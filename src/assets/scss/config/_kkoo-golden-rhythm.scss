@@ -1,0 +1,96 @@
+/**
+ * KKOO golden-ratio rhythm (φ ≈ 1.618)
+ * Use for gaps between labels, copy, icons, and images app-wide.
+ */
+
+:root {
+  --kkoo-phi: 1.618;
+  --kkoo-inv-phi: 0.618;
+
+  /* Base 0.5rem (8px) × φ^n */
+  --kkoo-space-0: 0;
+  --kkoo-space-1: 0.3125rem; /* ~5px */
+  --kkoo-space-2: 0.5rem; /* 8px */
+  --kkoo-space-3: calc(var(--kkoo-space-2) * var(--kkoo-phi)); /* ~13px */
+  --kkoo-space-4: calc(var(--kkoo-space-3) * var(--kkoo-phi)); /* ~21px */
+  --kkoo-space-5: calc(var(--kkoo-space-4) * var(--kkoo-phi)); /* ~34px */
+  --kkoo-space-6: calc(var(--kkoo-space-5) * var(--kkoo-phi)); /* ~55px */
+  --kkoo-space-7: calc(var(--kkoo-space-6) * var(--kkoo-phi)); /* ~89px */
+  --kkoo-space-8: calc(var(--kkoo-space-7) * var(--kkoo-phi)); /* ~144px */
+
+  /* Semantic rhythm */
+  --kkoo-rhythm-label: var(--kkoo-space-2);
+  --kkoo-rhythm-paragraph: var(--kkoo-space-2);
+  --kkoo-rhythm-title-body: var(--kkoo-space-3);
+  --kkoo-rhythm-image-text: var(--kkoo-space-3);
+  --kkoo-rhythm-icon-text: var(--kkoo-space-2);
+  --kkoo-rhythm-section: var(--kkoo-space-5);
+  --kkoo-rhythm-card: var(--kkoo-space-4);
+
+  --kkoo-line-height-phi: var(--kkoo-phi);
+  --kkoo-line-height-tight: 1.382;
+  --kkoo-line-height-body: 1.618;
+}
+
+/* Vertical flow: consistent gaps between siblings */
+.kkoo-flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kkoo-rhythm-title-body);
+}
+
+.kkoo-flow--tight {
+  gap: var(--kkoo-rhythm-paragraph);
+}
+
+.kkoo-flow--section {
+  gap: var(--kkoo-rhythm-section);
+}
+
+/* Label → field */
+.kkoo-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kkoo-rhythm-label);
+}
+
+/* Image / media → caption */
+.kkoo-media-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kkoo-rhythm-image-text);
+}
+
+.kkoo-media-block img,
+.kkoo-media-block .kkoo-media-block__media {
+  display: block;
+  max-width: 100%;
+}
+
+/* Icon + text row */
+.kkoo-icon-row {
+  display: flex;
+  align-items: center;
+  gap: var(--kkoo-rhythm-icon-text);
+}
+
+/* Card padding */
+.kkoo-card-rhythm {
+  padding: var(--kkoo-rhythm-card);
+}
+
+/* Typography rhythm */
+.kkoo-text-rhythm {
+  line-height: var(--kkoo-line-height-body);
+}
+
+.kkoo-text-rhythm h1,
+.kkoo-text-rhythm h2,
+.kkoo-text-rhythm h3 {
+  line-height: var(--kkoo-line-height-tight);
+  margin: 0 0 var(--kkoo-rhythm-title-body);
+}
+
+.kkoo-text-rhythm p + p {
+  margin-top: var(--kkoo-rhythm-paragraph);
+}

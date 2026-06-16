@@ -1,0 +1,101 @@
+/**
+ * KKOO — outline actions as compact brand pills inside the app shell.
+ * Scoped to `.wrapper` (VerticalLayout) so marketing / auth layouts stay unchanged.
+ *
+ * Opt out: add class `kkoo-btn-outline-plain` to keep default Bootstrap outline styling.
+ */
+
+.wrapper {
+  /* Shape + type — sm and default (md) outline buttons */
+  .btn.btn-sm:not(.kkoo-btn-outline-plain)[class*='btn-outline-'],
+  .btn:not(.btn-sm):not(.btn-lg):not(.kkoo-btn-outline-plain)[class*='btn-outline-'] {
+    border-radius: 9999px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .btn.btn-sm:not(.kkoo-btn-outline-plain)[class*='btn-outline-'] {
+    padding-inline: 0.9rem;
+  }
+
+  .btn:not(.btn-sm):not(.btn-lg):not(.kkoo-btn-outline-plain)[class*='btn-outline-'] {
+    padding-inline: 1.1rem;
+  }
+
+  .btn.btn-lg:not(.kkoo-btn-outline-plain)[class*='btn-outline-'] {
+    border-radius: 9999px;
+    font-weight: 600;
+    padding-inline: 1.35rem;
+  }
+
+  .btn.btn-outline-primary:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-primary-rgb), 0.28);
+  }
+
+  .btn.btn-outline-secondary:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-secondary-rgb), 0.28);
+  }
+
+  .btn.btn-outline-success:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-success-rgb), 0.28);
+  }
+
+  .btn.btn-outline-danger:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-danger-rgb), 0.28);
+  }
+
+  .btn.btn-outline-warning:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-warning-rgb), 0.35);
+  }
+
+  .btn.btn-outline-info:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-info-rgb), 0.28);
+  }
+
+  .btn.btn-outline-light:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(255, 255, 255, 0.12);
+  }
+
+  .btn.btn-outline-dark:not(.kkoo-btn-outline-plain):hover:not(:disabled):not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(var(--bs-dark-rgb), 0.2);
+  }
+
+  .btn[class*='btn-outline-']:not(.kkoo-btn-outline-plain):active:not(:disabled):not(.disabled) {
+    transform: translateY(0);
+  }
+
+  .btn.btn-outline-primary:not(.kkoo-btn-outline-plain):focus-visible,
+  .btn.btn-outline-secondary:not(.kkoo-btn-outline-plain):focus-visible,
+  .btn.btn-outline-success:not(.kkoo-btn-outline-plain):focus-visible,
+  .btn.btn-outline-info:not(.kkoo-btn-outline-plain):focus-visible {
+    box-shadow:
+      0 0 0 0.15rem var(--bs-body-bg),
+      0 0 0 0.35rem rgba(var(--bs-primary-rgb), 0.35);
+  }
+
+  .btn.btn-outline-danger:not(.kkoo-btn-outline-plain):focus-visible {
+    box-shadow:
+      0 0 0 0.15rem var(--bs-body-bg),
+      0 0 0 0.35rem rgba(var(--bs-danger-rgb), 0.35);
+  }
+
+  .btn.btn-outline-warning:not(.kkoo-btn-outline-plain):focus-visible {
+    box-shadow:
+      0 0 0 0.15rem var(--bs-body-bg),
+      0 0 0 0.35rem rgba(var(--bs-warning-rgb), 0.4);
+  }
+}

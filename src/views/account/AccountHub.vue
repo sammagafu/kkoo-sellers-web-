@@ -1,0 +1,400 @@
+<template>
+  <VerticalLayout>
+    <b-row class="align-items-center mb-4">
+      <b-col cols="12" md="8">
+        <h4 class="mb-1">My account</h4>
+        <p class="text-muted mb-0 small">
+          One account for shopping, food, stays, and workspaces. Switch roles or open customer experiences from here.
+        </p>
+      </b-col>
+    </b-row>
+
+    <b-alert v-if="restrictedMessage" show variant="warning" class="mb-4">{{ restrictedMessage }}</b-alert>
+
+    <b-row class="g-3 mb-4">
+      <b-col cols="12" lg="7">
+        <b-card class="h-100" header="Signed in as" header-bg-variant="light" header-class="fw-semibold">
+          <div class="d-flex align-items-start gap-3">
+            <img
+              v-if="hubAvatarUrl"
+              :src="hubAvatarUrl"
+              alt=""
+              class="account-hub-avatar rounded-3 flex-shrink-0 object-fit-cover"
+              width="64"
+              height="64"
+            />
+            <div
+              v-else
+              class="account-hub-avatar rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center text-primary"
+            >
+              <Icon icon="solar:user-circle-bold-duotone" class="fs-1" />
+            </div>
+            <div class="min-w-0 flex-grow-1">
+              <h5 class="mb-1 text-truncate">{{ displayName }}</h5>
+              <p class="text-muted small mb-3">{{ contactLine }}</p>
+              <div class="d-flex flex-wrap gap-2">
+                <router-link :to="{ name: 'account.profile' }" class="btn btn-sm btn-soft-primary">
+                  Edit profile
+                </router-link>
+                <router-link :to="{ name: 'account.notifications' }" class="btn btn-sm btn-soft-primary">
+                  Notifications
+                </router-link>
+                <router-link :to="{ name: 'account.backup-codes' }" class="btn btn-sm btn-soft-primary">
+                  Backup codes
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </b-card>
+      </b-col>
+      <b-col cols="12" lg="5">
+        <b-card class="h-100" header="Active role" header-bg-variant="light" header-class="fw-semibold">
+          <p class="text-muted small mb-3 mb-md-2">
+            Pick the workspace context you want. You stay signed in; we only change where links and tools point.
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            <b-button
+              v-for="roleOption in roleSwitchOptions"
+              :key="roleOption.role"
+              pill
+              size="sm"
+              :variant="activeAccountRole === roleOption.role ? 'primary' : 'outline-secondary'"
+              class="d-inline-flex align-items-center gap-2"
+              @click="switchRole(roleOption.role)"
+            >
+              <Icon :icon="roleOption.icon" class="fs-18" />
+              <span>{{ roleOption.label }}</span>
+            </b-button>
+          </div>
+        </b-card>
+      </b-col>
+    </b-row>
+
+    <b-card class="mb-4" header="Customer experiences" header-bg-variant="light" header-class="fw-semibold">
+      <p class="text-muted small mb-3">
+        Public web areas you can open while signed in. Your session carries across these paths.
+      </p>
+      <b-row class="g-3">
+        <b-col v-for="app in frontendApps" :key="app.title" cols="12" sm="6" xl="4">
+          <router-link v-if="app.to" :to="app.to" class="text-decoration-none text-reset d-block h-100">
+            <b-card class="h-100 border shadow-sm account-hub-link-card">
+              <div class="d-flex align-items-start gap-3">
+                <span class="account-hub-tile-icon rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                  <Icon :icon="app.icon" class="fs-4 text-primary" />
+                </span>
+                <div class="min-w-0">
+                  <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <h6 class="mb-0">{{ app.title }}</h6>
+                    <span class="badge badge-soft-primary rounded-pill">{{ app.badge }}</span>
+                  </div>
+                  <p class="text-muted small mb-0">{{ app.copy }}</p>
+                </div>
+              </div>
+            </b-card>
+          </router-link>
+          <a v-else-if="app.href" :href="app.href" class="text-decoration-none text-reset d-block h-100" target="_blank" rel="noopener">
+            <b-card class="h-100 border shadow-sm account-hub-link-card">
+              <div class="d-flex align-items-start gap-3">
+                <span class="account-hub-tile-icon rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                  <Icon :icon="app.icon" class="fs-4 text-primary" />
+                </span>
+                <div class="min-w-0">
+                  <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <h6 class="mb-0">{{ app.title }}</h6>
+                    <span class="badge badge-soft-primary rounded-pill">{{ app.badge }}</span>
+                  </div>
+                  <p class="text-muted small mb-0">{{ app.copy }}</p>
+                </div>
+              </div>
+            </b-card>
+          </a>
+        </b-col>
+      </b-row>
+    </b-card>
+
+    <b-card header="Workspaces" header-bg-variant="light" header-class="fw-semibold">
+      <p class="text-muted small mb-3">
+        Seller, CRM, and admin tools open only when your account has those roles.
+      </p>
+      <b-row class="g-3">
+        <b-col v-for="workspace in workspaceCards" :key="workspace.title" cols="12" md="6" xl="4">
+          <b-card
+            class="h-100"
+            :class="{ 'opacity-75': !workspace.available }"
+            body-class="d-flex flex-column"
+          >
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <span class="account-hub-tile-icon rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                <Icon :icon="workspace.icon" class="fs-4 text-primary" />
+              </span>
+              <div class="min-w-0 flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <h6 class="mb-0">{{ workspace.title }}</h6>
+                  <span
+                    :class="
+                      workspace.available ? 'badge badge-soft-success rounded-pill' : 'badge bg-secondary rounded-pill'
+                    "
+                  >
+                    {{ workspace.status }}
+                  </span>
+                </div>
+                <p class="text-muted small mb-0">{{ workspace.copy }}</p>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-auto pt-1">
+              <b-button
+                v-if="workspace.available && workspace.role"
+                variant="primary"
+                size="sm"
+                @click="switchRole(workspace.role)"
+              >
+                Switch here
+              </b-button>
+              <a
+                v-else-if="workspace.href"
+                :href="workspace.href"
+                class="btn btn-sm"
+                :class="workspace.available ? 'btn-outline-secondary' : 'btn-outline-primary'"
+                target="_blank"
+                rel="noopener"
+              >
+                {{ workspace.available ? workspace.cta : workspace.fallbackCta ?? workspace.cta }}
+              </a>
+              <router-link
+                v-else-if="workspace.route"
+                :to="workspace.route"
+                class="btn btn-sm"
+                :class="workspace.available ? 'btn-outline-secondary' : 'btn-outline-primary'"
+              >
+                {{ workspace.available ? workspace.cta : workspace.fallbackCta ?? workspace.cta }}
+              </router-link>
+            </div>
+          </b-card>
+        </b-col>
+      </b-row>
+    </b-card>
+  </VerticalLayout>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { Icon } from '@iconify/vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ROLES } from '@/acl'
+import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import { BUYER_ACCOUNT_ROLE, useAuthStore, type AccountRole } from '@/stores/auth'
+import { resolveAssetUrl } from '@/utils/assetUrl'
+import { buyerWebPath, bizWebPath } from '@/config/cross-app-links'
+
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+
+const { user, activeAccountRole, availableAccountRoles } = storeToRefs(auth)
+
+const roleMeta: Record<AccountRole, { label: string; icon: string }> = {
+  [BUYER_ACCOUNT_ROLE]: { label: 'Buyer', icon: 'solar:cart-large-2-bold' },
+  [ROLES.SELLER]: { label: 'Seller', icon: 'solar:shop-2-bold' },
+  [ROLES.ADMIN]: { label: 'Admin', icon: 'solar:shield-user-bold' },
+  [ROLES.STAFF]: { label: 'Staff', icon: 'solar:users-group-rounded-bold' },
+  [ROLES.CRM_MEMBER]: { label: 'Business team', icon: 'solar:buildings-3-bold' },
+}
+
+const roleDefaultRoutes: Record<AccountRole, { name?: string; href?: string }> = {
+  [BUYER_ACCOUNT_ROLE]: { href: buyerWebPath('/account') },
+  [ROLES.SELLER]: { href: bizWebPath('/seller') },
+  [ROLES.ADMIN]: { name: 'dashboards.index' },
+  [ROLES.STAFF]: { name: 'dashboards.index' },
+  [ROLES.CRM_MEMBER]: { href: bizWebPath('/seller/crm') },
+}
+
+const displayName = computed(() => {
+  const currentUser = user.value
+  return (
+    currentUser?.full_name ||
+    [currentUser?.first_name, currentUser?.last_name].filter(Boolean).join(' ') ||
+    currentUser?.username ||
+    'KKOO member'
+  )
+})
+
+const hubAvatarUrl = computed(() => {
+  const u = user.value as { avatar_url?: string; avatar?: string } | null
+  return resolveAssetUrl(u?.avatar_url ?? u?.avatar) ?? ''
+})
+
+const contactLine = computed(() => {
+  const currentUser = user.value
+  return [currentUser?.phone_number, currentUser?.email].filter(Boolean).join(' • ') || 'Your shared account is ready to use.'
+})
+
+const restrictedMessage = computed(() => {
+  const restricted = String(route.query.restricted ?? '').toLowerCase()
+  switch (restricted) {
+    case 'admin':
+      return 'This account is signed in, but it does not have admin or staff access.'
+    case 'business':
+      return 'This account can still shop and eat on the web. Register the business role first to open seller tools.'
+    default:
+      return ''
+  }
+})
+
+const roleSwitchOptions = computed(() =>
+  availableAccountRoles.value.map((role) => ({
+    role,
+    label: roleMeta[role].label,
+    icon: roleMeta[role].icon,
+  }))
+)
+
+const frontendApps = computed(() => [
+  {
+    title: 'Marketplace',
+    icon: 'solar:cart-large-2-bold',
+    badge: 'Buyer',
+    copy: 'Shop products, browse storefronts, and stay on the buyer journey from discovery to delivery.',
+    href: buyerWebPath('/personal'),
+  },
+  {
+    title: 'Restaurants',
+    icon: 'solar:chef-hat-bold',
+    badge: 'Eat',
+    copy: 'Open restaurant frontends, discover menus, and send buyers into storefront-led ordering flows.',
+    href: buyerWebPath('/restaurants'),
+  },
+  {
+    title: 'Hotels',
+    icon: 'solar:bed-bold',
+    badge: 'Stay',
+    copy: 'Browse hotel listings and hospitality storefronts through the public stay frontend.',
+    href: buyerWebPath('/hotels'),
+  },
+  {
+    title: 'Community',
+    icon: 'solar:users-group-rounded-bold',
+    badge: 'People',
+    copy: 'Join discussions, feature requests, and updates in the shared community experience.',
+    href: buyerWebPath('/community'),
+  },
+  {
+    title: 'Share & earn',
+    icon: 'solar:gift-bold',
+    badge: 'Growth',
+    copy: 'Open the referral and rewards frontend to share offers and track earning moments.',
+    href: buyerWebPath('/share-earn'),
+  },
+  {
+    title: 'Gift vouchers',
+    icon: 'solar:ticket-bold',
+    badge: 'Gifting',
+    copy: 'Send vouchers through the consumer-facing gift experience without leaving your account context.',
+    href: buyerWebPath('/vouchers'),
+  },
+  {
+    title: 'Merchant frontend',
+    icon: 'solar:bag-5-bold',
+    badge: 'Business',
+    copy: 'See the seller-facing marketing story, onboarding path, and business landing experience.',
+    href: buyerWebPath('/merchant'),
+  },
+  {
+    title: 'KKOORide',
+    icon: 'solar:scooter-bold',
+    badge: 'Mobility',
+    copy: 'Customer transport is explained here on the web.',
+    href: buyerWebPath('/courier'),
+  },
+])
+
+const roleAvailability = computed(() => new Set(availableAccountRoles.value))
+
+const workspaceCards = computed(() => [
+  {
+    title: 'Buyer account',
+    icon: 'solar:user-circle-bold',
+    available: true,
+    status: activeAccountRole.value === BUYER_ACCOUNT_ROLE ? 'Current' : 'Available',
+    copy: 'Every signed-in person can stay in buyer mode for shopping, food, stays, vouchers, and account management.',
+    role: BUYER_ACCOUNT_ROLE,
+    route: undefined,
+    href: buyerWebPath('/account'),
+    cta: 'Open buyer account',
+  },
+  {
+    title: 'Business / seller workspace',
+    icon: 'solar:shop-2-bold',
+    available: roleAvailability.value.has(ROLES.SELLER),
+    status: roleAvailability.value.has(ROLES.SELLER) ? 'Available' : 'Register required',
+    copy: 'Manage products, menus, orders, and storefront operations when the account has a seller registration.',
+    role: roleAvailability.value.has(ROLES.SELLER) ? ROLES.SELLER : null,
+    route: roleAvailability.value.has(ROLES.SELLER) ? undefined : { name: 'auth.seller-register' },
+    href: roleAvailability.value.has(ROLES.SELLER) ? bizWebPath('/seller') : undefined,
+    cta: 'Open seller dashboard',
+    fallbackCta: 'Create company / business',
+  },
+  {
+    title: 'Business team CRM',
+    icon: 'solar:buildings-3-bold',
+    available: roleAvailability.value.has(ROLES.CRM_MEMBER),
+    status: roleAvailability.value.has(ROLES.CRM_MEMBER) ? 'Available' : 'Invite required',
+    copy: 'If a company invited you into its business team, you can switch into CRM work without owning the seller account.',
+    role: roleAvailability.value.has(ROLES.CRM_MEMBER) ? ROLES.CRM_MEMBER : null,
+    route: undefined,
+    href: roleAvailability.value.has(ROLES.CRM_MEMBER) ? bizWebPath('/seller/crm') : undefined,
+    cta: 'Open business CRM',
+  },
+  {
+    title: 'Admin dashboard',
+    icon: 'solar:shield-user-bold',
+    available: roleAvailability.value.has(ROLES.ADMIN) || roleAvailability.value.has(ROLES.STAFF),
+    status: roleAvailability.value.has(ROLES.ADMIN) || roleAvailability.value.has(ROLES.STAFF) ? 'Available' : 'Restricted',
+    copy: 'Platform oversight, moderation, and operations reporting remain preserved in the admin dashboard for approved staff.',
+    role: roleAvailability.value.has(ROLES.ADMIN)
+      ? ROLES.ADMIN
+      : roleAvailability.value.has(ROLES.STAFF)
+        ? ROLES.STAFF
+        : null,
+    route:
+      roleAvailability.value.has(ROLES.ADMIN) || roleAvailability.value.has(ROLES.STAFF)
+        ? { name: 'dashboards.index' }
+        : null,
+    cta: 'Open admin dashboard',
+  },
+])
+
+async function switchRole(role: AccountRole) {
+  auth.setActiveAccountRole(role)
+  const target = roleDefaultRoutes[role]
+  if (!target) return
+  if (target.href) {
+    window.location.href = target.href
+    return
+  }
+  if (target.name) await router.push({ name: target.name })
+}
+</script>
+
+<style scoped>
+.account-hub-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  background: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+.account-hub-tile-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  background: rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.account-hub-link-card {
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.account-hub-link-card:hover {
+  border-color: rgba(var(--bs-primary-rgb), 0.35) !important;
+  box-shadow: 0 0.25rem 1rem rgba(var(--bs-body-color-rgb), 0.08) !important;
+}
+</style>

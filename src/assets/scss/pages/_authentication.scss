@@ -1,0 +1,71 @@
+//
+// authentication.scss — viewport shell + shared auth scene container
+//
+@import 'auth-centered';
+
+html.auth-viewport-lock {
+  overflow: hidden;
+  height: 100%;
+}
+
+html.auth-viewport-lock #app {
+  height: 100%;
+  overflow: hidden;
+}
+
+body.authentication-bg {
+  background: #f0e8df;
+  overflow: hidden;
+  height: 100%;
+  height: 100dvh;
+
+  .account-pages {
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    height: 100%;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+html[data-bs-theme='dark'] body.authentication-bg {
+  background: #100c14;
+}
+
+.auth-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-shell {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Utility template pages (maintenance, coming-soon) */
+.account-pages--auth .auth-card {
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+  border: none;
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, #fff 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: none;
+}
+
+html[data-bs-theme='dark'] .account-pages--auth .auth-card {
+  background: color-mix(in srgb, #1e2430 94%, transparent);
+}

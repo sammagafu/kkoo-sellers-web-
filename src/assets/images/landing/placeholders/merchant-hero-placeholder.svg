@@ -1,0 +1,40 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#F7F2FF"/>
+  <rect x="54" y="54" width="1092" height="792" rx="36" fill="url(#bg)"/>
+  <rect x="120" y="136" width="960" height="628" rx="36" fill="#FFFFFF" fill-opacity="0.08" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="2"/>
+  <rect x="176" y="192" width="330" height="452" rx="32" fill="#FFFFFF" fill-opacity="0.96"/>
+  <rect x="214" y="234" width="254" height="148" rx="24" fill="url(#panel)"/>
+  <rect x="214" y="414" width="164" height="18" rx="9" fill="#5C308F" fill-opacity="0.18"/>
+  <rect x="214" y="444" width="212" height="16" rx="8" fill="#5C308F" fill-opacity="0.12"/>
+  <rect x="214" y="500" width="118" height="104" rx="22" fill="#F7A829"/>
+  <rect x="348" y="500" width="120" height="104" rx="22" fill="#F0E4FF"/>
+  <rect x="548" y="192" width="474" height="222" rx="30" fill="#24143A" fill-opacity="0.98"/>
+  <rect x="588" y="234" width="172" height="16" rx="8" fill="#FFFFFF" fill-opacity="0.84"/>
+  <rect x="588" y="266" width="304" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.18"/>
+  <rect x="588" y="294" width="270" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.18"/>
+  <rect x="588" y="340" width="136" height="50" rx="16" fill="#F7A829"/>
+  <rect x="744" y="340" width="136" height="50" rx="16" fill="#FFFFFF" fill-opacity="0.1"/>
+  <rect x="548" y="454" width="226" height="188" rx="28" fill="#FFFFFF" fill-opacity="0.94"/>
+  <rect x="796" y="454" width="226" height="188" rx="28" fill="#FFFFFF" fill-opacity="0.94"/>
+  <path d="M258 310C258 266.922 292.922 232 336 232H344C387.078 232 422 266.922 422 310V340H258V310Z" fill="#E8C39F"/>
+  <circle cx="340" cy="292" r="56" fill="#2D1946"/>
+  <rect x="282" y="342" width="116" height="86" rx="28" fill="#5C308F"/>
+  <path d="M598 558C598 515.474 632.474 481 675 481H690C732.526 481 767 515.474 767 558V589H598V558Z" fill="#F0C8A2"/>
+  <circle cx="682" cy="540" r="58" fill="#3B1A5A"/>
+  <rect x="622" y="592" width="118" height="42" rx="18" fill="#6B38A6"/>
+  <path d="M844 558C844 515.474 878.474 481 921 481H936C978.526 481 1013 515.474 1013 558V589H844V558Z" fill="#DFAF85"/>
+  <circle cx="928" cy="540" r="58" fill="#7B46B3"/>
+  <rect x="868" y="592" width="118" height="42" rx="18" fill="#F7A829"/>
+  <text x="136" y="108" fill="#FFFFFF" fill-opacity="0.78" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">PLACEHOLDER</text>
+  <defs>
+    <linearGradient id="bg" x1="54" y1="54" x2="1146" y2="846" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#31144F"/>
+      <stop offset="0.52" stop-color="#5C308F"/>
+      <stop offset="1" stop-color="#F7A829"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="214" y1="234" x2="468" y2="382" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5C308F"/>
+      <stop offset="1" stop-color="#F7A829"/>
+    </linearGradient>
+  </defs>
+</svg>

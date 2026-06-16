@@ -1,0 +1,27 @@
+# Deploy runs from ci.yml after a successful build on main.
+# Use this workflow only for manual redeploys.
+
+name: Deploy Admin Web (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH build and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.DO_APP_DIR }}"
+            git pull
+            npm ci
+            npm run build
+            rsync -av --delete dist/ "${{ secrets.DO_WEB_DIR }}/"
+            sudo nginx -t
+            sudo systemctl reload nginx

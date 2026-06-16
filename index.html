@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/src/assets/images/logo-sm.png">
+    <title>KKOOAPP — Shop, order, and run your business in one place</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KKOO helps you shop on your phone, track deliveries, pay safely with escrow, and earn rewards—while your team lists products, manages orders, and settles payouts in one ecosystem. Built for Tanzania and Africa." />
+    <meta name="keywords" content="KKOO, Kkoo, e-commerce, marketplace, delivery, Tanzania, Africa, mobile money, escrow, food delivery, grocery, rewards, seller tools" />
+    <meta name="author" content="KKOOAPP" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://kkooapp.co.tz/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KKOOAPP" />
+    <meta property="og:title" content="KKOOAPP — Shop, order, and run your business in one place" />
+    <meta property="og:description" content="Shop and track on the Kkoo app. Run catalog, orders, delivery, and payouts on the web. Escrow, insured delivery, rewards—one KKOO ecosystem." />
+    <meta property="og:url" content="https://kkooapp.co.tz/" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:image" content="https://kkooapp.co.tz/og-image.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="KKOOAPP — Shop, order, and run your business in one place" />
+    <meta name="twitter:description" content="Shop on your phone. Run the shop on the web. Escrow, delivery tracking, rewards—same KKOO." />
+    <meta name="twitter:image" content="https://kkooapp.co.tz/og-image.png" />
+
+    <meta name="theme-color" content="#5c308f" />
+
+    <!-- JSON-LD: Organization / WebSite for search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "KKOOAPP",
+      "alternateName": "KKOO",
+      "url": "https://kkooapp.co.tz/",
+      "description": "Commerce and delivery: shop and pay on the Kkoo buyers app; manage catalog, orders, delivery, and payouts on the Kkoo admin site. Escrow, insured delivery, rewards, and referrals in one ecosystem.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "KKOOAPP"
+      }
+    }
+    </script>
+
+    <style>
+      #splash-screen {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        background: radial-gradient(circle at 15% 8%, rgba(92, 48, 143, 0.10), transparent 55%),
+          radial-gradient(circle at 85% 18%, rgba(247, 168, 41, 0.12), transparent 55%),
+          #fffdf7;
+        display: flex;
+        height: 100%;
+        width: 100%;
+        transform: translate(-50%, -50%);
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 1;
+        transition: all 15s linear;
+        overflow: hidden;
+      }
+
+      html[data-bs-theme="dark"] #splash-screen {
+        background: radial-gradient(circle at 18% 12%, rgba(247, 168, 41, 0.10), transparent 55%),
+          radial-gradient(circle at 78% 20%, rgba(92, 48, 143, 0.18), transparent 55%),
+          #08050f;
+      }
+
+      #splash-screen.remove {
+        animation: fadeout 0.7s forwards;
+        z-index: 0;
+      }
+
+      @keyframes fadeout {
+        to {
+          visibility: hidden;
+        }
+      }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="splash-screen">
+    <img
+      alt="KKOO logo"
+      src="./src/assets/images/logo-light.svg"
+      style="height: 160px; width: auto;"
+    />
+  </div>
+<script type="module" src="/src/main.ts"></script>
+<script>
+    const appEl = document.querySelector('#app');
+    new MutationObserver(() => {
+      document.querySelector('#splash-screen')?.classList.add('remove');
+    }).observe(appEl, { childList: true })
+  </script>
+</body>
+</html>

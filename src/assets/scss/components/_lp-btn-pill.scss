@@ -1,0 +1,484 @@
+/*
+ * Pill CTA — colored body + label left, white disc flush right, arrow centered in disc.
+ * Variants: --primary (brand), --surface (light), --inverse (charcoal), --accent (secondary / e.g. orange).
+ * Used on marketing Landing + MarketingLayout; relies on Bootstrap --bs-*-rgb tokens.
+ */
+.lp-btn-pill {
+  --lp-pill-well: 2.625rem;
+  --lp-pill-pad-x: 1.7rem;
+  --lp-pill-arrow: #111827;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  padding-left: var(--lp-pill-pad-x);
+  padding-right: 0;
+  border-radius: 9999px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  overflow: hidden;
+  background-clip: padding-box;
+  /* Ensure Bootstrap .btn doesn’t hide variant backgrounds */
+  background-color: transparent;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Bootstrap `.btn` padding — reset so pill layout controls insets (no `p-0` on markup) */
+.btn.lp-btn-pill,
+.lp-btn-pill.p-0,
+.lp-btn-pill.border-0.p-0 {
+  padding-left: var(--lp-pill-pad-x) !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.lp-btn-pill--primary.btn,
+a.lp-btn-pill--primary {
+  color: var(--lp-cream, #faf6f0) !important;
+  border: none !important;
+  background-color: rgb(var(--bs-primary-rgb, 92, 48, 143)) !important;
+  background-image: none !important;
+  box-shadow: 0 4px 16px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.38);
+}
+
+.lp-btn-pill--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.45);
+}
+
+.lp-btn-pill--primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 5px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.5);
+}
+
+.lp-btn-pill--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.35);
+}
+
+a.lp-btn-pill--surface,
+.lp-btn-pill--surface.btn {
+  /* Default arrow: brand secondary (e.g. orange) — alternate to primary purple */
+  --lp-pill-arrow: rgb(var(--bs-secondary-rgb, 230, 126, 34));
+  color: var(--bs-emphasis-color) !important;
+  border: 1px solid var(--bs-border-color) !important;
+  background-color: var(--lp-cream, #faf6f0) !important;
+  background-image: linear-gradient(
+    180deg,
+    var(--lp-cream, #faf6f0) 0%,
+    var(--lp-beige, #f0e8df) 100%
+  ) !important;
+  box-shadow: 0 2px 8px rgba(var(--lp-ink-rgb, 42, 24, 54), 0.08);
+}
+
+.lp-btn-pill--surface:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.35) !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
+  --lp-pill-arrow: rgb(var(--bs-primary-rgb, 92, 48, 143));
+}
+
+.lp-btn-pill--surface:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 4px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.4);
+}
+
+.lp-btn-pill--surface:active {
+  transform: translateY(0);
+}
+
+/* Ghost — language / compact selectors (not the primary CTA) */
+a.lp-btn-pill--ghost,
+.lp-btn-pill--ghost.btn {
+  --lp-pill-arrow: color-mix(in srgb, var(--bs-body-color) 52%, var(--bs-primary) 48%);
+  font-weight: 500;
+  color: var(--bs-secondary-color) !important;
+  border: 1px solid color-mix(in srgb, var(--bs-border-color) 92%, var(--bs-primary) 8%) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none;
+}
+
+.lp-btn-pill--ghost:hover {
+  transform: none;
+  color: var(--bs-emphasis-color) !important;
+  border-color: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.32) !important;
+  background-color: color-mix(in srgb, var(--bs-body-bg) 90%, var(--bs-primary) 10%) !important;
+  --lp-pill-arrow: rgb(var(--bs-primary-rgb, 92, 48, 143));
+}
+
+.lp-btn-pill--ghost:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 4px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.28);
+}
+
+.lp-btn-pill--ghost:active {
+  transform: none;
+}
+
+.lp-btn-pill--ghost .lp-btn-pill__well {
+  background: color-mix(
+    in srgb,
+    var(--bs-body-bg) 82%,
+    rgb(var(--bs-primary-rgb, 92, 48, 143)) 18%
+  ) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.14);
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--ghost {
+  color: rgba(226, 232, 240, 0.82) !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  background-color: transparent !important;
+  --lp-pill-arrow: rgba(253, 230, 138, 0.92);
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--ghost:hover {
+  color: rgba(248, 250, 252, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.5) !important;
+  --lp-pill-arrow: rgb(var(--bs-primary-rgb, 92, 48, 143));
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--ghost .lp-btn-pill__well {
+  background: rgba(30, 41, 59, 0.85) !important;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--ghost:hover .lp-btn-pill__well {
+  background: rgba(51, 65, 85, 0.95) !important;
+}
+
+.lp-btn-pill--inverse.btn,
+a.lp-btn-pill--inverse {
+  color: #fff !important;
+  border: none !important;
+  background-color: #1e1e1e !important;
+  background-image: none !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.lp-btn-pill--inverse:hover {
+  transform: translateY(-1px);
+  background-color: #2a2a2a !important;
+  background-image: none !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+}
+
+.lp-btn-pill--accent.btn,
+a.lp-btn-pill--accent {
+  color: #fff !important;
+  border: none !important;
+  background-color: rgb(var(--bs-secondary-rgb, 108, 117, 125)) !important;
+  background-image: none !important;
+  box-shadow: 0 4px 16px rgba(var(--bs-secondary-rgb, 108, 117, 125), 0.4);
+}
+
+.lp-btn-pill--accent:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.lp-btn-pill--accent:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 5px rgba(var(--bs-secondary-rgb, 108, 117, 125), 0.45);
+}
+
+.lp-btn-pill--accent:active {
+  transform: translateY(0);
+}
+
+.lp-btn-pill__label {
+  display: inline-flex;
+  align-items: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  /* Outer pill already provides left padding; keep label tight */
+  padding-left: 0;
+  padding-right: 0.85rem;
+}
+
+.lp-btn-pill__well {
+  width: var(--lp-pill-well);
+  height: var(--lp-pill-well);
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff !important;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.lp-btn-pill--primary .lp-btn-pill__well,
+.lp-btn-pill--inverse .lp-btn-pill__well,
+.lp-btn-pill--accent .lp-btn-pill__well {
+  box-shadow: none;
+}
+
+/* Light theme: purple disc instead of white (primary / accent / inverse) */
+html:not([data-bs-theme='dark']) .lp-btn-pill--primary .lp-btn-pill__well,
+html:not([data-bs-theme='dark']) .lp-btn-pill--inverse .lp-btn-pill__well,
+html:not([data-bs-theme='dark']) .lp-btn-pill--accent .lp-btn-pill__well {
+  background: color-mix(
+    in srgb,
+    rgb(var(--bs-primary-rgb, 92, 48, 143)) 48%,
+    #f3edfb 52%
+  ) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb, 92, 48, 143), 0.18);
+}
+
+.lp-btn-pill__icon {
+  display: block;
+  font-size: 1.15rem;
+  color: var(--lp-pill-arrow);
+  line-height: 1;
+}
+
+/* Leading icon inside label (e.g. download / shop / ride) — keeps pill height with sign-in layout */
+.lp-btn-pill__lead-icon {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1;
+  opacity: 0.95;
+}
+
+.lp-btn-pill--sm .lp-btn-pill__lead-icon {
+  font-size: 1.05rem;
+}
+
+.lp-btn-pill--lg .lp-btn-pill__lead-icon {
+  font-size: 1.25rem;
+}
+
+.lp-btn-pill--primary .lp-btn-pill__lead-icon,
+.lp-btn-pill--accent .lp-btn-pill__lead-icon,
+.lp-btn-pill--inverse .lp-btn-pill__lead-icon {
+  color: rgba(var(--lp-cream-rgb, 250, 246, 240), 0.96);
+}
+
+/* Arrow on end disc: light = lavender disc + contrast arrows; dark = white disc */
+.lp-btn-pill--primary .lp-btn-pill__icon {
+  color: rgb(var(--bs-secondary-rgb, 230, 126, 34)) !important;
+}
+
+.lp-btn-pill--accent .lp-btn-pill__icon {
+  color: rgb(var(--bs-primary-rgb, 92, 48, 143)) !important;
+}
+
+.lp-btn-pill--inverse .lp-btn-pill__icon {
+  color: rgb(var(--bs-secondary-rgb, 230, 126, 34)) !important;
+}
+
+/* Light theme: dark purple arrows on lavender well */
+html:not([data-bs-theme='dark']) .lp-btn-pill--primary .lp-btn-pill__icon,
+html:not([data-bs-theme='dark']) .lp-btn-pill--accent .lp-btn-pill__icon,
+html:not([data-bs-theme='dark']) .lp-btn-pill--inverse .lp-btn-pill__icon {
+  color: color-mix(in srgb, rgb(var(--bs-primary-rgb, 92, 48, 143)) 38%, #140a1f 62%) !important;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--primary .lp-btn-pill__well,
+html[data-bs-theme='dark'] .lp-btn-pill--inverse .lp-btn-pill__well,
+html[data-bs-theme='dark'] .lp-btn-pill--accent .lp-btn-pill__well {
+  background: #fff !important;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--primary .lp-btn-pill__icon {
+  color: rgb(var(--bs-secondary-rgb, 230, 126, 34)) !important;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--accent .lp-btn-pill__icon {
+  color: rgb(var(--bs-primary-rgb, 92, 48, 143)) !important;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--inverse .lp-btn-pill__icon {
+  color: rgb(var(--bs-secondary-rgb, 230, 126, 34)) !important;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--surface {
+  background-color: rgb(15, 23, 42) !important;
+  background-image: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 1) 100%) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --lp-pill-arrow: rgb(var(--bs-secondary-rgb, 230, 126, 34));
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--surface .lp-btn-pill__well {
+  background: #f8fafc !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--surface:hover {
+  --lp-pill-arrow: rgb(var(--bs-primary-rgb, 92, 48, 143));
+}
+
+.lp-btn-pill--sm {
+  --lp-pill-well: 2.25rem;
+  font-size: 0.8625rem;
+}
+
+.lp-btn-pill--sm .lp-btn-pill__label {
+  padding-top: 0.36rem;
+  padding-bottom: 0.36rem;
+  padding-left: 0;
+  padding-right: 0.7rem;
+}
+
+.lp-btn-pill--sm .lp-btn-pill__icon {
+  font-size: 1.08rem;
+}
+
+/* ~44×44px minimum touch target on small screens (WCAG 2.5.5); marketing CTAs use --sm heavily */
+@media (max-width: 575.98px) {
+  .lp-btn-pill--sm {
+    --lp-pill-well: 2.75rem;
+    font-size: 0.9375rem;
+  }
+
+  .lp-btn-pill--sm .lp-btn-pill__label {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 0;
+    padding-right: 0.85rem;
+  }
+
+  .lp-btn-pill--sm.lp-btn-pill--solo {
+    --lp-pill-well: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+.lp-btn-pill--lg {
+  --lp-pill-well: 2.9rem;
+  --lp-pill-pad-x: 1.85rem;
+  font-size: 0.985rem;
+  letter-spacing: 0.01em;
+}
+
+.lp-btn-pill--lg .lp-btn-pill__label {
+  padding-top: 0.58rem;
+  padding-bottom: 0.58rem;
+  padding-left: 0;
+  padding-right: 0.95rem;
+}
+
+.lp-btn-pill--lg .lp-btn-pill__icon {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 767.98px) {
+  .lp-btn-pill--lg {
+    --lp-pill-well: 2.7rem;
+    --lp-pill-pad-x: 1.55rem;
+    font-size: 0.94rem;
+  }
+
+  .lp-btn-pill--lg .lp-btn-pill__label {
+    padding-top: 0.52rem;
+    padding-bottom: 0.52rem;
+    padding-left: 0;
+    padding-right: 0.85rem;
+  }
+}
+
+.lp-btn-pill.w-100 {
+  justify-content: space-between;
+}
+
+.lp-btn-pill.w-100 .lp-btn-pill__label {
+  flex: 1 1 auto;
+  justify-content: center;
+  text-align: center;
+  padding-left: 2.95rem;
+  padding-right: 1.15rem;
+}
+
+/* Full-width toolbar dropdown (language): label left, chevron well right */
+.lp-btn-pill--lang.w-100 .lp-btn-pill__label {
+  justify-content: flex-start;
+  text-align: left;
+  padding-left: 0.7rem;
+  padding-right: 0.85rem;
+}
+
+.lp-btn-pill.dropdown-toggle::after {
+  display: none !important;
+}
+
+/*
+ * Outline-style chrome: circular “solo” pill (theme toggle, icon-only actions)
+ * Matches surface colors + alternate icon hues (secondary → primary on hover)
+ */
+.lp-btn-pill--solo {
+  --lp-pill-well: 2.75rem;
+  width: var(--lp-pill-well);
+  height: var(--lp-pill-well);
+  min-width: var(--lp-pill-well);
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--bs-emphasis-color) !important;
+  border: 1px solid var(--bs-border-color) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.lp-btn-pill--solo:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.35) !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
+}
+
+.lp-btn-pill--solo .lp-btn-pill__icon {
+  color: rgb(var(--bs-secondary-rgb, 230, 126, 34)) !important;
+}
+
+.lp-btn-pill--solo:hover .lp-btn-pill__icon {
+  color: rgb(var(--bs-primary-rgb, 92, 48, 143)) !important;
+}
+
+.lp-btn-pill--sm.lp-btn-pill--solo {
+  --lp-pill-well: 2.35rem;
+}
+
+.lp-btn-pill--sm.lp-btn-pill--solo .lp-btn-pill__icon {
+  font-size: 1.2rem;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--solo {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 1) 100%) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--solo .lp-btn-pill__icon {
+  color: rgb(var(--bs-secondary-rgb, 230, 126, 34)) !important;
+}
+
+html[data-bs-theme='dark'] .lp-btn-pill--solo:hover .lp-btn-pill__icon {
+  color: rgb(var(--bs-primary-rgb, 92, 48, 143)) !important;
+}

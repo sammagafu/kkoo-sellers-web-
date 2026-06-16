@@ -1,0 +1,207 @@
+// 
+// _theme-mode.scss
+// 
+
+
+/* Root Prefix Variable – Kkoo product/brand color palette */
+:root {
+    /* Brand palette (from Kkoo product theme) */
+    --#{$prefix}kkoo-primary:                   #{$kkoo-primary};
+    --#{$prefix}kkoo-secondary:                 #{$kkoo-secondary};
+    --#{$prefix}kkoo-success:                   #{$kkoo-success};
+    --#{$prefix}kkoo-error:                    #{$kkoo-error};
+    --#{$prefix}kkoo-surface:                  #{$kkoo-light-surface};
+    --#{$prefix}kkoo-surface-variant:          #{$kkoo-light-surface-variant};
+    --#{$prefix}kkoo-on-surface:               #{$kkoo-light-on-surface};
+    --#{$prefix}kkoo-on-surface-variant:        #{$kkoo-light-on-surface-variant};
+
+    --#{$prefix}logo-lg-height:                96px;
+    --#{$prefix}logo-sm-height:                64px;
+
+    --#{$prefix}main-nav-width:               245px;
+    --#{$prefix}main-nav-width-sm:             75px;
+    --#{$prefix}main-nav-item-icon-size:       18px;
+    --#{$prefix}main-nav-item-font-size:       15px;
+    --#{$prefix}main-nav-item-padding-x:       15px;
+    --#{$prefix}main-nav-item-padding-y:       10px;
+    --#{$prefix}main-nav-item-margin-y:       2px;
+    --#{$prefix}main-nav-item-active-bg:       #{tint-color($kkoo-primary, 90%)};
+    --#{$prefix}main-nav-item-active-color:   #{$kkoo-primary};
+
+    --#{$prefix}topbar-height:                 70px;
+    --#{$prefix}footer-height:                 60px;
+
+    /* Headings use brand on-surface */
+    --#{$prefix}headings-color:                 #{$kkoo-light-on-surface};
+
+    --#{$prefix}input-border-color:             #d8dfe7;
+    --#{$prefix}input-focus-border-color:       #{$kkoo-primary};
+}
+
+
+/* Color system - Dark Mode only */
+html[data-bs-theme="dark"],
+[data-bs-theme="dark"] {
+
+    --#{$prefix}border-color:                   #2f3944;
+
+    --#{$prefix}light:                           #{$body-tertiary-bg-dark};
+    --#{$prefix}dark:                            #{$body-tertiary-color-dark};
+    
+    --#{$prefix}light-rgb:                       #{to-rgb($body-tertiary-bg-dark)};
+    --#{$prefix}dark-rgb:                        #{to-rgb($body-tertiary-color-dark)};
+
+    // Heading Variable
+    --#{$prefix}headings-color:                  #{$body-color-dark};
+
+    --#{$prefix}input-border-color:             #3a4551;
+    --#{$prefix}input-focus-border-color:       #4a5663;
+
+    /* Icons orange in dark mode (sidebar, topbar, and general) */
+    --#{$prefix}icon-color-dark:                 #{$kkoo-secondary};
+}
+
+/* Dark mode: force orange color on icons (Iconify / nav icons) */
+html[data-bs-theme="dark"] {
+    .main-nav .nav-icon,
+    .main-nav .nav-link .nav-icon,
+    .main-nav .nav-icon iconify-icon,
+    .main-nav .nav-icon svg {
+        color: $kkoo-secondary !important;
+    }
+    .main-nav .nav-icon svg {
+        fill: currentColor;
+    }
+    .main-nav .nav-link:hover .nav-icon,
+    .main-nav .nav-link.active .nav-icon,
+    .main-nav .nav-link.show .nav-icon {
+        color: $kkoo-secondary !important;
+    }
+    .topbar .topbar-button,
+    .topbar .topbar-button iconify-icon,
+    .topbar .topbar-button svg,
+    .topbar .topbar-item iconify-icon {
+        color: $kkoo-secondary !important;
+    }
+    .topbar .topbar-button svg {
+        fill: currentColor;
+    }
+    .topbar .topbar-button:hover,
+    .topbar .topbar-button.show.active,
+    .topbar .topbar-button:active {
+        color: $kkoo-secondary !important;
+    }
+    /* Dashboard and card stat icons */
+    .dashboard-stat-card .stat-card-icon-wrap iconify-icon,
+    .dashboard-stat-card .stat-card-icon-wrap svg,
+    .dashboard-stat-card .stat-card-icon,
+    .stat-card-icon-wrap iconify-icon {
+        color: $kkoo-secondary !important;
+    }
+    .dashboard-stat-card .stat-card-icon-wrap svg {
+        fill: currentColor;
+    }
+    /* Cards – dark brand (Skillset-style with our colors) */
+    .card {
+        background-color: #1c1822;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba($kkoo-primary, 0.25);
+    }
+    .card .card-header {
+        background-color: #252030;
+        border-bottom-color: rgba($kkoo-primary, 0.25);
+    }
+    .card .card-footer {
+        background-color: #252030;
+        border-top-color: rgba($kkoo-primary, 0.25);
+    }
+    .card .card-title,
+    .card .card-body {
+        color: var(--#{$prefix}body-color);
+    }
+    .card .list-group-item {
+        background-color: transparent;
+        border-color: rgba($kkoo-primary, 0.2);
+        color: var(--#{$prefix}body-color);
+    }
+
+    /* Admin footer – match dark card styling and ensure readable text */
+    .footer {
+        background-color: #1c1822;
+        border-top-color: rgba($kkoo-primary, 0.25);
+        color: var(--#{$prefix}body-color);
+    }
+    .footer .text-muted {
+        color: rgba(226, 232, 240, 0.7) !important;
+    }
+
+    /* Seller profile edit: orange links in dark mode */
+    .seller-profile-page a:not(.btn) {
+        color: $kkoo-secondary;
+        &:hover {
+            color: tint-color($kkoo-secondary, 15%);
+        }
+    }
+}
+
+
+/* Main Menu Light – brand palette (primary tint hover, primary active) */
+html[data-menu-color="light"]{
+    --#{$prefix}main-nav-bg:                               #ffffff;
+    --#{$prefix}main-nav-item-color:                       #{$kkoo-light-on-surface-variant};
+    --#{$prefix}main-nav-item-hover-bg:                    #{$kkoo-light-surface-variant};
+    --#{$prefix}main-nav-item-hover-color:                 #{$kkoo-primary};
+    --#{$prefix}main-nav-item-active-bg:                    #{tint-color($kkoo-primary, 90%)};
+    --#{$prefix}main-nav-item-active-color:               #{$kkoo-primary};
+    --#{$prefix}main-nav-border-color:                     #eaedf1;
+}
+
+
+/* Main Menu Dark – Kkoo deep purple shell */
+html[data-menu-color="dark"] {
+    --#{$prefix}main-nav-bg:                               #{$kkoo-primary-dark};
+    --#{$prefix}main-nav-item-color:                       rgba(255, 255, 255, 0.78);
+    --#{$prefix}main-nav-item-hover-bg:                    rgba(255, 255, 255, 0.08);
+    --#{$prefix}main-nav-item-hover-color:                 #{$kkoo-secondary};
+    --#{$prefix}main-nav-item-active-bg:                    #{rgba($kkoo-secondary, 0.16)};
+    --#{$prefix}main-nav-item-active-color:               #{$kkoo-secondary};
+    --#{$prefix}main-nav-border-color:                     rgba(255, 255, 255, 0.1);
+}
+
+
+/* Main Menu Dark (Dark Mode Only) – orange accent for icons and words */
+html[data-bs-theme="dark"][data-menu-color="dark"],
+html[data-bs-theme="dark"][data-menu-color="light"] {
+    --#{$prefix}main-nav-bg:                               #1A1230;
+    --#{$prefix}main-nav-item-color:                        rgba(237, 233, 245, 0.85);
+    --#{$prefix}main-nav-item-hover-bg:                    rgba(92, 48, 143, 0.35);
+    --#{$prefix}main-nav-item-hover-color:                  #{$kkoo-secondary};
+    --#{$prefix}main-nav-item-active-bg:                    #{rgba($kkoo-secondary, 0.18)};
+    --#{$prefix}main-nav-item-active-color:                #{$kkoo-secondary};
+    --#{$prefix}main-nav-border-color:                     rgba(92, 48, 143, 0.35);
+}
+
+
+/* Topbar Light – brand on-surface variant for text, surface variant for search */
+html[data-topbar-color="light"] {
+    --#{$prefix}topbar-bg:                                 #{$white};
+    --#{$prefix}topbar-item-color:                         #{$kkoo-light-on-surface-variant};
+    --#{$prefix}topbar-search-bg:                          #{$kkoo-light-surface-variant};
+}
+
+
+/* Topbar Dark – Kkoo deep purple */
+html[data-topbar-color="dark"] {
+    --#{$prefix}topbar-bg:                                 #{$kkoo-primary-dark};
+    --#{$prefix}topbar-item-color:                         rgba(255, 255, 255, 0.78);
+    --#{$prefix}topbar-search-bg:                          rgba(255, 255, 255, 0.08);
+}
+
+
+/* Topbar Dark (Dark Mode Only) – orange accent for icons and words */
+html[data-bs-theme="dark"][data-topbar-color="dark"], 
+html[data-bs-theme="dark"][data-topbar-color="light"] {
+    --#{$prefix}topbar-bg:                                 #1A1230;
+    --#{$prefix}topbar-item-color:                         rgba(237, 233, 245, 0.9);
+    --#{$prefix}topbar-search-bg:                          rgba(92, 48, 143, 0.35);
+}

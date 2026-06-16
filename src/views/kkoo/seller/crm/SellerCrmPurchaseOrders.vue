@@ -1,0 +1,86 @@
+<template>
+  <VerticalLayout>
+    <b-card title="Purchase Orders">
+      <div v-if="hasMultipleBusinesses" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <span class="text-muted">Business:</span>
+        <b-form-select v-model="selectedBusinessId" :options="businessOptions" value-field="id" text-field="name" size="sm" class="w-auto" style="max-width: 220px;" @change="load" />
+      </div>
+      <p class="text-muted mb-3">Track stock purchased from suppliers. PO status: draft, ordered, received, cancelled.</p>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <b-form-select v-model="statusFilter" :options="statusOptions" class="w-auto" @change="applyFilter" />
+        <b-button variant="outline-secondary" size="sm" @click="load">Refresh</b-button>
+      </div>
+      <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
+      <b-table v-if="items.length" :items="items" :fields="fields" striped responsive>
+        <template #cell(total)="data">{{ formatCurrency(data.item.total) }}</template>
+        <template #cell(status)="data">
+          <b-badge :variant="poStatusVariant(data.item.status)">{{ data.item.status || 'draft' }}</b-badge>
+        </template>
+        <template #cell(actions)="data">
+          <b-button size="sm" variant="outline-primary" :to="{ name: 'seller.crm.purchase-orders.detail', params: { id: String(data.item.id) } }">View</b-button>
+        </template>
+      </b-table>
+      <p v-else-if="loading">Loading…</p>
+      <EmptyState v-else title="No purchase orders" message="Create POs when the CRM API is configured. CRM is configured by your platform administrator. Contact support if you need access." />
+      <b-pagination
+        v-if="hasPagination"
+        :model-value="page"
+        :total-rows="total"
+        :per-page="pageSize"
+        size="sm"
+        class="mt-3"
+        @update:model-value="(v: unknown) => setPage(Number(v))"
+      />
+    </b-card>
+  </VerticalLayout>
+</template>
+
+<script setup lang="ts">
+import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { crmApi } from '@/api'
+import { useCrmList } from '@/composables/useCrmList'
+import { useCrmBusinessSwitcher } from '@/composables/useCrmBusinessSwitcher'
+
+const switcher = useCrmBusinessSwitcher()
+const { selectedBusinessId, hasMultipleBusinesses, loadBusinesses, businesses } = switcher
+const businessOptions = computed(() => businesses.value.map((b) => ({ id: Number(b.id), name: (b.name as string) || `Business ${b.id}` })))
+
+const statusFilter = ref('')
+const statusOptions = [{ value: '', text: 'All statuses' }, { value: 'draft', text: 'Draft' }, { value: 'ordered', text: 'Ordered' }, { value: 'received', text: 'Received' }, { value: 'cancelled', text: 'Cancelled' }]
+const { items, total, page, pageSize, loading, error, hasPagination, setPage, load } = useCrmList(
+  (params) => crmApi.getPurchaseOrders({ ...params, business_id: switcher.selectedBusinessId.value ?? undefined, status: statusFilter.value || undefined }),
+  {}
+)
+const fields = [
+  { key: 'id', label: 'ID' },
+  { key: 'po_number', label: 'PO #' },
+  { key: 'supplier_id', label: 'Supplier ID' },
+  { key: 'total', label: 'Total' },
+  { key: 'status', label: 'Status' },
+  { key: 'order_date', label: 'Order date' },
+  { key: 'actions', label: 'Actions' },
+]
+function formatCurrency(v: unknown): string {
+  if (v == null || v === '') return '—'
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isNaN(n) ? '—' : new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n)
+}
+function poStatusVariant(s: unknown): string {
+  const status = String(s ?? '').toLowerCase()
+  if (status === 'received') return 'success'
+  if (status === 'cancelled') return 'danger'
+  if (status === 'ordered') return 'info'
+  return 'secondary'
+}
+function applyFilter() {
+  setPage(1)
+}
+watch(statusFilter, () => setPage(1))
+watch(() => switcher.selectedBusinessId.value, () => load())
+onMounted(async () => {
+  await loadBusinesses()
+  load()
+})
+</script>

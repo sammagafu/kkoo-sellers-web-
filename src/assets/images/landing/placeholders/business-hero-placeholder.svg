@@ -1,0 +1,35 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#F8F5FF"/>
+  <rect x="54" y="54" width="1092" height="792" rx="36" fill="url(#bg)"/>
+  <rect x="118" y="130" width="964" height="640" rx="34" fill="#FFFFFF" fill-opacity="0.08" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="170" y="180" width="292" height="430" rx="30" fill="#FFFFFF" fill-opacity="0.96"/>
+  <rect x="206" y="222" width="220" height="132" rx="22" fill="#F3E8FF"/>
+  <rect x="206" y="384" width="168" height="16" rx="8" fill="#5C308F" fill-opacity="0.2"/>
+  <rect x="206" y="414" width="190" height="16" rx="8" fill="#5C308F" fill-opacity="0.12"/>
+  <rect x="206" y="456" width="220" height="118" rx="24" fill="#6E3BA9"/>
+  <rect x="510" y="180" width="520" height="248" rx="30" fill="#26143F" fill-opacity="0.98"/>
+  <rect x="548" y="226" width="162" height="16" rx="8" fill="#FFFFFF" fill-opacity="0.8"/>
+  <rect x="548" y="258" width="312" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.18"/>
+  <rect x="548" y="289" width="284" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.18"/>
+  <rect x="548" y="334" width="132" height="46" rx="16" fill="#F7A829"/>
+  <rect x="702" y="334" width="132" height="46" rx="16" fill="#FFFFFF" fill-opacity="0.1"/>
+  <rect x="510" y="466" width="246" height="204" rx="28" fill="#FFFFFF" fill-opacity="0.94"/>
+  <rect x="784" y="466" width="246" height="204" rx="28" fill="#FFFFFF" fill-opacity="0.94"/>
+  <path d="M246 292C246 249.49 280.49 215 323 215H330C372.51 215 407 249.49 407 292V324H246V292Z" fill="#E8C39F"/>
+  <circle cx="326" cy="274" r="56" fill="#251537"/>
+  <rect x="266" y="324" width="120" height="88" rx="28" fill="#F7A829"/>
+  <path d="M578 570C578 523.056 616.056 485 663 485H684C730.944 485 769 523.056 769 570V603H578V570Z" fill="#DDB291"/>
+  <circle cx="675" cy="548" r="62" fill="#3B1A5A"/>
+  <rect x="613" y="605" width="124" height="48" rx="18" fill="#5C308F"/>
+  <path d="M852 570C852 523.056 890.056 485 937 485H958C1004.94 485 1043 523.056 1043 570V603H852V570Z" fill="#F1C59F"/>
+  <circle cx="949" cy="548" r="62" fill="#6B38A6"/>
+  <rect x="888" y="605" width="122" height="48" rx="18" fill="#F7A829"/>
+  <text x="136" y="108" fill="#FFFFFF" fill-opacity="0.78" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">PLACEHOLDER</text>
+  <defs>
+    <linearGradient id="bg" x1="54" y1="54" x2="1146" y2="846" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#341752"/>
+      <stop offset="0.55" stop-color="#5C308F"/>
+      <stop offset="1" stop-color="#E9A12A"/>
+    </linearGradient>
+  </defs>
+</svg>

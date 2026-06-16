@@ -1,0 +1,149 @@
+//
+// KKOO brand alignment — maps Bootstrap UI tokens to the product palette
+//
+
+// Secondary (gold): readable text on filled buttons
+.btn-secondary {
+  --#{$prefix}btn-color: #{$kkoo-primary-dark};
+  --#{$prefix}btn-hover-color: #{$kkoo-primary-dark};
+  --#{$prefix}btn-active-color: #{$kkoo-primary-dark};
+  --#{$prefix}btn-focus-shadow-rgb: #{to-rgb($kkoo-secondary)};
+}
+
+.btn-outline-secondary {
+  --#{$prefix}btn-color: #{$kkoo-primary-dark};
+  --#{$prefix}btn-hover-color: #{$kkoo-primary-dark};
+  --#{$prefix}btn-active-color: #{$kkoo-primary-dark};
+}
+
+// Info uses brand purple instead of template cyan (alerts, badges, progress)
+.alert-info {
+  --#{$prefix}alert-color: #{$kkoo-primary-dark};
+  --#{$prefix}alert-bg: #{rgba($kkoo-primary, 0.1)};
+  --#{$prefix}alert-border-color: #{rgba($kkoo-primary, 0.22)};
+  --#{$prefix}alert-link-color: #{$kkoo-primary};
+}
+
+.alert-info .alert-link {
+  color: $kkoo-primary;
+}
+
+.badge.text-bg-info,
+.badge.bg-info {
+  --#{$prefix}badge-color: #{$white};
+  background-color: $kkoo-primary-light !important;
+}
+
+.badge.text-bg-info-subtle,
+.badge.bg-info-subtle {
+  --#{$prefix}badge-color: #{$kkoo-primary-dark};
+  background-color: #{rgba($kkoo-primary, 0.12)} !important;
+}
+
+.text-info {
+  color: $kkoo-primary !important;
+}
+
+.text-info-emphasis {
+  color: $kkoo-primary-dark !important;
+}
+
+.bg-info {
+  background-color: $kkoo-primary-light !important;
+}
+
+.text-bg-info {
+  color: $white !important;
+  background-color: $kkoo-primary-light !important;
+}
+
+.progress-bar.bg-info {
+  background-color: $kkoo-primary !important;
+}
+
+.btn-info {
+  --#{$prefix}btn-bg: #{$kkoo-primary-light};
+  --#{$prefix}btn-border-color: #{$kkoo-primary-light};
+  --#{$prefix}btn-hover-bg: #{$kkoo-primary};
+  --#{$prefix}btn-hover-border-color: #{$kkoo-primary};
+  --#{$prefix}btn-active-bg: #{$kkoo-primary-dark};
+  --#{$prefix}btn-active-border-color: #{$kkoo-primary-dark};
+}
+
+.btn-outline-info {
+  --#{$prefix}btn-color: #{$kkoo-primary};
+  --#{$prefix}btn-border-color: #{$kkoo-primary};
+  --#{$prefix}btn-hover-bg: #{$kkoo-primary};
+  --#{$prefix}btn-hover-border-color: #{$kkoo-primary};
+  --#{$prefix}btn-active-bg: #{$kkoo-primary-dark};
+  --#{$prefix}btn-active-border-color: #{$kkoo-primary-dark};
+}
+
+// Admin shell — cards, tables, nav
+.wrapper {
+  .card {
+    border-color: rgba($kkoo-primary, 0.1);
+    box-shadow: 0 2px 12px rgba($kkoo-primary, 0.06);
+  }
+
+  .card-header {
+    background-color: rgba($kkoo-light-surface-variant, 0.55);
+    border-bottom-color: rgba($kkoo-primary, 0.1);
+  }
+
+  .table-hover > tbody > tr:hover > * {
+    --#{$prefix}table-color-state: var(--#{$prefix}emphasis-color);
+    --#{$prefix}table-bg-state: #{rgba($kkoo-primary, 0.05)};
+  }
+
+  .nav-tabs .nav-link.active {
+    color: $kkoo-primary;
+    border-bottom-color: $kkoo-primary;
+  }
+
+  .page-item.active .page-link {
+    background-color: $kkoo-primary;
+    border-color: $kkoo-primary;
+  }
+
+  .page-link {
+    color: $kkoo-primary;
+
+    &:hover {
+      color: $kkoo-primary-dark;
+    }
+  }
+
+  .form-check-input:checked {
+    background-color: $kkoo-primary;
+    border-color: $kkoo-primary;
+  }
+
+  .form-switch .form-check-input:focus {
+    --#{$prefix}form-switch-bg: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$kkoo-primary}'/></svg>");
+  }
+}
+
+// Light theme: subtle brand tint on striped tables
+html:not([data-bs-theme='dark']) {
+  .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --#{$prefix}table-bg-type: #{rgba($kkoo-primary, 0.03)};
+  }
+
+  .dropdown-item.active,
+  .dropdown-item:active {
+    background-color: #{rgba($kkoo-primary, 0.12)};
+    color: $kkoo-primary-dark;
+  }
+}
+
+// Dark mode: input focus ring uses brand purple
+html[data-bs-theme='dark'] {
+  --#{$prefix}input-focus-border-color: #{$kkoo-primary-light};
+
+  .alert-info {
+    --#{$prefix}alert-color: #{tint-color($kkoo-primary-light, 20%)};
+    --#{$prefix}alert-bg: #{rgba($kkoo-primary, 0.2)};
+    --#{$prefix}alert-border-color: #{rgba($kkoo-primary-light, 0.35)};
+  }
+}

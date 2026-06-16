@@ -1,0 +1,25 @@
+# Faster, smaller image context — keep docker/ for nginx stage
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+.DS_Store
+coverage
+.vscode
+.idea
+*.log
+deploy
+docs
+.github
+.do
+**/*.md
+# Explicitly include docker nginx config (required by Dockerfile)
+!docker
+!docker/
+!docker/**
+**/*.spec.ts
+**/*.test.ts
+e2e
+playwright-report

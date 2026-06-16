@@ -1,0 +1,6 @@
+{
+  "name": "@kkoo/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Placeholder workspace package for future shared types, constants, or utilities extracted from the web app (optional)."
+}

@@ -1,0 +1,94 @@
+//
+// app.scss
+//
+
+// Core files
+@import "./node_modules/bootstrap/scss/functions";
+@import "./node_modules/bootstrap/scss/variables";
+
+// KKOO tokens before Bootstrap overrides (spacers reference φ scale)
+@import "config/kkoo-design-tokens";
+
+@import "config/variables";
+@import "config/variables-dark";
+
+@import "config/variables-custom";
+@import "config/theme-mode";
+
+@import "config/kkoo-golden-rhythm";
+
+@import "./node_modules/bootstrap/scss/bootstrap";
+
+// Structure
+@import "structure/topbar";
+@import "structure/vertical";
+@import "structure/page-title";
+@import "structure/footer";
+
+// Bootstrap
+@import "components/accordion";
+@import "components/alerts";
+@import "components/avatar";
+@import "components/backgrounds";
+@import "components/badge";
+@import "components/breadcrumb";
+@import "components/buttons";
+@import "config/kkoo-brand-overrides";
+@import "components/lp-btn-pill";
+@import "components/lp-landing";
+@import "components/kkoo-admin-outline-buttons";
+@import "components/card";
+@import "components/docs";
+@import "components/dropdown";
+@import "components/forms";
+@import "components/helper";
+@import "components/list-group";
+@import "components/modal";
+@import "components/nav";
+@import "components/pagination";
+@import "components/popover";
+@import "components/print";
+@import "components/progress";
+@import "components/reboot";
+@import "components/switch";
+@import "components/tables";
+@import "components/type";
+@import "components/tooltip";
+
+
+// Plugin
+@import "plugins/simplebar";
+@import "plugins/calendar";
+@import "plugins/choice";
+@import "plugins/editors";
+@import "plugins/apexcharts";
+@import "plugins/vector-map";
+@import "plugins/flatpicker";
+@import "plugins/swiper";
+@import "plugins/sweetalert";
+@import "plugins/prismjs";
+@import "plugins/range-slider";
+@import "plugins/toastify";
+
+
+// App Page
+
+
+// Pages
+@import "pages/authentication";
+@import "pages/error-404";
+@import "pages/dashboard-home";
+@import "pages/landing";
+@import "pages/pricing";
+@import "pages/timeline";
+
+// WOW fade-in (v-wow directive)
+.wow.wow-fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.wow.wow-fade-in.wow-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
