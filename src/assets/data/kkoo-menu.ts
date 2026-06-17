@@ -1,6 +1,7 @@
 import type { MenuItemType } from '@/types/menu'
 import type { User } from '@/types/auth'
 import { ROLES } from '@/acl'
+import type { CrmRolePermissions } from '@/config/crmRoles'
 
 const base: MenuItemType[] = [
   { key: 'kkoo-menu', label: 'KKOOAPP', isTitle: true },
@@ -477,13 +478,14 @@ export function getKkooMenuItems(
   sellerVerified: boolean = true,
   user?: User | null,
   panelRole?: string | null,
+  crmPermissions?: CrmRolePermissions | null,
 ): MenuItemType[] {
   const effectiveRole = resolveEffectivePanelRole(role, panelRole, user)
   if (!effectiveRole) return base
   // Rider/driver flows are handled in the mobile rider app (not this panel).
   // CRM-only members: minimal menu (Dashboard = CRM, Team & Business, CRM list items only)
   if (effectiveRole === ROLES.CRM_MEMBER) {
-    return [
+    const crmItems: MenuItemType[] = [
       { key: 'kkoo-menu', label: 'KKOOAPP', isTitle: true },
       { key: 'dashboard', icon: 'solar:home-2-broken', label: 'Dashboard', route: { name: 'seller.crm.dashboard' } },
       { key: 'crm-section', label: 'CRM', isTitle: true },
@@ -497,6 +499,7 @@ export function getKkooMenuItems(
       { key: 'seller-crm-purchase-orders', icon: 'solar:clipboard-list-broken', label: 'Purchase Orders', route: { name: 'seller.crm.purchase-orders' } },
       { key: 'seller-crm-employees', icon: 'solar:user-id-broken', label: 'Employees', route: { name: 'seller.crm.employees' } },
     ]
+    return filterCrmMenuByPermissions(crmItems, crmPermissions)
   }
   // Sellers get Dashboard (main) + Seller dashboard (overview)
   const baseForSeller = [...base]
@@ -604,4 +607,18 @@ export function getKkooMenuItems(
   }
   if (effectiveRole === ROLES.ADMIN || effectiveRole === ROLES.STAFF) return [...base, ...adminMenuForUser(user)]
   return base
+}
+
+function filterCrmMenuByPermissions(items: MenuItemType[], perms?: CrmRolePermissions | null): MenuItemType[] {
+  if (!perms) return items
+  return items.filter((item) => {
+    const routeName =
+      item.route && typeof item.route === 'object' && 'name' in item.route
+        ? String(item.route.name)
+        : ''
+    if (routeName === 'seller.crm.business' || routeName === 'seller.crm.employees') {
+      return perms.can_manage_members === true
+    }
+    return true
+  })
 }

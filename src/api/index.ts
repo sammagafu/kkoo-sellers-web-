@@ -66,6 +66,7 @@ export { ridesApi, type RideRequestPayload } from './rides'
 export { documentTypesAdminApi, documentRequirementsAdminApi, documentRequirementsPublicApi } from './documents'
 export { weeklyPassApi } from './weeklyPass'
 export { campaignsAdminApi, type AppCampaignPayload } from './campaigns'
+export { partnersAdminApi } from './partners'
 export {
   listActiveFlashSales,
   getFlashSale,

@@ -22,18 +22,20 @@ import AppMenu from '@/components/AppMenu/index.vue';
 import { getKkooMenuItems } from '@/assets/data/kkoo-menu';
 import { useLayoutStore } from '@/stores/layout';
 import { useAuthStore } from '@/stores/auth';
+import { useCrmSession } from '@/composables/useCrmSession';
+import { ROLES } from '@/acl';
 
 const useLayout = useLayoutStore();
 const auth = useAuthStore();
+const { crmPermissions, loadCrmSession } = useCrmSession();
 
-// Show only KKOO menu for this role; unverified sellers see disabled links + Finalize registration only.
-// Pass user so admin/staff menu shows when is_staff/is_superuser is set even if role wasn't inferred.
 const menuItems = computed(() =>
   getKkooMenuItems(
     auth.role,
     auth.isSeller ? auth.isSellerVerified : true,
     auth.user,
     auth.activePanelRole,
+    auth.activePanelRole === ROLES.CRM_MEMBER ? crmPermissions.value : null,
   )
 );
 
@@ -53,6 +55,9 @@ const resize = () => {
 };
 
 onMounted(() => {
+  if (auth.activePanelRole === ROLES.CRM_MEMBER || auth.isSeller) {
+    void loadCrmSession();
+  }
   resize();
   window.addEventListener('resize', () => {
     resize();

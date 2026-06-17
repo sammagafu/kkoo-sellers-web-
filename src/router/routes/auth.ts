@@ -31,6 +31,12 @@ export const authRoutes = [
         redirect: (to: RouteLocationGeneric) => ({ name: 'auth.sign-up', query: { ...to.query, as: 'seller' } }),
     },
     {
+        path: '/auth/oauth/callback',
+        name: 'auth.oauth-callback',
+        meta: { title: setTitle('Signing in') },
+        component: () => import('@/views/auth/oauth-callback.vue'),
+    },
+    {
         path: '/auth/lock-screen',
         name: 'auth.lock-screen',
         meta: {

@@ -1,11 +1,6 @@
 <template>
   <VerticalLayout>
-    <b-card title="Expenses">
-      <div v-if="hasMultipleBusinesses" class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <span class="text-muted">Business:</span>
-        <b-form-select v-model="selectedBusinessId" :options="businessOptions" value-field="id" text-field="name" size="sm" class="w-auto" style="max-width: 220px;" @change="load" />
-      </div>
-      <p class="text-muted mb-3">Record expenses by category (rent, utilities, transport, supplies).</p>
+    <b-card title="Expenses">      <p class="text-muted mb-3">Record expenses by category (rent, utilities, transport, supplies).</p>
       <div class="d-flex flex-wrap gap-2 mb-3">
         <b-form-input v-model="categoryFilter" placeholder="Category" class="w-auto" style="max-width: 180px;" @keyup.enter="applyFilter" />
         <b-button variant="outline-primary" size="sm" @click="applyFilter">Filter</b-button>
@@ -55,20 +50,17 @@ import EmptyState from '@/components/EmptyState.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { crmApi } from '@/api'
 import { useCrmList } from '@/composables/useCrmList'
-import { useCrmBusinessSwitcher } from '@/composables/useCrmBusinessSwitcher'
+import { useCrmWorkspace } from '@/composables/useCrmWorkspace'
 import { getApiFieldErrors } from '@/types/crm'
 
-const switcher = useCrmBusinessSwitcher()
-const { selectedBusinessId, hasMultipleBusinesses, loadBusinesses, businesses } = switcher
-const businessOptions = computed(() => businesses.value.map((b) => ({ id: Number(b.id), name: (b.name as string) || `Business ${b.id}` })))
-
+const { activeBusinessId } = useCrmWorkspace()
 const categoryFilter = ref('')
 const showAddModal = ref(false)
 const addForm = ref({ category: '', amount: 0, description: '', date: new Date().toISOString().slice(0, 10) })
 const addErrors = ref<Record<string, string>>({})
 
 const { items, total, page, pageSize, loading, error, hasPagination, setPage, load } = useCrmList(
-  (params) => crmApi.getExpenses({ ...params, business_id: switcher.selectedBusinessId.value ?? undefined, category: categoryFilter.value?.trim() || undefined }),
+  (params) => crmApi.getExpenses({ ...params, business_id: activeBusinessId.value ?? undefined, category: categoryFilter.value?.trim() || undefined }),
   {}
 )
 
@@ -117,9 +109,5 @@ async function onAddOk(event: Event) {
 }
 
 watch(categoryFilter, () => setPage(1))
-watch(() => switcher.selectedBusinessId.value, () => load())
-onMounted(async () => {
-  await loadBusinesses()
-  load()
-})
+onMounted(() => load())
 </script>

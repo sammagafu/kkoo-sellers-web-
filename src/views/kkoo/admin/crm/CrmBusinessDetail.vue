@@ -135,6 +135,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { crmApi } from '@/api'
 import { getApiFieldErrors } from '@/types/crm'
+import { CRM_ROLE_OPTIONS, crmRoleLabel, KKOO_CRM_ROLES } from '@/config/crmRoles'
 
 const route = useRoute()
 const id = computed<string | undefined>(() => { const p = route.params.id; return Array.isArray(p) ? p[0] : (p ?? undefined) })
@@ -157,7 +158,7 @@ const members = ref<{ user_id: number; user_name?: string; role?: string }[]>([]
 const membersLoading = ref(false)
 const membersError = ref('')
 const addUserId = ref<number | null>(null)
-const addMemberRole = ref('member')
+const addMemberRole = ref(KKOO_CRM_ROLES.RUNNER)
 const addMemberSaving = ref(false)
 const addMemberError = ref('')
 const removeLoading = ref<number | null>(null)
@@ -170,7 +171,7 @@ const invitations = ref<{ id: number | string; email?: string; role?: string; cr
 const invitationsLoading = ref(false)
 const invitationsError = ref('')
 const inviteEmail = ref('')
-const inviteRole = ref('member')
+const inviteRole = ref(KKOO_CRM_ROLES.RUNNER)
 const inviteByEmailSaving = ref(false)
 const inviteByEmailError = ref('')
 const revokeInvitationLoading = ref<number | string | null>(null)
@@ -184,24 +185,14 @@ const planOptions = [
   { value: 'growth', text: 'Growth' },
   { value: 'elite', text: 'Elite' },
 ]
-const memberRoleOptions = [
-  { value: 'admin', text: 'Admin' },
-  { value: 'manager', text: 'Manager' },
-  { value: 'member', text: 'Member' },
-  { value: 'viewer', text: 'Viewer' },
-]
+const memberRoleOptions = CRM_ROLE_OPTIONS.map((r) => ({ value: r.value, text: r.text }))
+const inviteRoleOptions = memberRoleOptions
 
 const invitationFields = [
   { key: 'email', label: 'Email' },
   { key: 'role', label: 'Role' },
   { key: 'created_at', label: 'Invited' },
   { key: 'actions', label: 'Actions' },
-]
-const inviteRoleOptions = [
-  { value: 'admin', text: 'Admin' },
-  { value: 'manager', text: 'Manager' },
-  { value: 'member', text: 'Member' },
-  { value: 'viewer', text: 'Viewer' },
 ]
 
 const memberFields = [

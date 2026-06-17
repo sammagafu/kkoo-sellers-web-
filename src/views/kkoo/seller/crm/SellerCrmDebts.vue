@@ -1,11 +1,6 @@
 <template>
   <VerticalLayout>
-    <b-card title="Debts (Deni)">
-      <div v-if="hasMultipleBusinesses" class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <span class="text-muted">Business:</span>
-        <b-form-select v-model="selectedBusinessId" :options="businessOptions" value-field="id" text-field="name" size="sm" class="w-auto" style="max-width: 220px;" @change="onBusinessChange" />
-      </div>
-      <p class="text-muted mb-3">Outstanding customer credit. Create debt or record payments to reduce debt.</p>
+    <b-card title="Debts (Deni)">      <p class="text-muted mb-3">Outstanding customer credit. Create debt or record payments to reduce debt.</p>
       <div class="d-flex flex-wrap gap-2 mb-3">
         <b-form-select v-model="statusFilter" :options="statusOptions" class="w-auto" @change="applyFilter" />
         <b-button variant="outline-secondary" size="sm" @click="load">Refresh</b-button>
@@ -60,13 +55,10 @@ import EmptyState from '@/components/EmptyState.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { crmApi } from '@/api'
 import { useCrmList } from '@/composables/useCrmList'
-import { useCrmBusinessSwitcher } from '@/composables/useCrmBusinessSwitcher'
+import { useCrmWorkspace } from '@/composables/useCrmWorkspace'
 import { getApiFieldErrors } from '@/types/crm'
 
-const switcher = useCrmBusinessSwitcher()
-const { selectedBusinessId, hasMultipleBusinesses, loadBusinesses, setSelectedBusinessId, businesses } = switcher
-const businessOptions = computed(() => businesses.value.map((b) => ({ id: Number(b.id), name: (b.name as string) || `Business ${b.id}` })))
-
+const { activeBusinessId } = useCrmWorkspace()
 const statusFilter = ref('')
 const showAddModal = ref(false)
 const addForm = ref({ customer_id: null as number | null, amount: null as number | null, due_date: '', notes: '' })
@@ -92,7 +84,7 @@ async function onAddOk(event: Event) {
     due_date: addForm.value.due_date?.trim() || undefined,
     notes: addForm.value.notes?.trim() || undefined,
   }
-  const bid = switcher.selectedBusinessId.value
+  const bid = activeBusinessId.value
   if (bid != null) payload.business_id = bid
   try {
     await crmApi.createDebt(payload as { customer_id: number; amount: number; due_date?: string; notes?: string })
@@ -107,7 +99,7 @@ async function onAddOk(event: Event) {
 }
 const statusOptions = [{ value: '', text: 'All statuses' }, { value: 'pending', text: 'Pending' }, { value: 'partial', text: 'Partial' }, { value: 'paid', text: 'Paid' }, { value: 'overdue', text: 'Overdue' }]
 const { items, total, page, pageSize, loading, error, hasPagination, setPage, load } = useCrmList(
-  (params) => crmApi.getDebts({ ...params, business_id: switcher.selectedBusinessId.value ?? undefined, status: statusFilter.value || undefined }),
+  (params) => crmApi.getDebts({ ...params, business_id: activeBusinessId.value ?? undefined, status: statusFilter.value || undefined }),
   {}
 )
 const fields = [
@@ -134,14 +126,6 @@ function debtStatusVariant(s: unknown): string {
 function applyFilter() {
   setPage(1)
 }
-function onBusinessChange() {
-  setSelectedBusinessId(selectedBusinessId.value)
-  load()
-}
 watch(statusFilter, () => setPage(1))
-watch(() => switcher.selectedBusinessId.value, () => load())
-onMounted(async () => {
-  await loadBusinesses()
-  load()
-})
+onMounted(() => load())
 </script>

@@ -29,6 +29,9 @@
           <!-- Context label (Admin dashboard / Seller dashboard) -->
           <span v-if="panelContextLabel" class="topbar-context-label d-none d-md-inline text-muted small ms-1" aria-label="Current panel">{{ panelContextLabel }}</span>
 
+          <!-- CRM company (multi-business users) -->
+          <CrmCompanySwitcher class="flex-shrink-1" />
+
           <!-- App Search-->
           <form class="app-search d-none d-md-block me-auto" @submit.prevent="onSearchSubmit">
             <div class="position-relative">
@@ -234,6 +237,7 @@ function setLocale(code: LocaleCode) {
 }
 
 import DropDown from "@/components/DropDown.vue";
+import CrmCompanySwitcher from '@/components/crm/CrmCompanySwitcher.vue';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import logoLight from '@/assets/images/logo-light.svg';
 import logoDark from '@/assets/images/logo-dark.svg';

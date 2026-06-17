@@ -62,6 +62,7 @@ declare module 'vue' {
     ChatConversations: typeof import('./src/components/ChatConversations.vue')['default']
     ChoicesInput: typeof import('./src/components/ChoicesInput.vue')['default']
     ChoicesSelect: typeof import('./src/components/ChoicesSelect.vue')['default']
+    CrmCompanySwitcher: typeof import('./src/components/crm/CrmCompanySwitcher.vue')['default']
     DashboardCommandHero: typeof import('./src/components/dashboard/DashboardCommandHero.vue')['default']
     DashboardQuickActions: typeof import('./src/components/dashboard/DashboardQuickActions.vue')['default']
     DashboardQuickActionsTile: typeof import('./src/components/dashboard/DashboardQuickActionsTile.vue')['default']

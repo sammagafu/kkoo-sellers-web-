@@ -446,6 +446,7 @@ export const useAuthStore = defineStore('auth_store', () => {
     can,
     hasRole,
     loginWithOtp,
+    establishSession,
     completeRegistration,
     defaultRouteAfterAuth,
     initialize,

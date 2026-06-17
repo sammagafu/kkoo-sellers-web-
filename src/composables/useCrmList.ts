@@ -4,6 +4,7 @@
  * Response can be { results: [] } or { results: [], total, next, previous }.
  */
 import { ref, computed, watch } from 'vue'
+import { useCrmWorkspace } from '@/composables/useCrmWorkspace'
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -78,6 +79,12 @@ export function useCrmList(
     page.value = p
     load()
   }
+
+  const { activeBusinessId } = useCrmWorkspace()
+  watch(activeBusinessId, () => {
+    page.value = 1
+    load()
+  })
 
   return {
     items,

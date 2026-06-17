@@ -45,14 +45,14 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { crmApi } from '@/api'
-import { useCrmBusinessSwitcher } from '@/composables/useCrmBusinessSwitcher'
+import { useCrmWorkspace } from '@/composables/useCrmWorkspace'
 import { getApiFieldErrors } from '@/types/crm'
 
 const router = useRouter()
-const switcher = useCrmBusinessSwitcher()
+const { activeBusinessId } = useCrmWorkspace()
 const form = ref({
   name: '',
   sku: '',
@@ -67,7 +67,7 @@ const form = ref({
 const errors = ref<Record<string, string>>({})
 const saving = ref(false)
 
-onMounted(() => switcher.loadBusinesses())
+
 
 async function onSubmit() {
   errors.value = {}
@@ -82,7 +82,7 @@ async function onSubmit() {
     unit: form.value.unit?.trim() || undefined,
     supplier_id: form.value.supplier_id != null ? form.value.supplier_id : undefined,
   }
-  const bid = switcher.selectedBusinessId.value
+  const bid = activeBusinessId.value
   if (bid != null) payload.business_id = bid
   try {
     saving.value = true

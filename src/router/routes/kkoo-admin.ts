@@ -35,6 +35,7 @@ export const kkooAdminRoutes = [
     { path: '/admin/kyc-documents', name: 'admin.kyc-documents', meta: { title: setTitle('KYC Documents'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/KycDocuments.vue') },
     { path: '/admin/document-types', name: 'admin.document-types', meta: { title: setTitle('Document Types'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/DocumentTypes.vue') },
     { path: '/admin/document-requirements', name: 'admin.document-requirements', meta: { title: setTitle('Document Requirements'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/DocumentRequirements.vue') },
+    { path: '/admin/partner-oauth', name: 'admin.partner-oauth', meta: { title: setTitle('Partner OAuth'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/PartnerOAuthClients.vue') },
     { path: '/admin/referral-stats', name: 'admin.referral-stats', meta: { title: setTitle('Referral Stats'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/ReferralStats.vue') },
     { path: '/admin/premium', name: 'admin.premium', meta: { title: setTitle('Premium Programs'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/Premium.vue') },
     { path: '/admin/weekly-pass', name: 'admin.weekly-pass', meta: { title: setTitle('Weekly Pass'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/WeeklyPass.vue') },

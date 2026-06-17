@@ -2,19 +2,6 @@
   <VerticalLayout>
     <b-card title="CRM Dashboard">
       <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-        <template v-if="hasMultipleBusinesses">
-          <span class="text-muted">Business:</span>
-          <b-form-select
-            v-model="selectedBusinessId"
-            :options="businessOptions"
-            value-field="id"
-            text-field="name"
-            size="sm"
-            class="w-auto"
-            style="max-width: 220px;"
-            @change="onBusinessChange"
-          />
-        </template>
         <span class="text-muted">Period:</span>
         <b-form-select v-model="period" :options="periodOptions" value-field="value" text-field="text" size="sm" class="w-auto" @change="load" />
       </div>
@@ -43,17 +30,11 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { crmApi } from '@/api'
-import { useCrmBusinessSwitcher } from '@/composables/useCrmBusinessSwitcher'
+import { useCrmWorkspace } from '@/composables/useCrmWorkspace'
 
-const {
-  businesses,
-  selectedBusinessId,
-  hasMultipleBusinesses,
-  setSelectedBusinessId,
-  loadBusinesses,
-} = useCrmBusinessSwitcher()
+const { activeBusinessId, loadWorkspace } = useCrmWorkspace()
 
 const periodOptions = [
   { value: 'today', text: 'Today' },
@@ -61,9 +42,6 @@ const periodOptions = [
   { value: 'this_month', text: 'This month' },
 ]
 const period = ref<'today' | 'this_week' | 'this_month'>('today')
-const businessOptions = computed(() =>
-  businesses.value.map((b) => ({ id: Number(b.id), name: (b.name as string) || `Business ${b.id}` }))
-)
 
 const loading = ref(false)
 const error = ref('')
@@ -76,18 +54,13 @@ function formatCurrency(v: unknown): string {
   return Number.isNaN(n) ? '—' : new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n)
 }
 
-function onBusinessChange() {
-  setSelectedBusinessId(selectedBusinessId.value)
-  load()
-}
-
 async function load() {
   loading.value = true
   error.value = ''
   dashboard.value = null
   apiUnavailable.value = false
   try {
-    const bid = selectedBusinessId.value ?? undefined
+    const bid = activeBusinessId.value ?? undefined
     const { data } = await crmApi.getDashboard({ business_id: bid, period: period.value })
     dashboard.value = (data ?? {}) as Record<string, unknown>
   } catch (e: unknown) {
@@ -103,8 +76,10 @@ async function load() {
   }
 }
 
+watch(activeBusinessId, () => load())
+
 onMounted(async () => {
-  await loadBusinesses()
+  await loadWorkspace()
   load()
 })
 </script>

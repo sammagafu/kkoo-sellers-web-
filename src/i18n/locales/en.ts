@@ -51,6 +51,7 @@ export default {
     signIn: 'Sign in',
     brandKicker: 'Shop · Sell · Move',
     signInWithPhone: 'Sign in with phone',
+    signInWithKkooAccount: 'Sign in to KKOO',
     signInSubtitle: 'One phone number. We text you a code — no password.',
     signInInfo1: 'Escrow on every deal',
     signInInfo2: 'SMS sign-in, no password',

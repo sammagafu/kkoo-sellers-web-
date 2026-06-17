@@ -9,6 +9,15 @@ import client from './client'
 const prefix = '/crm'
 
 export const crmApi = {
+  getSession() {
+    return client.get(`${prefix}/session/`)
+  },
+  selectBusiness(businessId: number) {
+    return client.post(`${prefix}/session/select-business/`, { business_id: businessId })
+  },
+  listRoles() {
+    return client.get(`${prefix}/roles/`)
+  },
   // Businesses (multi-tenant)
   getBusinesses(params?: { owner_id?: number; page?: number; page_size?: number }) {
     return client.get(`${prefix}/businesses/`, { params })

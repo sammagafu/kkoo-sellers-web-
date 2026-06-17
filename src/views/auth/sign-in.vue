@@ -10,6 +10,13 @@
       :logo-height="68"
       :otp="otpSent"
     >
+      <div class="mb-4">
+        <b-button variant="outline-primary" class="w-100" :disabled="loading" @click="signInWithKkoo">
+          {{ t('auth.signInWithKkooAccount') }}
+        </b-button>
+        <p class="text-muted small text-center mt-2 mb-0">{{ t('auth.orContinueWith') }} OTP</p>
+      </div>
+
       <b-form class="auth-center-form" @submit.prevent="otpSent ? handleVerifyOtp() : handleRequestOtp()" novalidate>
         <div v-if="route.query.reset === 'success'" class="auth-alert auth-alert--success">{{ t('auth.resetSuccess') }}</div>
         <div v-if="route.query.notAllowed === '1'" class="auth-alert auth-alert--warning">{{ t('auth.notAllowedPortal') }}</div>
@@ -102,6 +109,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api'
 import { toastError, toastSuccess } from '@/utils/toast'
+import { startKkooOAuth } from '@/utils/kkooOAuth'
 
 const phone = ref('')
 const otpCode = ref('')
@@ -118,6 +126,10 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
+
+function signInWithKkoo() {
+  void startKkooOAuth({ returnTo: String(route.query.redirectedFrom ?? route.fullPath) })
+}
 
 const signInInfoLines = computed(() => [
   t('auth.signInInfo1'),
