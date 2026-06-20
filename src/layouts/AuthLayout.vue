@@ -1,6 +1,5 @@
 <template>
   <div class="auth-shell auth-shell--centered account-pages account-pages--auth w-100" data-kkoo-portal="admin">
-    <AuthTopBar portal="admin" />
     <AuthScene />
 
     <main class="auth-center-stage">
@@ -15,7 +14,6 @@
 import { onMounted, onUnmounted } from 'vue'
 import AuthScene from '@/components/auth/AuthScene.vue'
 import AuthViewportFit from '@/components/auth/AuthViewportFit.vue'
-import AuthTopBar from '@/components/auth/AuthTopBar.vue'
 const body = document.body
 const root = document.documentElement
 

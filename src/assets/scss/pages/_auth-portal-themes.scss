@@ -294,51 +294,6 @@ html[data-bs-theme='dark'] {
   }
 }
 
-// Auth top bar (mark + title + portal badge)
-.auth-topbar {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 32rem;
-  margin: 0 auto 0.75rem;
-  padding: 0.35rem 0.15rem 0;
-}
-
-.auth-topbar__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  min-width: 0;
-  color: inherit;
-}
-
-.auth-topbar__mark {
-  width: 2rem;
-  height: 2rem;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.auth-topbar__title {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  color: var(--kkoo-portal-accent, #5c308f);
-}
-
-.auth-shell[data-kkoo-portal='buyer'] .auth-topbar__title {
-  color: #0284c7;
-}
-
-.auth-shell[data-kkoo-portal='seller'] .auth-topbar__title {
-  color: #ea580c;
-}
-
 .topbar-brand-logo {
   gap: 0.55rem;
 }
