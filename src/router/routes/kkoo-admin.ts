@@ -30,6 +30,7 @@ export const kkooAdminRoutes = [
     { path: '/admin/regional-settings', name: 'admin.regional-settings', meta: { title: setTitle('Regional Settings'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/RegionalSettings.vue') },
     { path: '/admin/logistics', name: 'admin.logistics', meta: { title: setTitle('Logistics'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/Logistics.vue') },
     { path: '/admin/logistics/zones', name: 'admin.logistics.zones', meta: { title: setTitle('Delivery Zones'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/LogisticsZones.vue') },
+    { path: '/admin/logistics/map-places', name: 'admin.logistics.map-places', meta: { title: setTitle('Kkoo Maps'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/MapPlaces.vue') },
     { path: '/admin/logistics/settings', name: 'admin.logistics.settings', meta: { title: setTitle('Logistics Settings'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/LogisticsSettings.vue') },
     { path: '/admin/logistics/drivers/:id', name: 'admin.drivers.detail', meta: { title: setTitle('Driver Detail'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/DriverDetail.vue') },
     { path: '/admin/kyc-documents', name: 'admin.kyc-documents', meta: { title: setTitle('KYC Documents'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/KycDocuments.vue') },

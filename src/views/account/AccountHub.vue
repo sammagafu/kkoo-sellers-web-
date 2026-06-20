@@ -2,10 +2,7 @@
   <VerticalLayout>
     <b-row class="align-items-center mb-4">
       <b-col cols="12" md="8">
-        <h4 class="mb-1">My account</h4>
-        <p class="text-muted mb-0 small">
-          One account for shopping, food, stays, and workspaces. Switch roles or open customer experiences from here.
-        </p>
+        <h4 class="mb-0">My account</h4>
       </b-col>
     </b-row>
 
@@ -31,7 +28,7 @@
             </div>
             <div class="min-w-0 flex-grow-1">
               <h5 class="mb-1 text-truncate">{{ displayName }}</h5>
-              <p class="text-muted small mb-3">{{ contactLine }}</p>
+              <p v-if="contactLine" class="text-muted small mb-3">{{ contactLine }}</p>
               <div class="d-flex flex-wrap gap-2">
                 <router-link :to="{ name: 'account.profile' }" class="btn btn-sm btn-soft-primary">
                   Edit profile
@@ -49,9 +46,6 @@
       </b-col>
       <b-col cols="12" lg="5">
         <b-card class="h-100" header="Active role" header-bg-variant="light" header-class="fw-semibold">
-          <p class="text-muted small mb-3 mb-md-2">
-            Pick the workspace context you want. You stay signed in; we only change where links and tools point.
-          </p>
           <div class="d-flex flex-wrap gap-2">
             <b-button
               v-for="roleOption in roleSwitchOptions"
@@ -71,9 +65,6 @@
     </b-row>
 
     <b-card class="mb-4" header="Customer experiences" header-bg-variant="light" header-class="fw-semibold">
-      <p class="text-muted small mb-3">
-        Public web areas you can open while signed in. Your session carries across these paths.
-      </p>
       <b-row class="g-3">
         <b-col v-for="app in frontendApps" :key="app.title" cols="12" sm="6" xl="4">
           <router-link v-if="app.to" :to="app.to" class="text-decoration-none text-reset d-block h-100">
@@ -83,11 +74,10 @@
                   <Icon :icon="app.icon" class="fs-4 text-primary" />
                 </span>
                 <div class="min-w-0">
-                  <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <div class="d-flex flex-wrap align-items-center gap-2">
                     <h6 class="mb-0">{{ app.title }}</h6>
                     <span class="badge badge-soft-primary rounded-pill">{{ app.badge }}</span>
                   </div>
-                  <p class="text-muted small mb-0">{{ app.copy }}</p>
                 </div>
               </div>
             </b-card>
@@ -99,11 +89,10 @@
                   <Icon :icon="app.icon" class="fs-4 text-primary" />
                 </span>
                 <div class="min-w-0">
-                  <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <div class="d-flex flex-wrap align-items-center gap-2">
                     <h6 class="mb-0">{{ app.title }}</h6>
                     <span class="badge badge-soft-primary rounded-pill">{{ app.badge }}</span>
                   </div>
-                  <p class="text-muted small mb-0">{{ app.copy }}</p>
                 </div>
               </div>
             </b-card>
@@ -113,9 +102,6 @@
     </b-card>
 
     <b-card header="Workspaces" header-bg-variant="light" header-class="fw-semibold">
-      <p class="text-muted small mb-3">
-        Seller, CRM, and admin tools open only when your account has those roles.
-      </p>
       <b-row class="g-3">
         <b-col v-for="workspace in workspaceCards" :key="workspace.title" cols="12" md="6" xl="4">
           <b-card
@@ -128,7 +114,7 @@
                 <Icon :icon="workspace.icon" class="fs-4 text-primary" />
               </span>
               <div class="min-w-0 flex-grow-1">
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <div class="d-flex flex-wrap align-items-center gap-2">
                   <h6 class="mb-0">{{ workspace.title }}</h6>
                   <span
                     :class="
@@ -138,7 +124,6 @@
                     {{ workspace.status }}
                   </span>
                 </div>
-                <p class="text-muted small mb-0">{{ workspace.copy }}</p>
               </div>
             </div>
             <div class="d-flex flex-wrap gap-2 mt-auto pt-1">
@@ -226,16 +211,16 @@ const hubAvatarUrl = computed(() => {
 
 const contactLine = computed(() => {
   const currentUser = user.value
-  return [currentUser?.phone_number, currentUser?.email].filter(Boolean).join(' • ') || 'Your shared account is ready to use.'
+  return [currentUser?.phone_number, currentUser?.email].filter(Boolean).join(' • ')
 })
 
 const restrictedMessage = computed(() => {
   const restricted = String(route.query.restricted ?? '').toLowerCase()
   switch (restricted) {
     case 'admin':
-      return 'This account is signed in, but it does not have admin or staff access.'
+      return 'No admin access on this account.'
     case 'business':
-      return 'This account can still shop and eat on the web. Register the business role first to open seller tools.'
+      return 'Register as a seller to open business tools.'
     default:
       return ''
   }
@@ -250,62 +235,14 @@ const roleSwitchOptions = computed(() =>
 )
 
 const frontendApps = computed(() => [
-  {
-    title: 'Marketplace',
-    icon: 'solar:cart-large-2-bold',
-    badge: 'Buyer',
-    copy: 'Shop products, browse storefronts, and stay on the buyer journey from discovery to delivery.',
-    href: buyerWebPath('/personal'),
-  },
-  {
-    title: 'Restaurants',
-    icon: 'solar:chef-hat-bold',
-    badge: 'Eat',
-    copy: 'Open restaurant frontends, discover menus, and send buyers into storefront-led ordering flows.',
-    href: buyerWebPath('/restaurants'),
-  },
-  {
-    title: 'Hotels',
-    icon: 'solar:bed-bold',
-    badge: 'Stay',
-    copy: 'Browse hotel listings and hospitality storefronts through the public stay frontend.',
-    href: buyerWebPath('/hotels'),
-  },
-  {
-    title: 'Community',
-    icon: 'solar:users-group-rounded-bold',
-    badge: 'People',
-    copy: 'Join discussions, feature requests, and updates in the shared community experience.',
-    href: buyerWebPath('/community'),
-  },
-  {
-    title: 'Share & earn',
-    icon: 'solar:gift-bold',
-    badge: 'Growth',
-    copy: 'Open the referral and rewards frontend to share offers and track earning moments.',
-    href: buyerWebPath('/share-earn'),
-  },
-  {
-    title: 'Gift vouchers',
-    icon: 'solar:ticket-bold',
-    badge: 'Gifting',
-    copy: 'Send vouchers through the consumer-facing gift experience without leaving your account context.',
-    href: buyerWebPath('/vouchers'),
-  },
-  {
-    title: 'Merchant frontend',
-    icon: 'solar:bag-5-bold',
-    badge: 'Business',
-    copy: 'See the seller-facing marketing story, onboarding path, and business landing experience.',
-    href: buyerWebPath('/merchant'),
-  },
-  {
-    title: 'KKOORide',
-    icon: 'solar:scooter-bold',
-    badge: 'Mobility',
-    copy: 'Customer transport is explained here on the web.',
-    href: buyerWebPath('/courier'),
-  },
+  { title: 'Marketplace', icon: 'solar:cart-large-2-bold', badge: 'Buyer', href: buyerWebPath('/personal') },
+  { title: 'Restaurants', icon: 'solar:chef-hat-bold', badge: 'Eat', href: buyerWebPath('/restaurants') },
+  { title: 'Hotels', icon: 'solar:bed-bold', badge: 'Stay', href: buyerWebPath('/hotels') },
+  { title: 'Community', icon: 'solar:users-group-rounded-bold', badge: 'People', href: buyerWebPath('/community') },
+  { title: 'Share & earn', icon: 'solar:gift-bold', badge: 'Growth', href: buyerWebPath('/share-earn') },
+  { title: 'Gift vouchers', icon: 'solar:ticket-bold', badge: 'Gifting', href: buyerWebPath('/vouchers') },
+  { title: 'Merchant', icon: 'solar:bag-5-bold', badge: 'Business', href: buyerWebPath('/merchant') },
+  { title: 'KKOORide', icon: 'solar:scooter-bold', badge: 'Mobility', href: buyerWebPath('/courier') },
 ])
 
 const roleAvailability = computed(() => new Set(availableAccountRoles.value))
@@ -316,41 +253,37 @@ const workspaceCards = computed(() => [
     icon: 'solar:user-circle-bold',
     available: true,
     status: activeAccountRole.value === BUYER_ACCOUNT_ROLE ? 'Current' : 'Available',
-    copy: 'Every signed-in person can stay in buyer mode for shopping, food, stays, vouchers, and account management.',
     role: BUYER_ACCOUNT_ROLE,
     route: undefined,
     href: buyerWebPath('/account'),
-    cta: 'Open buyer account',
+    cta: 'Open buyer',
   },
   {
-    title: 'Business / seller workspace',
+    title: 'Seller workspace',
     icon: 'solar:shop-2-bold',
     available: roleAvailability.value.has(ROLES.SELLER),
     status: roleAvailability.value.has(ROLES.SELLER) ? 'Available' : 'Register required',
-    copy: 'Manage products, menus, orders, and storefront operations when the account has a seller registration.',
     role: roleAvailability.value.has(ROLES.SELLER) ? ROLES.SELLER : null,
     route: roleAvailability.value.has(ROLES.SELLER) ? undefined : { name: 'auth.seller-register' },
     href: roleAvailability.value.has(ROLES.SELLER) ? bizWebPath('/seller') : undefined,
-    cta: 'Open seller dashboard',
-    fallbackCta: 'Create company / business',
+    cta: 'Open seller',
+    fallbackCta: 'Register business',
   },
   {
-    title: 'Business team CRM',
+    title: 'Business CRM',
     icon: 'solar:buildings-3-bold',
     available: roleAvailability.value.has(ROLES.CRM_MEMBER),
     status: roleAvailability.value.has(ROLES.CRM_MEMBER) ? 'Available' : 'Invite required',
-    copy: 'If a company invited you into its business team, you can switch into CRM work without owning the seller account.',
     role: roleAvailability.value.has(ROLES.CRM_MEMBER) ? ROLES.CRM_MEMBER : null,
     route: undefined,
     href: roleAvailability.value.has(ROLES.CRM_MEMBER) ? bizWebPath('/seller/crm') : undefined,
-    cta: 'Open business CRM',
+    cta: 'Open CRM',
   },
   {
     title: 'Admin dashboard',
     icon: 'solar:shield-user-bold',
     available: roleAvailability.value.has(ROLES.ADMIN) || roleAvailability.value.has(ROLES.STAFF),
     status: roleAvailability.value.has(ROLES.ADMIN) || roleAvailability.value.has(ROLES.STAFF) ? 'Available' : 'Restricted',
-    copy: 'Platform oversight, moderation, and operations reporting remain preserved in the admin dashboard for approved staff.',
     role: roleAvailability.value.has(ROLES.ADMIN)
       ? ROLES.ADMIN
       : roleAvailability.value.has(ROLES.STAFF)
@@ -360,7 +293,7 @@ const workspaceCards = computed(() => [
       roleAvailability.value.has(ROLES.ADMIN) || roleAvailability.value.has(ROLES.STAFF)
         ? { name: 'dashboards.index' }
         : null,
-    cta: 'Open admin dashboard',
+    cta: 'Open admin',
   },
 ])
 

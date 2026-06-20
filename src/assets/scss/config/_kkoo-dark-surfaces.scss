@@ -1,0 +1,71 @@
+// Theme-aware surfaces for admin / seller custom panels
+
+html[data-bs-theme='dark'] {
+  .code-example pre {
+    background: var(--kkoo-panel-muted) !important;
+    border-color: var(--kkoo-panel-border) !important;
+
+    code {
+      color: var(--bs-body-color) !important;
+    }
+  }
+
+  code {
+    background: var(--kkoo-panel-muted);
+    color: var(--bs-body-color);
+  }
+
+  .invoice-logo-preview-wrap {
+    background: var(--kkoo-panel-muted) !important;
+    border-color: var(--kkoo-panel-border) !important;
+  }
+
+  .feature-flags {
+    background: linear-gradient(180deg, var(--kkoo-panel-bg) 0%, var(--kkoo-panel-muted) 100%) !important;
+  }
+
+  .flag-card {
+    background: var(--kkoo-panel-bg) !important;
+    border-color: var(--kkoo-panel-border) !important;
+  }
+
+  .flag-card__title {
+    color: var(--kkoo-panel-ink) !important;
+  }
+
+  .flag-card__copy {
+    color: var(--kkoo-panel-sub) !important;
+  }
+
+  .rollout-pill {
+    background: var(--kkoo-accent-tint) !important;
+    color: #f7c948 !important;
+  }
+
+  .premium-metrics-card,
+  .premium-config-panel,
+  .insights-panel__card {
+    background: var(--kkoo-panel-bg);
+    border-color: var(--kkoo-panel-border);
+  }
+
+  .invite-challenges-panel .table-responsive,
+  .invite-challenges-panel .preview-box {
+    background: var(--kkoo-panel-muted);
+    border-color: var(--kkoo-panel-border);
+  }
+
+  .badges-gallery__badge,
+  .leaderboard-row {
+    background: var(--kkoo-panel-bg);
+    border-color: var(--kkoo-panel-border);
+  }
+
+  .leaderboard-row--highlight {
+    background: var(--kkoo-panel-muted) !important;
+  }
+
+  .catalog-product-link {
+    color: var(--bs-link-color);
+  }
+}

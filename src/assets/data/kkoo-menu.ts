@@ -108,6 +108,12 @@ const adminMenu: MenuItemType[] = [
     label: 'Promotion Bundles',
     route: { name: 'admin.promotions.bundles' },
   },
+  {
+    key: 'admin-platform-campaigns',
+    icon: 'solar:megaphone-bold',
+    label: 'Push & promos',
+    route: { name: 'admin.platform-campaigns' },
+  },
   // —— Logistics ——
   { key: 'admin-group-logistics', label: 'Logistics', isTitle: true },
   {
@@ -121,6 +127,12 @@ const adminMenu: MenuItemType[] = [
     icon: 'solar:map-point-broken',
     label: 'Delivery Zones',
     route: { name: 'admin.logistics.zones' },
+  },
+  {
+    key: 'admin-logistics-map-places',
+    icon: 'solar:map-arrow-square-broken',
+    label: 'Kkoo Maps',
+    route: { name: 'admin.logistics.map-places' },
   },
   {
     key: 'admin-logistics-settings',
@@ -458,7 +470,9 @@ function resolveEffectivePanelRole(
   role: string | null,
   panelRole: string | null | undefined,
   user?: User | null,
+  activeAccountRole?: string | null,
 ): string | null {
+  if (activeAccountRole === 'buyer') return null
   if (panelRole === ROLES.ADMIN || panelRole === ROLES.STAFF || panelRole === ROLES.SELLER || panelRole === ROLES.CRM_MEMBER) {
     return panelRole
   }
@@ -479,8 +493,9 @@ export function getKkooMenuItems(
   user?: User | null,
   panelRole?: string | null,
   crmPermissions?: CrmRolePermissions | null,
+  activeAccountRole?: string | null,
 ): MenuItemType[] {
-  const effectiveRole = resolveEffectivePanelRole(role, panelRole, user)
+  const effectiveRole = resolveEffectivePanelRole(role, panelRole, user, activeAccountRole)
   if (!effectiveRole) return base
   // Rider/driver flows are handled in the mobile rider app (not this panel).
   // CRM-only members: minimal menu (Dashboard = CRM, Team & Business, CRM list items only)

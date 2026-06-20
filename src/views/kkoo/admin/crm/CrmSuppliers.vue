@@ -13,7 +13,7 @@
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
-      <EmptyState v-else title="No suppliers" message="Add suppliers in CRM when the API is available. CRM is configured by your platform administrator or in the backend." />
+      <EmptyState v-else title="No suppliers" message="Add suppliers in CRM when the API is available" />
       <b-pagination
         v-if="hasPagination"
         :model-value="page"

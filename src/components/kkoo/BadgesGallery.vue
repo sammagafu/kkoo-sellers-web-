@@ -78,8 +78,8 @@ const badges = ref<Badge[]>([
     gap: 1.5rem;
 
     .badge-item {
-      background: #fff;
-      border: 1px solid #e0e0e0;
+      background: var(--kkoo-panel-bg);
+      border: 1px solid var(--kkoo-panel-border);
       border-radius: 8px;
       padding: 1.5rem;
       display: flex;

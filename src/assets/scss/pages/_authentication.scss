@@ -2,6 +2,7 @@
 // authentication.scss — viewport shell + shared auth scene container
 //
 @import 'auth-centered';
+@import 'auth-portal-themes';
 
 html.auth-viewport-lock {
   overflow: hidden;

@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import logoLightImg from '@/assets/images/logo-light.svg'
+import logoLightImg from '@/assets/images/logo-mark-light.svg'
 
 type PropsType = {
   customClass?: string
@@ -22,6 +22,6 @@ type PropsType = {
 }
 
 withDefaults(defineProps<PropsType>(), {
-  logoHeight: 128,
+  logoHeight: 40,
 })
 </script>

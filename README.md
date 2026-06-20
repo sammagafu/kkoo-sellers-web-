@@ -30,3 +30,13 @@ Push to `main` → GitHub Actions SSH deploy:
 - `DO_WEB_DIR=/var/www/admin`
 
 Server: `git pull && npm ci && npm run build && rsync dist/ → /var/www/admin`
+
+## Logistics — unlock cities / counties
+
+**Path:** `/admin/logistics/zones`
+
+- Toggle **Active** to unlock delivery/rides in a city (e.g. Arusha, Nairobi)
+- **Add region** to create a new city (country code, map center, radius, pricing, currency)
+- Buyers see changes via `GET /logistics/markets/` without an app release
+
+See [kkoo-buyers-app/docs/PHASE2_AND_MARKETS.md](../kkoo-buyers-app/docs/PHASE2_AND_MARKETS.md).

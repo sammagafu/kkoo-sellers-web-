@@ -13,7 +13,7 @@
           class="mb-3"
           @dismissed="markSellerWarningShown"
         >
-          <p class="mb-2 mb-md-0 me-md-3 d-md-inline"><strong>Complete your registration.</strong> Finalize your profile and upload KYC documents to get verified. Verify to unlock: CRM, invoicing, menu, analytics, wholesale, notification preferences.</p>
+          <p class="mb-2 mb-md-0 me-md-3 d-md-inline"><strong>Complete registration</strong> — verify your profile to unlock seller tools.</p>
           <router-link :to="{ name: 'seller.profile' }" class="alert-link fw-semibold">Finalize registration →</router-link>
         </b-alert>
         <b-alert
@@ -25,7 +25,7 @@
           @dismissed="profileCompletion.dismiss()"
         >
           <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3">
-            <span class="me-md-2"><strong>Profile {{ profileCompletion.percentage }}% complete.</strong> Update your {{ profileCompletion.profileLabelLower }} to get the most out of KKOO.</span>
+            <span class="me-md-2"><strong>Profile {{ profileCompletion.percentage }}% complete.</strong></span>
             <div class="d-flex align-items-center gap-2 flex-grow-1 flex-md-grow-0">
               <b-progress :value="profileCompletion.percentage" :max="100" class="flex-grow-1" style="min-width: 80px; max-width: 120px;" />
               <router-link :to="profileUpdateTo" class="alert-link fw-semibold">Update profile →</router-link>

@@ -5,7 +5,6 @@
         <span class="text-muted">Period:</span>
         <b-form-select v-model="period" :options="periodOptions" value-field="value" text-field="text" size="sm" class="w-auto" @change="load" />
       </div>
-      <p class="text-muted mb-3">Your business overview: cash in/out, low stock, outstanding debt (deni). Data from CRM API when configured.</p>
       <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
       <template v-if="loading"><p class="text-muted">Loading…</p></template>
       <template v-else-if="dashboard">
@@ -21,7 +20,7 @@
           <b-col md="3"><b-card class="mb-3"><h6 class="text-muted">Petty cash in</h6><h4>{{ formatCurrency(dashboard.petty_cash_in) }}</h4></b-card></b-col>
           <b-col md="3"><b-card class="mb-3"><h6 class="text-muted">Petty cash out</h6><h4>{{ formatCurrency(dashboard.petty_cash_out) }}</h4></b-card></b-col>
         </b-row>
-        <p v-if="apiUnavailable" class="text-muted small">CRM API is not configured. CRM is configured by your platform administrator. Contact support if you need access.</p>
+        <p v-if="apiUnavailable" class="text-muted small">CRM not connected.</p>
       </template>
       <div v-else-if="!loading && !error" class="text-center py-4"><p class="text-muted">No dashboard data.</p><b-button variant="outline-primary" @click="load">Retry</b-button></div>
     </b-card>

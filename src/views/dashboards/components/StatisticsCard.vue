@@ -152,7 +152,7 @@ const colorVariant = computed(() => {
   color: var(--bs-body-color) !important;
 }
 .dashboard-stat-card .stat-card-footer {
-  background: #f8f9fa;
+  background: var(--bs-tertiary-bg);
   font-size: 0.8125rem;
 }
 .dashboard-stat-card .stat-card-growth,

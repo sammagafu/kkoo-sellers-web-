@@ -10,10 +10,14 @@
     <template v-else-if="order">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <b-button variant="outline-secondary" size="sm" :to="{ name: 'seller.orders' }">Back to Orders</b-button>
+        <b-button v-if="subOrder" variant="outline-primary" size="sm" @click="openStatusModal">Update status</b-button>
       </div>
       <b-card :title="`Order #${order.order_number ?? order.id}`" class="mb-0">
         <b-list-group class="mb-3">
-          <b-list-group-item><strong>Status</strong> {{ order.status ?? '—' }}</b-list-group-item>
+          <b-list-group-item><strong>Order status</strong> {{ order.status ?? '—' }}</b-list-group-item>
+          <b-list-group-item v-if="subOrder"><strong>Your store status</strong> {{ subOrder.status ?? '—' }}</b-list-group-item>
+          <b-list-group-item v-if="subOrder?.seller_notes"><strong>Note to buyer</strong> {{ subOrder.seller_notes }}</b-list-group-item>
+          <b-list-group-item v-if="subOrder?.estimated_ready_at"><strong>Estimated ready</strong> {{ formatDate(subOrder.estimated_ready_at) }}</b-list-group-item>
           <b-list-group-item><strong>Total</strong> {{ formatMoney(order.final_total ?? order.total_amount ?? order.total) }}</b-list-group-item>
           <b-list-group-item><strong>Created</strong> {{ formatDate(order.created_at) }}</b-list-group-item>
           <b-list-group-item v-if="order.delivery_type"><strong>Delivery</strong> {{ order.delivery_type }}</b-list-group-item>
@@ -106,6 +110,25 @@
         </b-form-group>
         <p class="small text-muted">The API records that the invoice was sent. Share the invoice link with your customer.</p>
       </b-modal>
+
+      <b-modal v-model="showStatusModal" title="Update your store status" hide-footer>
+        <p v-if="statusError" class="text-danger small mb-2">{{ statusError }}</p>
+        <b-form-group label="Status">
+          <b-form-select v-model="selectedStatus" :options="subOrderStatusOptions" />
+        </b-form-group>
+        <b-form-group label="Note to buyer">
+          <b-form-textarea v-model="sellerNotes" rows="2" placeholder="Optional message for the customer" />
+        </b-form-group>
+        <b-form-group v-if="selectedStatus === 'cancelled'" label="Cancel reason">
+          <b-form-textarea v-model="cancelReason" rows="2" placeholder="Why this portion is cancelled" />
+        </b-form-group>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <b-button variant="secondary" @click="showStatusModal = false">Close</b-button>
+          <b-button variant="primary" :disabled="statusUpdating || !selectedStatus" @click="submitStatus">
+            {{ statusUpdating ? 'Saving…' : 'Save' }}
+          </b-button>
+        </div>
+      </b-modal>
     </template>
   </VerticalLayout>
 </template>
@@ -118,10 +141,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  background: #f5f5f5;
+  background: var(--kkoo-panel-muted);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--kkoo-panel-border);
 }
 .invoice-logo-preview {
   max-width: 100%;
@@ -137,10 +160,18 @@ import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import { ordersUserApi, logisticsBuyerApi, authApi } from '@/api'
 import { resolveAssetUrl } from '@/utils/assetUrl'
 import { formatApiError } from '@/utils/formatApiError'
+import { resolveOrderRef } from '@/utils/orderRef'
 import type { OrderInvoiceResponse, OrderInvoiceCustomization } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
-const id = computed(() => Number(route.params.id) || 0)
+const auth = useAuthStore()
+const orderRefParam = computed(() => {
+  const raw = route.params.id
+  const s = Array.isArray(raw) ? raw[0] : raw
+  const ref = typeof s === 'string' ? s.trim() : s != null ? String(s).trim() : ''
+  return ref && ref !== 'undefined' ? ref : ''
+})
 const loaded = ref(false)
 const error = ref('')
 const order = ref<Record<string, unknown> | null>(null)
@@ -166,6 +197,25 @@ const invoiceLogoInputRef = ref<HTMLInputElement | null>(null)
 const invoiceLogoUploadError = ref('')
 const invoiceLogoObjectUrl = ref('')
 const sellerStoreLogoUrl = ref('')
+const subOrder = ref<Record<string, unknown> | null>(null)
+const showStatusModal = ref(false)
+const selectedStatus = ref('')
+const sellerNotes = ref('')
+const cancelReason = ref('')
+const statusUpdating = ref(false)
+const statusError = ref('')
+
+const sellerId = computed(() => Number((auth.user as { id?: number })?.id) || 0)
+const orderRef = computed(() => resolveOrderRef(order.value) ?? orderRefParam.value)
+
+const subOrderStatusOptions = [
+  { value: 'confirmed', text: 'Confirmed' },
+  { value: 'preparing', text: 'Preparing' },
+  { value: 'ready', text: 'Ready' },
+  { value: 'shipped', text: 'Shipped' },
+  { value: 'delivered', text: 'Delivered' },
+  { value: 'cancelled', text: 'Cancelled' },
+]
 
 const invoiceLogoPreview = computed(() => {
   const url = invoiceCustom.value.logo_url?.trim()
@@ -200,10 +250,10 @@ function formatMoney(v: unknown): string {
 }
 
 async function loadInvoice() {
-  if (!id.value) return
+  if (!orderRefParam.value) return
   invoiceError.value = ''
   try {
-    const { data } = await ordersUserApi.getInvoice(id.value)
+    const { data } = await ordersUserApi.getInvoice(orderRefParam.value)
     invoice.value = data ?? null
     const custom = (data as { customization?: OrderInvoiceCustomization })?.customization
     if (custom) {
@@ -243,7 +293,7 @@ async function onInvoiceLogoFileChange(ev: Event) {
   const formData = new FormData()
   formData.append('logo', file)
   try {
-    const { data } = await ordersUserApi.uploadInvoiceLogo(id.value, formData)
+    const { data } = await ordersUserApi.uploadInvoiceLogo(orderRefParam.value, formData)
     const url = data?.logo_url
     if (url) {
       invoiceCustom.value.logo_url = url
@@ -263,11 +313,11 @@ function copyShareUrl() {
 }
 
 async function createOrUpdateInvoice() {
-  if (!id.value) return
+  if (!orderRefParam.value) return
   invoiceLoading.value = true
   invoiceError.value = ''
   try {
-    const { data } = await ordersUserApi.createOrUpdateInvoice(id.value, invoiceCustom.value)
+    const { data } = await ordersUserApi.createOrUpdateInvoice(orderRefParam.value, invoiceCustom.value)
     invoice.value = data ?? null
   } catch (e: unknown) {
     invoiceError.value = formatApiError(e, 'Failed to create/update invoice')
@@ -281,11 +331,11 @@ async function saveInvoiceCustomization() {
 }
 
 async function sendInvoiceLink() {
-  if (!id.value || !invoice.value) return
+  if (!orderRefParam.value || !invoice.value) return
   invoiceLoading.value = true
   invoiceError.value = ''
   try {
-    const { data } = await ordersUserApi.sendInvoice(id.value, { delivery_method: 'link' })
+    const { data } = await ordersUserApi.sendInvoice(orderRefParam.value, { delivery_method: 'link' })
     if (data?.share_url) invoice.value = { ...invoice.value!, share_url: data.share_url, sent_at: data.sent_at ?? undefined, delivery_method: 'link' }
   } catch (e: unknown) {
     invoiceError.value = formatApiError(e, 'Failed to send invoice')
@@ -295,11 +345,11 @@ async function sendInvoiceLink() {
 }
 
 async function sendInvoiceEmail() {
-  if (!id.value || !invoice.value) return
+  if (!orderRefParam.value || !invoice.value) return
   invoiceLoading.value = true
   invoiceError.value = ''
   try {
-    const { data } = await ordersUserApi.sendInvoice(id.value, { delivery_method: 'email', to_email: invoiceSendToEmail.value || undefined })
+    const { data } = await ordersUserApi.sendInvoice(orderRefParam.value, { delivery_method: 'email', to_email: invoiceSendToEmail.value || undefined })
     if (data) invoice.value = { ...invoice.value!, sent_at: data.sent_at ?? undefined, delivery_method: 'email', sent_to_email: data.sent_to_email ?? undefined }
     showSendEmailModal.value = false
     invoiceSendToEmail.value = ''
@@ -310,28 +360,76 @@ async function sendInvoiceEmail() {
   }
 }
 
+async function loadSubOrder() {
+  if (!orderRef.value || !sellerId.value) {
+    subOrder.value = null
+    return
+  }
+  try {
+    const { data } = await ordersUserApi.listSubOrders(orderRef.value)
+    const list = Array.isArray(data?.sub_orders) ? (data.sub_orders as Record<string, unknown>[]) : []
+    subOrder.value = list.find((so) => Number(so.seller_id) === sellerId.value) ?? null
+  } catch {
+    subOrder.value = null
+  }
+}
+
+function openStatusModal() {
+  selectedStatus.value = String(subOrder.value?.status ?? '')
+  sellerNotes.value = String(subOrder.value?.seller_notes ?? '')
+  cancelReason.value = String(subOrder.value?.cancel_reason ?? '')
+  statusError.value = ''
+  showStatusModal.value = true
+}
+
+async function submitStatus() {
+  if (!orderRef.value || !sellerId.value || !selectedStatus.value) return
+  statusUpdating.value = true
+  statusError.value = ''
+  try {
+    const payload: { status: string; seller_notes?: string; cancel_reason?: string } = {
+      status: selectedStatus.value,
+    }
+    if (sellerNotes.value.trim()) payload.seller_notes = sellerNotes.value.trim()
+    if (selectedStatus.value === 'cancelled' && cancelReason.value.trim()) {
+      payload.cancel_reason = cancelReason.value.trim()
+    }
+    const { data } = await ordersUserApi.updateSubOrderStatus(orderRef.value, sellerId.value, payload)
+    const updated = (data as { sub_order?: Record<string, unknown> })?.sub_order
+    if (updated) subOrder.value = updated
+    showStatusModal.value = false
+    const { data: orderData } = await ordersUserApi.get(orderRefParam.value)
+    order.value = (orderData ?? {}) as Record<string, unknown>
+  } catch (e: unknown) {
+    statusError.value = formatApiError(e, 'Failed to update status')
+  } finally {
+    statusUpdating.value = false
+  }
+}
+
 async function load() {
-  if (!id.value) return
+  if (!orderRefParam.value) return
   loaded.value = false
   error.value = ''
   try {
-    const { data } = await ordersUserApi.get(id.value)
+    const { data } = await ordersUserApi.get(orderRefParam.value)
     order.value = (data ?? {}) as Record<string, unknown>
     loaded.value = true
-    await loadInvoice()
+    await Promise.all([loadInvoice(), loadSubOrder()])
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Failed to load order')
     order.value = null
+    subOrder.value = null
   }
 }
 
 async function loadTracking() {
-  if (!id.value) return
+  if (!orderRefParam.value) return
   trackingLoading.value = true
   trackingError.value = ''
   tracking.value = null
   try {
-    const { data } = await logisticsBuyerApi.getTracking(id.value)
+    const { data } = await logisticsBuyerApi.getTracking(orderRefParam.value)
     tracking.value = data ?? null
   } catch {
     trackingError.value = 'Tracking not available for this order.'
@@ -341,7 +439,7 @@ async function loadTracking() {
 }
 
 onMounted(load)
-watch(id, load)
+watch(orderRefParam, load)
 watch(showCustomize, (visible) => {
   if (visible && !sellerStoreLogoUrl.value) loadSellerStoreLogo()
 })

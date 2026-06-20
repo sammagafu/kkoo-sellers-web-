@@ -14,7 +14,7 @@
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
-      <EmptyState v-else title="No employees" message="Add employees when the CRM API is configured. CRM is configured by your platform administrator. Contact support if you need access." />
+      <EmptyState v-else title="No employees" message="Add employees when the CRM API is configured" />
       <b-pagination
         v-if="hasPagination"
         :model-value="page"

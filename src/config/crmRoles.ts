@@ -23,17 +23,17 @@ export const CRM_ROLE_OPTIONS = [
   {
     value: KKOO_CRM_ROLES.STEWARD,
     text: 'KKOO Steward',
-    description: 'Trust lead — manage team, settings, and all business records.',
+    description: 'Team lead — full access.',
   },
   {
     value: KKOO_CRM_ROLES.RUNNER,
     text: 'KKOO Runner',
-    description: 'Market hand — daily sales, stock, invoices, and payments.',
+    description: 'Daily sales and stock.',
   },
   {
     value: KKOO_CRM_ROLES.WATCHER,
     text: 'KKOO Watcher',
-    description: 'Read-only plus reports — cannot change records.',
+    description: 'View only.',
   },
 ] as const
 

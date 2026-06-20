@@ -29,11 +29,8 @@
       show
       class="mb-3"
     >
-      <h6 class="mb-1">Complete your registration to unlock more</h6>
-      <p class="mb-1 small">
-        Finalize your profile and upload KYC documents to get verified. Verify to unlock:
-        CRM, invoicing, Menu (restaurant), analytics, wholesale tiers, and notification preferences.
-      </p>
+      <h6 class="mb-1">Complete registration</h6>
+      <p class="mb-1 small">Verify your profile to unlock seller tools.</p>
       <router-link
         :to="{ name: 'seller.profile' }"
         class="btn btn-sm btn-outline-primary"

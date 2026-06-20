@@ -3,7 +3,6 @@
     <b-row>
       <b-col>
         <h4 class="mb-1">Notifications</h4>
-        <p class="text-muted small mb-3">In-app notifications from the platform.</p>
       </b-col>
       <b-col cols="12" class="d-flex justify-content-end gap-2 mb-3">
         <b-button

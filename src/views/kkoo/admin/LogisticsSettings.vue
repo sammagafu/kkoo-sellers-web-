@@ -71,6 +71,127 @@
           <p v-else-if="error" class="text-danger">{{ error }}</p>
         </b-card>
 
+        <b-card v-if="!endpointUnavailable && settings" title="Passenger ride pricing" class="mb-4">
+          <p class="text-muted mb-3">
+            Per-kilometre rates by fuel type for ride quotes. Set each type separately — fuel, gas/LPG, and EV should not share the same rate.
+            Leave at <strong>0</strong> to fall back to the zone per-km from Delivery Zones.
+          </p>
+          <b-form @submit.prevent="savePassengerPricing">
+            <b-row>
+              <b-col md="4">
+                <b-form-group label="Per km — fuel (petrol/diesel)" label-for="per-km-fuel">
+                  <b-form-input
+                    id="per-km-fuel"
+                    v-model.number="passengerForm.passenger_per_km_fuel"
+                    type="number"
+                    min="0"
+                    step="1"
+                  />
+                </b-form-group>
+              </b-col>
+              <b-col md="4">
+                <b-form-group label="Per km — gas / LPG" label-for="per-km-gas">
+                  <b-form-input
+                    id="per-km-gas"
+                    v-model.number="passengerForm.passenger_per_km_gas"
+                    type="number"
+                    min="0"
+                    step="1"
+                  />
+                </b-form-group>
+              </b-col>
+              <b-col md="4">
+                <b-form-group label="Per km — electric (EV)" label-for="per-km-ev">
+                  <b-form-input
+                    id="per-km-ev"
+                    v-model.number="passengerForm.passenger_per_km_ev"
+                    type="number"
+                    min="0"
+                    step="1"
+                  />
+                </b-form-group>
+              </b-col>
+            </b-row>
+            <p class="text-muted small mb-2">Vehicle fare multipliers (optional; 0 = system default)</p>
+            <b-row>
+              <b-col md="4">
+                <b-form-group label="Boda multiplier" label-for="mult-boda">
+                  <b-form-input
+                    id="mult-boda"
+                    v-model.number="passengerForm.passenger_vehicle_mult_boda"
+                    type="number"
+                    min="0"
+                    max="3"
+                    step="0.01"
+                  />
+                </b-form-group>
+              </b-col>
+              <b-col md="4">
+                <b-form-group label="Bajaj multiplier" label-for="mult-bajaj">
+                  <b-form-input
+                    id="mult-bajaj"
+                    v-model.number="passengerForm.passenger_vehicle_mult_bajaj"
+                    type="number"
+                    min="0"
+                    max="3"
+                    step="0.01"
+                  />
+                </b-form-group>
+              </b-col>
+              <b-col md="4">
+                <b-form-group label="Car multiplier" label-for="mult-car">
+                  <b-form-input
+                    id="mult-car"
+                    v-model.number="passengerForm.passenger_vehicle_mult_car"
+                    type="number"
+                    min="0"
+                    max="3"
+                    step="0.01"
+                  />
+                </b-form-group>
+              </b-col>
+            </b-row>
+            <b-button type="submit" variant="primary" :disabled="passengerSaving">Save passenger pricing</b-button>
+            <b-alert v-if="passengerSaveError" variant="danger" show class="mt-2">{{ passengerSaveError }}</b-alert>
+          </b-form>
+        </b-card>
+
+        <b-card v-if="!endpointUnavailable && settings" title="Send me distance pricing" class="mb-4">
+          <p class="text-muted mb-3">
+            How far from the buyer’s delivery point a store can be before a per-km surcharge applies on Send me catalog picks.
+          </p>
+          <b-form @submit.prevent="saveBuyForMePricing">
+            <b-row>
+              <b-col md="6">
+                <b-form-group label="Free radius (metres)" label-for="bfm-free-radius">
+                  <b-form-input
+                    id="bfm-free-radius"
+                    v-model.number="buyForMeForm.buy_for_me_free_radius_meters"
+                    type="number"
+                    min="0"
+                    step="100"
+                  />
+                  <small class="text-muted">Stores within this distance have no distance surcharge.</small>
+                </b-form-group>
+              </b-col>
+              <b-col md="6">
+                <b-form-group label="Per km surcharge (TZS)" label-for="bfm-per-km">
+                  <b-form-input
+                    id="bfm-per-km"
+                    v-model.number="buyForMeForm.buy_for_me_per_km_surcharge_tzs"
+                    type="number"
+                    min="0"
+                    step="50"
+                  />
+                  <small class="text-muted">Charged for each km beyond the free radius.</small>
+                </b-form-group>
+              </b-col>
+            </b-row>
+            <b-button type="submit" variant="primary" :disabled="buyForMeSaving">Save Send me pricing</b-button>
+            <b-alert v-if="buyForMeSaveError" variant="danger" show class="mt-2">{{ buyForMeSaveError }}</b-alert>
+          </b-form>
+        </b-card>
+
         <b-card title="Smart Dispatch Rules">
           <p class="text-muted">
             Control directed offers, search radius, reassignment pacing, and same-route bundle tolerance.
@@ -206,6 +327,14 @@ const settings = ref<{
   payout_every_n_rides?: number
   free_rides_before_payout?: number
   min_payout_amount?: number
+  passenger_per_km_fuel?: number
+  passenger_per_km_gas?: number
+  passenger_per_km_ev?: number
+  passenger_vehicle_mult_boda?: number
+  passenger_vehicle_mult_bajaj?: number
+  passenger_vehicle_mult_car?: number
+  buy_for_me_free_radius_meters?: number
+  buy_for_me_per_km_surcharge_tzs?: number
   updated_at?: string
 } | null>(null)
 
@@ -215,6 +344,24 @@ const form = reactive({
   free_rides_before_payout: 0,
   min_payout_amount: 0,
 })
+
+const passengerForm = reactive({
+  passenger_per_km_fuel: 0,
+  passenger_per_km_gas: 0,
+  passenger_per_km_ev: 0,
+  passenger_vehicle_mult_boda: 0,
+  passenger_vehicle_mult_bajaj: 0,
+  passenger_vehicle_mult_car: 0,
+})
+const passengerSaving = ref(false)
+const passengerSaveError = ref('')
+
+const buyForMeForm = reactive({
+  buy_for_me_free_radius_meters: 2000,
+  buy_for_me_per_km_surcharge_tzs: 500,
+})
+const buyForMeSaving = ref(false)
+const buyForMeSaveError = ref('')
 
 const dispatchForm = reactive<DispatchRulesPayload>({
   dispatch_directed_offers_enabled: true,
@@ -240,6 +387,14 @@ async function load() {
     form.payout_every_n_rides = settings.value?.payout_every_n_rides ?? 1
     form.free_rides_before_payout = settings.value?.free_rides_before_payout ?? 0
     form.min_payout_amount = settings.value?.min_payout_amount ?? 0
+    passengerForm.passenger_per_km_fuel = settings.value?.passenger_per_km_fuel ?? 0
+    passengerForm.passenger_per_km_gas = settings.value?.passenger_per_km_gas ?? 0
+    passengerForm.passenger_per_km_ev = settings.value?.passenger_per_km_ev ?? 0
+    passengerForm.passenger_vehicle_mult_boda = settings.value?.passenger_vehicle_mult_boda ?? 0
+    passengerForm.passenger_vehicle_mult_bajaj = settings.value?.passenger_vehicle_mult_bajaj ?? 0
+    passengerForm.passenger_vehicle_mult_car = settings.value?.passenger_vehicle_mult_car ?? 0
+    buyForMeForm.buy_for_me_free_radius_meters = settings.value?.buy_for_me_free_radius_meters ?? 2000
+    buyForMeForm.buy_for_me_per_km_surcharge_tzs = settings.value?.buy_for_me_per_km_surcharge_tzs ?? 500
   } catch (e: unknown) {
     const status = (e as { response?: { status?: number } })?.response?.status
     if (status === 404 || status === 405) {
@@ -293,6 +448,42 @@ async function save() {
     saveError.value = formatApiError(e, 'Failed to save settings')
   } finally {
     saving.value = false
+  }
+}
+
+async function saveBuyForMePricing() {
+  buyForMeSaveError.value = ''
+  buyForMeSaving.value = true
+  try {
+    await logisticsAdminApi.updateSettings({
+      buy_for_me_free_radius_meters: buyForMeForm.buy_for_me_free_radius_meters,
+      buy_for_me_per_km_surcharge_tzs: buyForMeForm.buy_for_me_per_km_surcharge_tzs,
+    })
+    await load()
+  } catch (e: unknown) {
+    buyForMeSaveError.value = formatApiError(e, 'Failed to save Send me pricing')
+  } finally {
+    buyForMeSaving.value = false
+  }
+}
+
+async function savePassengerPricing() {
+  passengerSaveError.value = ''
+  passengerSaving.value = true
+  try {
+    await logisticsAdminApi.updateSettings({
+      passenger_per_km_fuel: passengerForm.passenger_per_km_fuel,
+      passenger_per_km_gas: passengerForm.passenger_per_km_gas,
+      passenger_per_km_ev: passengerForm.passenger_per_km_ev,
+      passenger_vehicle_mult_boda: passengerForm.passenger_vehicle_mult_boda || undefined,
+      passenger_vehicle_mult_bajaj: passengerForm.passenger_vehicle_mult_bajaj || undefined,
+      passenger_vehicle_mult_car: passengerForm.passenger_vehicle_mult_car || undefined,
+    })
+    await load()
+  } catch (e: unknown) {
+    passengerSaveError.value = formatApiError(e, 'Failed to save passenger pricing')
+  } finally {
+    passengerSaving.value = false
   }
 }
 

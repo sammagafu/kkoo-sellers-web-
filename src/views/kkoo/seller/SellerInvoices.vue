@@ -12,7 +12,14 @@
           {{ formatMoney(data.item.final_total ?? data.item.total_amount ?? data.item.total) }}
         </template>
         <template #cell(actions)="data">
-          <b-button size="sm" variant="outline-primary" :to="{ name: 'seller.orders.detail', params: { id: String(data.item.id) } }">Open order & invoice</b-button>
+          <b-button
+            size="sm"
+            variant="outline-primary"
+            :disabled="!sellerOrderDetailRoute(data.item)"
+            :to="sellerOrderDetailRoute(data.item)"
+          >
+            Open order & invoice
+          </b-button>
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
@@ -27,6 +34,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import { ref, computed, onMounted } from 'vue'
 import { ordersUserApi } from '@/api'
 import { formatApiError } from '@/utils/formatApiError'
+import { resolveOrderRef, sellerOrderDetailRoute } from '@/utils/orderRef'
 
 const items = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
@@ -49,7 +57,7 @@ const displayItems = computed(() => {
   return list.filter(
     (o) =>
       String(o.order_number ?? '').toLowerCase().includes(q) ||
-      String(o.id ?? '').toLowerCase().includes(q)
+      String(resolveOrderRef(o) ?? '').toLowerCase().includes(q)
   )
 })
 

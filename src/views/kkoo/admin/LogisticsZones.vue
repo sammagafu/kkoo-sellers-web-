@@ -1,12 +1,27 @@
 <template>
   <VerticalLayout>
-    <b-card title="Delivery Zones">
-      <p class="text-muted">Manage delivery zones and pricing (base fee, per km, min/max).</p>
+    <b-card title="Delivery regions">
+      <p class="text-muted">
+        City-level service areas across countries. Toggle <strong>Active</strong> to unlock a county/city
+        (e.g. Arusha, Nairobi). Buyers see locked cities as “coming soon” until you unlock them.
+      </p>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <b-button variant="primary" size="sm" @click="showCreateModal = true">Add region</b-button>
         <b-button variant="outline-primary" size="sm" @click="load">Refresh</b-button>
       </div>
       <p v-if="error" class="text-danger">{{ error }}</p>
       <b-table v-if="zones.length" :items="zones" :fields="zoneFields" striped responsive>
+        <template #cell(country_code)="row">
+          <span>{{ row.item.country_code || 'TZ' }}</span>
+        </template>
+        <template #cell(is_active)="row">
+          <b-form-checkbox
+            switch
+            :checked="row.item.is_active === true"
+            :disabled="togglingId === row.item.id"
+            @change="(v: boolean) => toggleActive(row.item, v)"
+          />
+        </template>
         <template #cell(actions)="row">
           <b-button size="sm" variant="outline-primary" @click="openPricing(row.item)">Pricing</b-button>
         </template>
@@ -14,8 +29,51 @@
       <p v-else-if="loading" class="text-muted">Loading…</p>
       <EmptyState v-else />
 
-      <b-modal v-model="showPricingModal" title="Zone pricing" @ok="savePricing" @hidden="pricingTarget = null">
-        <p v-if="pricingTarget">Zone: {{ pricingTarget.name ?? pricingTarget.id }}</p>
+      <b-modal v-model="showCreateModal" title="Add service region" @ok="createZone" @hidden="resetCreateForm">
+        <b-form-group label="City name">
+          <b-form-input v-model="createForm.name" placeholder="e.g. Nairobi" />
+        </b-form-group>
+        <b-form-group label="Code (unique slug)">
+          <b-form-input v-model="createForm.code" placeholder="e.g. nairobi" />
+        </b-form-group>
+        <b-form-group label="Country code">
+          <b-form-input v-model="createForm.country_code" placeholder="TZ, KE, UG, NG…" />
+        </b-form-group>
+        <b-row>
+          <b-col>
+            <b-form-group label="Center lat">
+              <b-form-input v-model.number="createForm.center_lat" type="number" step="0.0001" />
+            </b-form-group>
+          </b-col>
+          <b-col>
+            <b-form-group label="Center lng">
+              <b-form-input v-model.number="createForm.center_lng" type="number" step="0.0001" />
+            </b-form-group>
+          </b-col>
+        </b-row>
+        <b-form-group label="Radius km (auto bounds)">
+          <b-form-input v-model.number="createForm.radius_km" type="number" step="1" min="5" />
+        </b-form-group>
+        <b-row>
+          <b-col>
+            <b-form-group label="Base fee">
+              <b-form-input v-model.number="createForm.base_fee" type="number" step="0.01" min="0" />
+            </b-form-group>
+          </b-col>
+          <b-col>
+            <b-form-group label="Per km fee">
+              <b-form-input v-model.number="createForm.per_km_fee" type="number" step="0.01" min="0" />
+            </b-form-group>
+          </b-col>
+        </b-row>
+        <b-form-group label="Currency">
+          <b-form-input v-model="createForm.currency" placeholder="TZS, KES, UGX…" />
+        </b-form-group>
+        <b-form-checkbox v-model="createForm.is_active">Unlock immediately</b-form-checkbox>
+      </b-modal>
+
+      <b-modal v-model="showPricingModal" title="Region pricing" @ok="savePricing" @hidden="pricingTarget = null">
+        <p v-if="pricingTarget">Region: {{ pricingTarget.name ?? pricingTarget.id }}</p>
         <b-form-group label="Base fee">
           <b-form-input v-model.number="pricingForm.base_fee" type="number" step="0.01" min="0" />
         </b-form-group>
@@ -46,15 +104,29 @@ import { formatApiError } from '@/utils/formatApiError'
 const loading = ref(false)
 const error = ref('')
 const zones = ref<Record<string, unknown>[]>([])
+const togglingId = ref<number | null>(null)
 const showPricingModal = ref(false)
+const showCreateModal = ref(false)
 const pricingTarget = ref<Record<string, unknown> | null>(null)
 const pricingForm = ref({ base_fee: 0, per_km_fee: 0, min_fee: 0, max_fee: 0, currency: 'TZS' })
+const createForm = ref({
+  name: '',
+  code: '',
+  country_code: 'TZ',
+  center_lat: -6.7924,
+  center_lng: 39.2083,
+  radius_km: 25,
+  base_fee: 3500,
+  per_km_fee: 850,
+  currency: 'TZS',
+  is_active: false,
+})
 
 const zoneFields = [
-  { key: 'id', label: 'ID' },
-  { key: 'name', label: 'Name' },
+  { key: 'name', label: 'City' },
+  { key: 'country_code', label: 'Country' },
   { key: 'code', label: 'Code' },
-  { key: 'is_active', label: 'Active' },
+  { key: 'is_active', label: 'Active (unlocked)' },
   { key: 'actions', label: 'Actions' },
 ]
 
@@ -64,6 +136,21 @@ function normalizeList(data: unknown): Record<string, unknown>[] {
   return (obj?.results ?? []) as Record<string, unknown>[]
 }
 
+function resetCreateForm() {
+  createForm.value = {
+    name: '',
+    code: '',
+    country_code: 'TZ',
+    center_lat: -6.7924,
+    center_lng: 39.2083,
+    radius_km: 25,
+    base_fee: 3500,
+    per_km_fee: 850,
+    currency: 'TZS',
+    is_active: false,
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -71,10 +158,50 @@ async function load() {
     const { data } = await logisticsAdminApi.listZones()
     zones.value = normalizeList(data)
   } catch (e: unknown) {
-    error.value = formatApiError(e, 'Failed to load zones')
+    error.value = formatApiError(e, 'Failed to load regions')
     zones.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function toggleActive(zone: Record<string, unknown>, active: boolean) {
+  const id = zone.id as number
+  if (!id) return
+  togglingId.value = id
+  error.value = ''
+  try {
+    await logisticsAdminApi.updateZone(id, { is_active: active })
+    zone.is_active = active
+  } catch (e: unknown) {
+    error.value = formatApiError(e, 'Failed to update region')
+    await load()
+  } finally {
+    togglingId.value = null
+  }
+}
+
+async function createZone(event: Event) {
+  event.preventDefault()
+  error.value = ''
+  try {
+    await logisticsAdminApi.createZone({
+      name: createForm.value.name.trim(),
+      code: createForm.value.code.trim().toLowerCase(),
+      country_code: createForm.value.country_code.trim().toUpperCase(),
+      center_lat: createForm.value.center_lat,
+      center_lng: createForm.value.center_lng,
+      radius_km: createForm.value.radius_km,
+      base_fee: createForm.value.base_fee,
+      per_km_fee: createForm.value.per_km_fee,
+      currency: createForm.value.currency.trim(),
+      is_active: createForm.value.is_active,
+    })
+    showCreateModal.value = false
+    resetCreateForm()
+    await load()
+  } catch (e: unknown) {
+    error.value = formatApiError(e, 'Failed to create region')
   }
 }
 

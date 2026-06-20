@@ -245,4 +245,21 @@ $kkoo-badge-border-accent: rgba(247, 168, 41, 0.35);
   // Gradients
   --kkoo-gradient-primary: #{$kkoo-gradient-primary};
   --kkoo-gradient-accent: #{$kkoo-gradient-accent};
+
+  // Shared surfaces (admin panels, cards)
+  --kkoo-panel-bg: #ffffff;
+  --kkoo-panel-muted: #f8f9fa;
+  --kkoo-panel-border: #e8eaf2;
+  --kkoo-panel-ink: #14213d;
+  --kkoo-panel-sub: #64748b;
+  --kkoo-accent-tint: #fff7e8;
+}
+
+html[data-bs-theme='dark'] {
+  --kkoo-panel-bg: #1c1822;
+  --kkoo-panel-muted: #252030;
+  --kkoo-panel-border: rgba(92, 48, 143, 0.28);
+  --kkoo-panel-ink: #ede9f5;
+  --kkoo-panel-sub: rgba(237, 233, 245, 0.68);
+  --kkoo-accent-tint: rgba(247, 168, 41, 0.16);
 }

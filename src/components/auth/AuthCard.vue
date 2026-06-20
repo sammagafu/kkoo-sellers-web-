@@ -7,7 +7,6 @@
       <i class="bi" :class="icon" />
     </div>
 
-    <p v-if="showLogo" class="auth-center-card__kicker">{{ t('auth.brandKicker') }}</p>
     <h1 class="auth-center-card__title">{{ title }}</h1>
     <p v-if="subtitle?.trim()" class="auth-center-card__subtitle">{{ subtitle }}</p>
 
@@ -55,7 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
   subtitle: '',
   icon: 'bi-box-arrow-in-right',
   showLogo: true,
-  logoHeight: 68,
+  logoHeight: 52,
   wide: false,
   otp: false,
   dividerLabel: '',

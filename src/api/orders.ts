@@ -26,28 +26,43 @@ export const ordersUserApi = {
   list(params?: { page?: number; page_size?: number }) {
     return client.get<{ results: unknown[] }>('/orders/', { params })
   },
-  get(id: number) {
-    return client.get(`/orders/${id}/`)
+  get(ref: string | number) {
+    return client.get(`/orders/${ref}/`)
   },
-  cancel(id: number) {
-    return client.post(`/orders/${id}/cancel/`)
+  cancel(ref: string | number) {
+    return client.post(`/orders/${ref}/cancel/`)
+  },
+  listSubOrders(orderRef: string | number) {
+    return client.get<{
+      order_number?: string
+      order_status?: string
+      sub_orders?: unknown[]
+      count?: number
+    }>(`/orders/${orderRef}/sub-orders/`)
+  },
+  updateSubOrderStatus(
+    orderRef: string | number,
+    sellerId: number,
+    data: { status: string; seller_notes?: string; cancel_reason?: string },
+  ) {
+    return client.patch(`/orders/${orderRef}/sub-orders/${sellerId}/`, data)
   },
   /** Order invoice: create, customize, send (for business owner/seller). Same endpoints as admin; backend may allow seller for their orders. */
-  getInvoice(orderId: number) {
-    return client.get<OrderInvoiceResponse>(`/orders/${orderId}/invoice/`)
+  getInvoice(orderRef: string | number) {
+    return client.get<OrderInvoiceResponse>(`/orders/${orderRef}/invoice/`)
   },
-  createOrUpdateInvoice(orderId: number, customization?: OrderInvoiceCustomization) {
-    return client.post<OrderInvoiceResponse>(`/orders/${orderId}/invoice/`, customization ? { customization } : {})
+  createOrUpdateInvoice(orderRef: string | number, customization?: OrderInvoiceCustomization) {
+    return client.post<OrderInvoiceResponse>(`/orders/${orderRef}/invoice/`, customization ? { customization } : {})
   },
   /**
    * kkoo-fiber has no POST /orders/:id/invoice/upload-logo/. Uses POST /users/seller/profile/logo/ (multipart `logo`) to get logo_url, then save via createOrUpdateInvoice.
    */
-  uploadInvoiceLogo(_orderId: number, formData: FormData) {
+  uploadInvoiceLogo(_orderRef: string | number, formData: FormData) {
     return client.post<{ logo_url?: string; message?: string }>('/users/seller/profile/logo/', formData)
   },
-  sendInvoice(orderId: number, payload?: { delivery_method?: 'link' | 'email'; to_email?: string }) {
+  sendInvoice(orderRef: string | number, payload?: { delivery_method?: 'link' | 'email'; to_email?: string }) {
     return client.post<{ message?: string; sent_at?: string; share_url?: string; tracking_pixel_url?: string; sent_to_email?: string }>(
-      `/orders/${orderId}/invoice/send/`,
+      `/orders/${orderRef}/invoice/send/`,
       payload ?? {}
     )
   },

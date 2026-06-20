@@ -1,8 +1,8 @@
 export const baseBrand = 'KKOOAPP — Shop, order, and run your business in one place'
 
 export function setTitle(title: string) {
-  const base = 'KKOOAPP — Business tools'
-  return title ? `${title} | ${base}` : base
+  const base = 'KKOOAPP — Admin'
+  return title ? `[Admin] ${title} | ${base}` : `[Admin] ${base}`
 }
 
 export function setLandingTitle(title: string) {

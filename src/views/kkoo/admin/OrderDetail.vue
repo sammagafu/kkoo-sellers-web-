@@ -353,10 +353,10 @@ watch(id, load)
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  background: #f5f5f5;
+  background: var(--kkoo-panel-muted);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--kkoo-panel-border);
 }
 .invoice-logo-preview {
   max-width: 100%;

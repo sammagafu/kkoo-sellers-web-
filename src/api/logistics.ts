@@ -32,9 +32,9 @@ export const logisticsPublicApi = {
 
 /** Buyer (auth). API.md: order tracking, review assignment. */
 export const logisticsBuyerApi = {
-  getTracking(order_id: number) {
+  getTracking(orderRef: string | number) {
     return client.get<{ status?: string; rider?: unknown; gps_track_link?: string; delivery_address?: unknown }>(
-      `/logistics/orders/${order_id}/tracking/`
+      `/logistics/orders/${orderRef}/tracking/`
     )
   },
   reviewAssignment(assignmentId: number, data: { rating: number; comment?: string }) {
@@ -51,6 +51,14 @@ export const logisticsAdminApi = {
       payout_every_n_rides?: number
       free_rides_before_payout?: number
       min_payout_amount?: number
+      passenger_per_km_fuel?: number
+      passenger_per_km_gas?: number
+      passenger_per_km_ev?: number
+      passenger_vehicle_mult_boda?: number
+      passenger_vehicle_mult_bajaj?: number
+      passenger_vehicle_mult_car?: number
+      buy_for_me_free_radius_meters?: number
+      buy_for_me_per_km_surcharge_tzs?: number
       updated_at?: string
       updated_by?: { id?: number; first_name?: string; last_name?: string }
     }>('/logistics/settings/')
@@ -61,6 +69,14 @@ export const logisticsAdminApi = {
     payout_every_n_rides?: number
     free_rides_before_payout?: number
     min_payout_amount?: number
+    passenger_per_km_fuel?: number
+    passenger_per_km_gas?: number
+    passenger_per_km_ev?: number
+    passenger_vehicle_mult_boda?: number
+    passenger_vehicle_mult_bajaj?: number
+    passenger_vehicle_mult_car?: number
+    buy_for_me_free_radius_meters?: number
+    buy_for_me_per_km_surcharge_tzs?: number
   }) {
     return client.put('/logistics/settings/', data)
   },
@@ -112,6 +128,26 @@ export const logisticsAdminApi = {
   },
   updateZone(id: number, data: Record<string, unknown>) {
     return client.patch(`/logistics/zones/${id}/`, data)
+  },
+  createZone(data: {
+    name: string
+    code: string
+    country_code: string
+    center_lat: number
+    center_lng: number
+    radius_km?: number
+    base_fee?: number
+    per_km_fee?: number
+    currency?: string
+    is_active?: boolean
+  }) {
+    return client.post('/logistics/zones/', data)
+  },
+  listMapPlaces(params?: { status?: string; q?: string; limit?: number }) {
+    return client.get<{ results?: unknown[]; count?: number }>('/logistics/map-places/', { params })
+  },
+  updateMapPlace(id: number, data: Record<string, unknown>) {
+    return client.patch(`/logistics/map-places/${id}/`, data)
   },
 }
 

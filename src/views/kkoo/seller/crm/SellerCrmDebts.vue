@@ -17,7 +17,7 @@
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
-      <EmptyState v-else title="No debts" message="Debts appear when customers buy on credit (CRM API). CRM is configured by your platform administrator. Contact support if you need access." />
+      <EmptyState v-else title="No debts" message="Debts appear when customers buy on credit (CRM API)" />
       <b-pagination
         v-if="hasPagination"
         :model-value="page"

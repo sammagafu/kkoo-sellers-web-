@@ -36,6 +36,7 @@ const menuItems = computed(() =>
     auth.user,
     auth.activePanelRole,
     auth.activePanelRole === ROLES.CRM_MEMBER ? crmPermissions.value : null,
+    auth.activeAccountRole,
   )
 );
 

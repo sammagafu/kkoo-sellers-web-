@@ -119,6 +119,7 @@
           <b-list-group-item v-if="riderProfile.status"><strong>Status</strong> <b-badge variant="secondary">{{ riderProfile.status }}</b-badge></b-list-group-item>
           <b-list-group-item v-if="riderProfile.zone != null"><strong>Zone</strong> {{ formatProfileValue(riderProfile.zone) }}</b-list-group-item>
           <b-list-group-item v-if="riderProfile.vehicle_type"><strong>Vehicle type</strong> {{ riderProfile.vehicle_type }}</b-list-group-item>
+          <b-list-group-item v-if="riderProfile.energy_type"><strong>Energy type</strong> {{ riderProfile.energy_type }}</b-list-group-item>
           <b-list-group-item v-if="riderProfile.verification_status"><strong>Verification</strong> {{ riderProfile.verification_status }}</b-list-group-item>
         </b-list-group>
       </b-card>

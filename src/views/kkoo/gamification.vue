@@ -162,8 +162,8 @@ import ScratchCard from '@/components/kkoo/ScratchCard.vue'
 <style scoped lang="scss">
 .code-example {
   pre {
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
+    background: var(--kkoo-panel-muted);
+    border: 1px solid var(--kkoo-panel-border);
     border-radius: 6px;
     padding: 1rem;
     overflow-x: auto;
@@ -171,7 +171,7 @@ import ScratchCard from '@/components/kkoo/ScratchCard.vue'
     code {
       font-family: 'Monaco', 'Courier New', monospace;
       font-size: 0.85rem;
-      color: #333;
+      color: var(--bs-body-color);
       line-height: 1.5;
     }
   }
@@ -186,10 +186,11 @@ ul {
 }
 
 code {
-  background: #f0f0f0;
+  background: var(--kkoo-panel-muted);
   padding: 0.2rem 0.4rem;
   border-radius: 3px;
   font-family: 'Monaco', 'Courier New', monospace;
   font-size: 0.85rem;
+  color: var(--bs-body-color);
 }
 </style>

@@ -14,8 +14,18 @@
         striped
         responsive
       >
+        <template #cell(id)="row">
+          {{ resolveOrderRef(row.item) ?? '—' }}
+        </template>
         <template #cell(actions)="row">
-          <b-button size="sm" variant="outline-primary" :to="{ name: 'seller.orders.detail', params: { id: String(row.item.id) } }">View</b-button>
+          <b-button
+            size="sm"
+            variant="outline-primary"
+            :disabled="!sellerOrderDetailRoute(row.item)"
+            :to="sellerOrderDetailRoute(row.item)"
+          >
+            View
+          </b-button>
         </template>
       </b-table>
       <p v-else-if="loading" class="text-muted">Loading…</p>
@@ -32,6 +42,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import { ref, computed, onMounted } from 'vue'
 import { ordersUserApi } from '@/api'
 import { formatApiError } from '@/utils/formatApiError'
+import { resolveOrderRef, sellerOrderDetailRoute } from '@/utils/orderRef'
 
 const search = ref('')
 const statusFilter = ref('')
@@ -74,7 +85,7 @@ const displayItems = computed(() => {
     list = list.filter(
       (o) =>
         String(o.order_number ?? '').toLowerCase().includes(q) ||
-        String(o.id ?? '').toLowerCase().includes(q)
+        String(resolveOrderRef(o) ?? '').toLowerCase().includes(q)
     )
   }
   return list

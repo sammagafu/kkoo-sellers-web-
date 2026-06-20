@@ -26,7 +26,7 @@
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
-      <EmptyState v-else title="No businesses" message="CRM API may not be configured or no businesses exist yet. CRM is configured by your platform administrator or in the backend." />
+      <EmptyState v-else title="No businesses" message="CRM API may not be configured or no businesses exist yet" />
       <b-pagination
         v-if="hasPagination"
         :model-value="page"

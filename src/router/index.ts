@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { allRoutes } from './routes/index';
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, BUYER_ACCOUNT_ROLE } from '@/stores/auth'
 import { ROLES } from '@/acl'
+import { buyerWebPath } from '@/config/cross-app-links'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,11 +36,25 @@ router.beforeEach((to, from, next) => {
 
 /** Admin panel: public auth pages; protected admin/staff areas require the right role. */
 router.beforeEach(async (routeTo, _routeFrom, next) => {
-  const authRequired = routeTo.matched.some((route) => route.meta.authRequired);
-  if (!authRequired) return next();
-
   const auth = useAuthStore();
   await auth.initialize();
+
+  if (auth.isAuthenticated) {
+    const isBuyerWorkspace =
+      auth.activeAccountRole === BUYER_ACCOUNT_ROLE ||
+      (!auth.isAdminOrStaff && !auth.isSeller && !auth.hasRole(ROLES.CRM_MEMBER));
+    const hitsAdminHome =
+      routeTo.path === '/' ||
+      routeTo.name === 'dashboards.index' ||
+      routeTo.path === '/dashboard';
+    if (isBuyerWorkspace && hitsAdminHome) {
+      window.location.href = buyerWebPath('/marketplace');
+      return;
+    }
+  }
+
+  const authRequired = routeTo.matched.some((route) => route.meta.authRequired);
+  if (!authRequired) return next();
   if (!auth.isAuthenticated) {
     return next({ name: 'auth.sign-in', query: { redirectedFrom: routeTo.fullPath } });
   }
@@ -53,6 +68,12 @@ router.beforeEach(async (routeTo, _routeFrom, next) => {
     path === '/dashboard' || path.startsWith('/admin') || path.startsWith('/preview/');
 
   if (needsAdminStaff) {
+    if (
+      auth.activeAccountRole === BUYER_ACCOUNT_ROLE &&
+      (auth.hasRole(ROLES.ADMIN) || auth.hasRole(ROLES.STAFF))
+    ) {
+      auth.setActiveAccountRole(auth.hasRole(ROLES.ADMIN) ? ROLES.ADMIN : ROLES.STAFF)
+    }
     const canAccessAdmin =
       auth.isAdminOrStaff ||
       auth.hasRole(ROLES.ADMIN) ||

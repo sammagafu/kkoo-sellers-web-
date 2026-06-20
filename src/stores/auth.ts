@@ -12,6 +12,7 @@ import {
   writeAdminAuthSession,
 } from '@/utils/adminAuthSessionStorage'
 import { jwtExpiresAtMs, refreshAccessTokenSingleFlight, startProactiveTokenRefresh, stopProactiveTokenRefresh } from '@/utils/tokenRefresh'
+import { buyerWebPath } from '@/config/cross-app-links'
 
 export const BUYER_ACCOUNT_ROLE = 'buyer' as const
 export type AccountRole = Role | typeof BUYER_ACCOUNT_ROLE
@@ -275,11 +276,8 @@ export const useAuthStore = defineStore('auth_store', () => {
   function defaultRouteAfterAuth(): { name: string; query?: Record<string, string> } {
     if (isAdminOrStaff.value) return { name: 'dashboards.index' }
     if (isSeller.value) return { name: 'seller.dashboard' }
-    if (
-      activeAccountRole.value === BUYER_ACCOUNT_ROLE ||
-      inferAvailableAccountRoles(user.value).includes(BUYER_ACCOUNT_ROLE)
-    ) {
-      return { name: 'account.home' }
+    if (typeof window !== 'undefined') {
+      window.location.href = buyerWebPath('/marketplace')
     }
     return { name: 'account.home' }
   }
@@ -407,14 +405,16 @@ export const useAuthStore = defineStore('auth_store', () => {
   const isSuperuser = computed(
     () => user.value?.is_superuser === true || user.value?.isSuperuser === true,
   )
-  const isAdminOrStaff = computed(
-    () =>
+  const isAdminOrStaff = computed(() => {
+    if (activeAccountRole.value === BUYER_ACCOUNT_ROLE) return false
+    return (
       activePanelRole.value === ROLES.ADMIN ||
       activePanelRole.value === ROLES.STAFF ||
       isSuperuser.value ||
       user.value?.is_staff === true ||
       user.value?.isStaff === true
-  )
+    )
+  })
   /** True when role is seller and user is verified (seller can use full navigation). */
   const isSellerVerified = computed(() => activePanelRole.value === ROLES.SELLER && user.value?.is_verified === true)
 

@@ -5,7 +5,6 @@
         <span class="text-muted">Period:</span>
         <b-form-select v-model="period" :options="periodOptions" value-field="value" text-field="text" size="sm" class="w-auto" @change="load" />
       </div>
-      <p class="text-muted mb-3">Overview for SME businesses: sales, cash, low stock, and outstanding debt (deni). Data from CRM API when configured.</p>
       <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
       <template v-if="loading">
         <p class="text-muted">Loading…</p>
@@ -63,10 +62,10 @@
             </b-card>
           </b-col>
         </b-row>
-        <p v-if="apiUnavailable" class="text-muted small">CRM API is not configured. CRM is configured by your platform administrator or in the backend.</p>
+        <p v-if="apiUnavailable" class="text-muted small">CRM not connected.</p>
       </template>
       <div v-else-if="!loading && !error" class="text-center py-4">
-        <p class="text-muted">No dashboard data. CRM is configured by your platform administrator or in the backend.</p>
+        <p class="text-muted">No dashboard data</p>
         <b-button variant="outline-primary" @click="load">Retry</b-button>
       </div>
     </b-card>

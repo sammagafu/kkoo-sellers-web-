@@ -150,6 +150,58 @@
       <ApexChart :chart="salesChartOptions" />
     </b-card>
 
+    <b-card title="Your customers" class="mb-4">
+      <p class="text-muted small mb-3">Buyers who ordered from your store — repeat rate, top spenders, and delivery areas.</p>
+      <b-row class="mb-3">
+        <b-col md="4">
+          <div class="stat-card">
+            <h6 class="text-muted text-uppercase small mb-1">Unique customers</h6>
+            <p class="h5 mb-0">{{ customers.summary?.unique_customers ?? 0 }}</p>
+          </div>
+        </b-col>
+        <b-col md="4">
+          <div class="stat-card">
+            <h6 class="text-muted text-uppercase small mb-1">Repeat buyers</h6>
+            <p class="h5 mb-0">{{ customers.summary?.repeat_customers ?? 0 }}</p>
+          </div>
+        </b-col>
+        <b-col md="4">
+          <div class="stat-card">
+            <h6 class="text-muted text-uppercase small mb-1">Repeat rate</h6>
+            <p class="h5 mb-0">{{ repeatRateLabel(customers.summary?.repeat_rate_pct) }}</p>
+          </div>
+        </b-col>
+      </b-row>
+      <b-table
+        v-if="(customers.top_customers?.length ?? 0) > 0"
+        :items="customers.top_customers"
+        :fields="customerFields"
+        small
+        responsive
+        hover
+        class="mb-3"
+      >
+        <template #cell(name)="{ item }">
+          {{ item.name || 'Buyer' }}
+          <b-badge v-if="item.is_repeat" variant="success" class="ms-1">Repeat</b-badge>
+        </template>
+        <template #cell(total_spent)="{ value }">{{ formatMoney(value) }}</template>
+        <template #cell(last_order_at)="{ value }">{{ lastOrderLabel(value) }}</template>
+      </b-table>
+      <p v-else class="text-muted mb-3">No marketplace buyers yet in this period.</p>
+      <h6 class="text-muted text-uppercase small">Customers by location</h6>
+      <b-table
+        v-if="(customers.customers_by_location?.length ?? 0) > 0"
+        :items="customers.customers_by_location"
+        :fields="customerLocationFields"
+        small
+        responsive
+      >
+        <template #cell(gmv)="{ value }">{{ formatMoney(value) }}</template>
+      </b-table>
+      <p v-else class="text-muted mb-0">Location data will appear when orders include delivery area or zone.</p>
+    </b-card>
+
     <p v-if="loading" class="text-muted">Loading…</p>
     <p v-else-if="error" class="text-danger">{{ error }}</p>
   </VerticalLayout>
@@ -159,7 +211,7 @@
 import { ref, computed, onMounted } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import ApexChart from '@/components/ApexChart.vue'
-import { analyticsSellerApi, type SellerAnalyticsResponse } from '@/api'
+import { analyticsSellerApi, type SellerAnalyticsResponse, type SellerCustomersResponse } from '@/api'
 import type { ApexChartType } from '@/types'
 
 const period = ref<'7d' | '30d' | undefined>(undefined)
@@ -183,6 +235,21 @@ const analytics = ref<SellerAnalyticsResponse>({
 })
 const loading = ref(true)
 const error = ref('')
+const customers = ref<SellerCustomersResponse>({})
+
+const customerFields = [
+  { key: 'name', label: 'Customer' },
+  { key: 'phone_number', label: 'Phone' },
+  { key: 'order_count', label: 'Orders' },
+  { key: 'total_spent', label: 'Spent (TZS)' },
+  { key: 'location', label: 'Location' },
+  { key: 'last_order_at', label: 'Last order' },
+]
+const customerLocationFields = [
+  { key: 'location', label: 'Area' },
+  { key: 'orders', label: 'Orders' },
+  { key: 'gmv', label: 'GMV (TZS)' },
+]
 
 const ordersByStatusKeys = computed(() => Object.keys(analytics.value.orders_by_status || {}))
 
@@ -254,12 +321,26 @@ function conversionLabel(rate: number | undefined): string {
   return `${Number(rate).toFixed(1)}%`
 }
 
+function repeatRateLabel(rate: number | undefined): string {
+  if (rate == null || Number.isNaN(rate)) return '—'
+  return `${Number(rate).toFixed(1)}%`
+}
+
+function customerPeriod(): '7d' | '30d' | '90d' | 'all' {
+  if (period.value === '7d' || period.value === '30d') return period.value
+  return '30d'
+}
+
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await analyticsSellerApi.overview({ period: period.value })
-    if (data) analytics.value = data
+    const [overviewRes, customersRes] = await Promise.all([
+      analyticsSellerApi.overview({ period: period.value }),
+      analyticsSellerApi.customers({ period: customerPeriod(), limit: 25 }),
+    ])
+    if (overviewRes.data) analytics.value = overviewRes.data
+    if (customersRes.data) customers.value = customersRes.data
   } catch (e: unknown) {
     const err = e as { response?: { data?: { detail?: string } } }
     error.value = err.response?.data?.detail ?? 'Failed to load analytics'

@@ -123,9 +123,9 @@ function formatDate(value?: string | null) {
 <style scoped lang="scss">
 .metric-card,
 .metric-panel {
-  border: 1px solid #e8eaf2;
+  border: 1px solid var(--kkoo-panel-border);
   border-radius: 1.1rem;
-  background: #fff;
+  background: var(--kkoo-panel-bg);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
 }
 
@@ -136,7 +136,7 @@ function formatDate(value?: string | null) {
 .metric-card__label,
 .program-card__title,
 .activity-row__copy {
-  color: #64748b;
+  color: var(--kkoo-panel-sub);
 }
 
 .metric-card__label {
@@ -148,7 +148,7 @@ function formatDate(value?: string | null) {
 }
 
 .metric-card__value {
-  color: #14213d;
+  color: var(--kkoo-panel-ink);
   font-size: 1.6rem;
   line-height: 1.15;
   font-weight: 800;
@@ -172,8 +172,8 @@ function formatDate(value?: string | null) {
 .program-card {
   padding: 1rem;
   border-radius: 0.95rem;
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-  border: 1px solid #edf2f7;
+  background: linear-gradient(180deg, var(--kkoo-panel-muted) 0%, var(--kkoo-panel-bg) 100%);
+  border: 1px solid var(--kkoo-panel-border);
 }
 
 .program-card__title {
@@ -185,7 +185,7 @@ function formatDate(value?: string | null) {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  color: #0f172a;
+  color: var(--kkoo-panel-ink);
   font-size: 0.95rem;
 }
 
@@ -200,7 +200,7 @@ function formatDate(value?: string | null) {
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--kkoo-panel-border);
 }
 
 .activity-row:last-child {
@@ -209,7 +209,7 @@ function formatDate(value?: string | null) {
 }
 
 .activity-row__title {
-  color: #14213d;
+  color: var(--kkoo-panel-ink);
   font-weight: 700;
   margin-bottom: 0.15rem;
 }
@@ -223,14 +223,14 @@ function formatDate(value?: string | null) {
 .target-pill {
   padding: 0.45rem 0.75rem;
   border-radius: 999px;
-  background: #fff7e8;
+  background: var(--kkoo-accent-tint);
   color: #9a6700;
   font-size: 0.85rem;
   font-weight: 700;
 }
 
 .target-pill--dark {
-  background: #eef2ff;
-  color: #3730a3;
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
 }
 </style>

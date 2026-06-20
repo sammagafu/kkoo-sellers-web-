@@ -104,7 +104,7 @@ const experimentItems: Array<{
 
 <style scoped lang="scss">
 .feature-flags {
-  background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+  background: linear-gradient(180deg, var(--kkoo-panel-bg) 0%, var(--kkoo-panel-muted) 100%);
 }
 
 .flag-card {
@@ -113,21 +113,21 @@ const experimentItems: Array<{
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem 1rem 0.95rem;
-  border: 1px solid #e8eaf2;
+  border: 1px solid var(--kkoo-panel-border);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--kkoo-panel-bg);
 }
 
 .flag-card__title {
   display: block;
-  color: #14213d;
+  color: var(--kkoo-panel-ink);
   font-weight: 700;
   margin-bottom: 0.25rem;
 }
 
 .flag-card__copy {
   display: block;
-  color: #64748b;
+  color: var(--kkoo-panel-sub);
   font-size: 0.925rem;
   line-height: 1.55;
 }
@@ -137,7 +137,7 @@ const experimentItems: Array<{
   text-align: center;
   padding: 0.45rem 0.7rem;
   border-radius: 999px;
-  background: #fff7e8;
+  background: var(--kkoo-accent-tint);
   color: #9a6700;
   font-weight: 700;
 }

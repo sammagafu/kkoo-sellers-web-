@@ -51,11 +51,10 @@
                 </b-input-group>
               </b-form-group>
             </div>
-            <p v-else class="text-muted small mb-0">Only KKOO Steward can add or remove team members.</p>
+            <p v-else class="text-muted small mb-0">Stewards only.</p>
           </b-tab>
 
           <b-tab title="Invitations">
-            <p class="text-muted small mb-2">Invite colleagues by email. They join this company when they accept.</p>
             <b-alert v-if="invitationsError" variant="danger" show>{{ invitationsError }}</b-alert>
             <b-alert v-if="inviteByEmailError" variant="danger" show>{{ inviteByEmailError }}</b-alert>
             <b-table v-if="invitations.length" :items="invitations" :fields="invitationFields" striped size="sm" class="mb-3">
