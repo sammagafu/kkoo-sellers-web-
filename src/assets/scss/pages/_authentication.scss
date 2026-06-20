@@ -20,8 +20,14 @@ body.authentication-bg {
   height: 100%;
   height: 100dvh;
 
+  .kkoo-portal-strip,
+  .kkoo-portal-badge,
+  .kkoo-portal-badge--floating {
+    display: none !important;
+  }
+
   .account-pages {
-    align-items: stretch;
+    align-items: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -30,6 +36,8 @@ body.authentication-bg {
     min-width: 0;
     position: relative;
     z-index: 1;
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
+      max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
   }
 }
 
