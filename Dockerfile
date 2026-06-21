@@ -13,7 +13,7 @@ RUN corepack enable pnpm 2>/dev/null || true && \
 
 COPY . .
 
-ARG VITE_API_BASE_URL=/api/v1
+ARG VITE_API_BASE_URL=https://api.kkooapp.co.tz/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ARG SASS_SILENCE_DEPRECATIONS=nested-rules
 ENV SASS_SILENCE_DEPRECATIONS=$SASS_SILENCE_DEPRECATIONS

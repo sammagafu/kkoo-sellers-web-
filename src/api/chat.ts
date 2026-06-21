@@ -3,6 +3,7 @@
  * Docs: https://kkooapp-backend-fiber/docs/INTEGRATION.md#17-chat
  */
 import client from './client'
+import { resolveApiBaseUrl } from '@/utils/apiBaseUrl'
 import type { Conversation, Message } from '../types/chat'
 
 export interface ChatStreamController {
@@ -66,7 +67,7 @@ export function openChatStream(
     onOpen?: () => void
   }
 ): ChatStreamController {
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+  const baseURL = resolveApiBaseUrl()
   const url = `${baseURL}/chat/conversations/${conversationId}/stream/`
   const controller = new AbortController()
   const decoder = new TextDecoder()

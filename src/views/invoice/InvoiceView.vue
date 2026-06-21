@@ -18,10 +18,11 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { resolveApiBaseUrl } from '@/utils/apiBaseUrl'
 
 const route = useRoute()
 const token = computed(() => (route.params.token as string) || '')
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+const baseURL = resolveApiBaseUrl()
 const iframeSrc = computed(() => `${baseURL.replace(/\/$/, '')}/invoice/view/${encodeURIComponent(token.value)}`)
 const error = ref('')
 

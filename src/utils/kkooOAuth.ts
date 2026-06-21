@@ -1,13 +1,13 @@
 import client from '@/api/client'
 import { oauthClientId, oauthDefaultScope, oauthRedirectUri } from '@/config/kkooOAuth'
+import { resolveApiBaseUrl } from '@/utils/apiBaseUrl'
 
 const PKCE_KEY = 'kkoo_oauth_pkce'
 const STATE_KEY = 'kkoo_oauth_state'
 const RETURN_KEY = 'kkoo_oauth_return'
 
 function apiBaseURL() {
-  const base = import.meta.env.VITE_API_BASE_URL as string | undefined
-  return (base || '/api/v1').replace(/\/$/, '')
+  return resolveApiBaseUrl()
 }
 
 function randomUrlSafe(len: number) {

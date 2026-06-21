@@ -9,33 +9,11 @@ import {
   clearAdminAuthSession,
   readAdminAuthTokens,
 } from '@/utils/adminAuthSessionStorage'
+import { resolveApiBaseUrl } from '@/utils/apiBaseUrl'
 import { refreshAccessTokenSingleFlight } from '@/utils/tokenRefresh'
 import { resetPiniaAuthAfterRefreshFailure } from '@/utils/syncPiniaAuthFromStorage'
 
-function inferDefaultBaseURL(): string {
-  if (typeof window === 'undefined') return 'http://localhost:8080/api/v1'
-  const origin = window.location.origin.replace(/\/$/, '')
-  // Same-origin /api/v1 — nginx (or host proxy) forwards to Fiber; avoids CORS on uploads.
-  return `${origin}/api/v1`
-}
-
-function normalizeBaseURL(raw: string): string {
-  if (raw.startsWith('/')) {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin.replace(/\/$/, '')}${raw}`.replace(/\/$/, '')
-    }
-    return raw.replace(/\/$/, '')
-  }
-  try {
-    const u = new URL(raw)
-    return u.toString().replace(/\/$/, '')
-  } catch {
-    return raw.replace(/\/$/, '')
-  }
-}
-
-// Prefer build-time env; otherwise inferred default; final fallback handled in inferDefaultBaseURL()
-const baseURL = normalizeBaseURL(import.meta.env.VITE_API_BASE_URL || inferDefaultBaseURL())
+const baseURL = resolveApiBaseUrl()
 
 /** Clear stored auth (e.g. when refresh fails). Caller should redirect to login. */
 export function clearStoredAuth() {

@@ -3,18 +3,8 @@
  */
 import axios from 'axios'
 import { mergeAdminAuthTokens, readAdminAuthTokens } from '@/utils/adminAuthSessionStorage'
+import { resolveApiBaseUrl } from '@/utils/apiBaseUrl'
 import { syncPiniaAuthTokens } from '@/utils/syncPiniaAuthFromStorage'
-
-function apiBaseURL(): string {
-  const raw = import.meta.env.VITE_API_BASE_URL
-  if (raw && typeof raw === 'string' && !raw.startsWith('/')) {
-    return raw.replace(/\/$/, '')
-  }
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin.replace(/\/$/, '')}/api/v1`
-  }
-  return 'http://localhost:8080/api/v1'
-}
 
 /** Decode JWT `exp` (seconds since epoch). Returns null if missing or invalid. */
 export function jwtExpiresAtMs(token: string | null | undefined): number | null {
@@ -40,7 +30,7 @@ export async function refreshAccessTokenSingleFlight(): Promise<{ access: string
     if (!refresh) return null
     try {
       const { data } = await axios.post<{ access?: string; refresh?: string; access_token?: string }>(
-        `${apiBaseURL()}/users/token/refresh/`,
+        `${resolveApiBaseUrl()}/users/token/refresh/`,
         { refresh },
         { headers: { 'Content-Type': 'application/json', Accept: 'application/json' } },
       )
