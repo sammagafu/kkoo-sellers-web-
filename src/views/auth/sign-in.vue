@@ -173,9 +173,14 @@ async function handleRequestOtp() {
   }
   loading.value = true
   try {
-    await authApi.requestOtp(phone.value.trim())
+    const res = await authApi.requestOtp(phone.value.trim())
     otpSent.value = true
-    successMessage.value = t('auth.otpSent')
+    if (res.debug_otp) {
+      otpCode.value = res.debug_otp
+      successMessage.value = `Test OTP: ${res.debug_otp}`
+    } else {
+      successMessage.value = t('auth.otpSent')
+    }
     startResendCooldown()
   } catch {
     error.value = t('auth.otpSendFailed')

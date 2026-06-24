@@ -75,6 +75,33 @@
             <span class="topbar-profile-progress-pct small fw-semibold">{{ profileCompletion.percentage }}%</span>
           </router-link>
 
+          <!-- KKOO web apps -->
+          <DropDown class="topbar-item">
+            <button
+              type="button"
+              class="topbar-button"
+              id="page-header-apps-dropdown"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+              title="Switch KKOO app"
+            >
+              <Icon icon="solar:widget-5-broken" class="fs-24 align-middle" />
+            </button>
+            <div class="dropdown-menu dropdown-menu-end py-2" aria-labelledby="page-header-apps-dropdown">
+              <span class="dropdown-header small text-muted">KKOO apps</span>
+              <a
+                v-for="item in kkooAppSwitcherItems"
+                :key="item.key"
+                :href="item.href"
+                class="dropdown-item d-flex align-items-center gap-2"
+              >
+                <Icon :icon="item.icon" class="fs-18 text-muted" />
+                <span>{{ item.label }}</span>
+              </a>
+            </div>
+          </DropDown>
+
           <!-- Notification -->
           <DropDown class="topbar-item">
             <button type="button" class="topbar-button position-relative" id="page-header-notifications-dropdown"
@@ -236,6 +263,7 @@ function setLocale(code: LocaleCode) {
   setLocaleStorage(code);
 }
 
+import { kkooAppSwitcherItems } from '@/config/app-portal-links'
 import DropDown from "@/components/DropDown.vue";
 import PortalBadge from '@/components/PortalBadge.vue';
 import CrmCompanySwitcher from '@/components/crm/CrmCompanySwitcher.vue';

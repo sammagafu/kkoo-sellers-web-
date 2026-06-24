@@ -15,7 +15,6 @@ declare module 'vue' {
     AuthField: typeof import('./src/components/auth/AuthField.vue')['default']
     AuthScene: typeof import('./src/components/auth/AuthScene.vue')['default']
     AuthTermsCheck: typeof import('./src/components/auth/AuthTermsCheck.vue')['default']
-    AuthTopBar: typeof import('./src/components/auth/AuthTopBar.vue')['default']
     AuthViewportFit: typeof import('./src/components/auth/AuthViewportFit.vue')['default']
     BadgesGallery: typeof import('./src/components/kkoo/BadgesGallery.vue')['default']
     BAlert: typeof import('bootstrap-vue-next')['BAlert']

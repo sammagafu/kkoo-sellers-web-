@@ -10,7 +10,7 @@
     <span class="auth-terms__text">
       {{ t('auth.acceptTermsPrefix') }}
       <a
-        :href="buyerWebPath('/legal/terms')"
+        :href="buyerWebPath('/terms-of-use')"
         target="_blank"
         rel="noopener noreferrer"
         class="auth-terms__link"

@@ -26,7 +26,20 @@
         </div>
 
         <div class="footer__links-block">
-          <span class="footer__links-label">Get the apps</span>
+          <span class="footer__links-label">KKOO web</span>
+          <div class="footer__app-links footer__app-links--web">
+            <a
+              v-for="item in kkooWebFooterLinks"
+              :key="item.key"
+              :href="item.href"
+              class="footer-app-link"
+              :title="item.label"
+            >
+              <Icon :icon="item.icon" class="footer-app-icon" aria-hidden="true" />
+              {{ item.label }}
+            </a>
+          </div>
+          <span class="footer__links-label">Mobile apps</span>
           <div class="footer__app-links">
             <a
               :href="appLinks.marketplace.appStore"
@@ -66,6 +79,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { healthApi } from '@/api'
 import { appLinks } from '@/config/app-links'
+import { kkooWebFooterLinks } from '@/config/app-portal-links'
 import { buildLabel, displayVersion } from '@/config/buildInfo'
 
 const apiStatus = ref<'idle' | 'ok' | 'error'>('idle')

@@ -67,22 +67,7 @@
     <b-card class="mb-4" header="Customer experiences" header-bg-variant="light" header-class="fw-semibold">
       <b-row class="g-3">
         <b-col v-for="app in frontendApps" :key="app.title" cols="12" sm="6" xl="4">
-          <router-link v-if="app.to" :to="app.to" class="text-decoration-none text-reset d-block h-100">
-            <b-card class="h-100 border shadow-sm account-hub-link-card">
-              <div class="d-flex align-items-start gap-3">
-                <span class="account-hub-tile-icon rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
-                  <Icon :icon="app.icon" class="fs-4 text-primary" />
-                </span>
-                <div class="min-w-0">
-                  <div class="d-flex flex-wrap align-items-center gap-2">
-                    <h6 class="mb-0">{{ app.title }}</h6>
-                    <span class="badge badge-soft-primary rounded-pill">{{ app.badge }}</span>
-                  </div>
-                </div>
-              </div>
-            </b-card>
-          </router-link>
-          <a v-else-if="app.href" :href="app.href" class="text-decoration-none text-reset d-block h-100" target="_blank" rel="noopener">
+          <a :href="app.href" class="text-decoration-none text-reset d-block h-100">
             <b-card class="h-100 border shadow-sm account-hub-link-card">
               <div class="d-flex align-items-start gap-3">
                 <span class="account-hub-tile-icon rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
@@ -171,6 +156,16 @@ import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import { BUYER_ACCOUNT_ROLE, useAuthStore, type AccountRole } from '@/stores/auth'
 import { resolveAssetUrl } from '@/utils/assetUrl'
 import { buyerWebPath, bizWebPath } from '@/config/cross-app-links'
+import {
+  adminDashboardUrl,
+  bizCrmUrl,
+  bizSellerAccountUrl,
+  bizSellerDashboardUrl,
+  bizSellerRegisterUrl,
+  buyerBusinessUrl,
+  buyerMerchantUrl,
+  buyerShopUrl,
+} from '@/config/app-portal-links'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -188,7 +183,7 @@ const roleMeta: Record<AccountRole, { label: string; icon: string }> = {
 
 const roleDefaultRoutes: Record<AccountRole, { name?: string; href?: string }> = {
   [BUYER_ACCOUNT_ROLE]: { href: buyerWebPath('/account') },
-  [ROLES.SELLER]: { href: bizWebPath('/seller') },
+  [ROLES.SELLER]: { href: bizSellerAccountUrl },
   [ROLES.ADMIN]: { name: 'dashboards.index' },
   [ROLES.STAFF]: { name: 'dashboards.index' },
   [ROLES.CRM_MEMBER]: { href: bizWebPath('/seller/crm') },
@@ -235,13 +230,18 @@ const roleSwitchOptions = computed(() =>
 )
 
 const frontendApps = computed(() => [
+  { title: 'KKOO Shop', icon: 'solar:home-2-bold', badge: 'Home', href: buyerShopUrl },
   { title: 'Marketplace', icon: 'solar:cart-large-2-bold', badge: 'Buyer', href: buyerWebPath('/personal') },
+  { title: 'For business', icon: 'solar:shop-2-bold', badge: 'Info', href: buyerBusinessUrl },
+  { title: 'For merchants', icon: 'solar:bag-5-bold', badge: 'Info', href: buyerMerchantUrl },
   { title: 'Restaurants', icon: 'solar:chef-hat-bold', badge: 'Eat', href: buyerWebPath('/restaurants') },
   { title: 'Hotels', icon: 'solar:bed-bold', badge: 'Stay', href: buyerWebPath('/hotels') },
   { title: 'Community', icon: 'solar:users-group-rounded-bold', badge: 'People', href: buyerWebPath('/community') },
   { title: 'Share & earn', icon: 'solar:gift-bold', badge: 'Growth', href: buyerWebPath('/share-earn') },
   { title: 'Gift vouchers', icon: 'solar:ticket-bold', badge: 'Gifting', href: buyerWebPath('/vouchers') },
-  { title: 'Merchant', icon: 'solar:bag-5-bold', badge: 'Business', href: buyerWebPath('/merchant') },
+  { title: 'Seller portal', icon: 'solar:widget-5-bold', badge: 'Biz', href: bizSellerDashboardUrl },
+  { title: 'Business CRM', icon: 'solar:buildings-3-bold', badge: 'Biz', href: bizCrmUrl },
+  { title: 'Admin panel', icon: 'solar:shield-user-bold', badge: 'Admin', href: adminDashboardUrl },
   { title: 'KKOORide', icon: 'solar:scooter-bold', badge: 'Mobility', href: buyerWebPath('/courier') },
 ])
 
@@ -259,14 +259,14 @@ const workspaceCards = computed(() => [
     cta: 'Open buyer',
   },
   {
-    title: 'Seller workspace',
+    title: 'Seller account',
     icon: 'solar:shop-2-bold',
     available: roleAvailability.value.has(ROLES.SELLER),
     status: roleAvailability.value.has(ROLES.SELLER) ? 'Available' : 'Register required',
     role: roleAvailability.value.has(ROLES.SELLER) ? ROLES.SELLER : null,
-    route: roleAvailability.value.has(ROLES.SELLER) ? undefined : { name: 'auth.seller-register' },
-    href: roleAvailability.value.has(ROLES.SELLER) ? bizWebPath('/seller') : undefined,
-    cta: 'Open seller',
+    route: undefined,
+    href: roleAvailability.value.has(ROLES.SELLER) ? bizSellerAccountUrl : bizSellerRegisterUrl,
+    cta: roleAvailability.value.has(ROLES.SELLER) ? 'Open seller account' : 'Register business',
     fallbackCta: 'Register business',
   },
   {

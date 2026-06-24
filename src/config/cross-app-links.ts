@@ -1,14 +1,63 @@
-/** Origins for the split KKOO web apps (override via Vite env in staging). */
+/** Origins for the split KKOO web apps — env override, else localhost ports, else production. */
 const env = import.meta.env
 
-export const buyerWebOrigin =
-  (env.VITE_BUYER_WEB_ORIGIN as string | undefined) || 'https://kkooapp.co.tz'
+const PRODUCTION_ORIGINS = {
+  buyer: 'https://kkooapp.co.tz',
+  admin: 'https://admin.kkooapp.co.tz',
+  biz: 'https://biz.kkooapp.co.tz',
+} as const
 
-export const adminWebOrigin =
-  (env.VITE_ADMIN_WEB_ORIGIN as string | undefined) || 'https://admin.kkooapp.co.tz'
+/** Local `npm run dev` ports (see docs/LOCAL_DEV.md). */
+const LOCAL_PORTS = {
+  buyer: 5175,
+  admin: 5173,
+  biz: 5174,
+} as const
 
-export const bizWebOrigin =
-  (env.VITE_BIZ_WEB_ORIGIN as string | undefined) || 'https://biz.kkooapp.co.tz'
+type WebApp = keyof typeof PRODUCTION_ORIGINS
+
+function trimOrigin(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed.replace(/\/$/, '') : undefined
+}
+
+function isLocalHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1'
+}
+
+function localOrigin(port: number): string {
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location
+    return `${protocol}//${hostname}:${port}`
+  }
+  return `http://localhost:${port}`
+}
+
+function resolveAppOrigin(envValue: string | undefined, app: WebApp): string {
+  const fromEnv = trimOrigin(envValue)
+  if (fromEnv) return fromEnv
+
+  if (typeof window !== 'undefined' && isLocalHost(window.location.hostname)) {
+    return localOrigin(LOCAL_PORTS[app])
+  }
+
+  return PRODUCTION_ORIGINS[app]
+}
+
+export const buyerWebOrigin = resolveAppOrigin(
+  env.VITE_BUYER_WEB_ORIGIN as string | undefined,
+  'buyer',
+)
+
+export const adminWebOrigin = resolveAppOrigin(
+  env.VITE_ADMIN_WEB_ORIGIN as string | undefined,
+  'admin',
+)
+
+export const bizWebOrigin = resolveAppOrigin(
+  env.VITE_BIZ_WEB_ORIGIN as string | undefined,
+  'biz',
+)
 
 function joinOrigin(origin: string, path: string) {
   return `${origin.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`
