@@ -25,20 +25,19 @@ export const authApi = {
   refresh(refreshToken: string) {
     return client.post<{ access: string; refresh?: string }>('/users/token/refresh/', { refresh: refreshToken })
   },
-  /** POST /users/otp/request/ – phone_number; also_push can deliver code in-app when user exists (fewer SMS). */
+  /** POST /users/otp/request/ – WhatsApp only (no SMS). */
   requestOtp(
     phone_number: string,
-    options?: { country_code?: string; channel?: 'sms'; also_push?: boolean; app_key?: string },
+    options?: { country_code?: string; also_push?: boolean; app_key?: string },
   ) {
     const body: {
       phone_number: string
       country_code?: string
-      channel?: string
+      channel: 'whatsapp'
       also_push?: boolean
       app_key?: string
-    } = { phone_number }
+    } = { phone_number, channel: 'whatsapp' }
     if (options?.country_code) body.country_code = options.country_code
-    if (options?.channel) body.channel = options.channel
     if (options?.also_push) {
       body.also_push = true
       body.app_key = options.app_key ?? 'admin_panel'
@@ -55,10 +54,12 @@ export const authApi = {
     return client.post<LoginResponse>('/users/otp/verify/', { phone_number, otp_code })
   },
   /** Legacy OTP paths (CUTOVER.md). Backend aliases: POST /users/auth/otp-request/, auth/otp-verify/ */
-  requestOtpLegacy(phone_number: string, country_code?: string, channel?: 'sms') {
-    const body: { phone_number: string; country_code?: string; channel?: string } = { phone_number }
+  requestOtpLegacy(phone_number: string, country_code?: string) {
+    const body: { phone_number: string; country_code?: string; channel: 'whatsapp' } = {
+      phone_number,
+      channel: 'whatsapp',
+    }
     if (country_code) body.country_code = country_code
-    if (channel) body.channel = channel
     return client.post<{ message?: string; debug_otp?: string }>('/users/auth/otp-request/', body)
   },
   verifyOtpLegacy(phone_number: string, otp_code: string) {

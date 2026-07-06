@@ -64,7 +64,7 @@ export default {
     phonePlaceholder: '+255712345678',
     phoneNumber: 'Simu',
     otpCode: 'Msimbo',
-    otpPromptSent: 'Angalia msimbo kwenye simu.',
+    otpPromptSent: 'Angalia WhatsApp kwenye simu yako kwa msimbo.',
     otpPlaceholder: 'Msimbo wa tarakimu 6',
     verifyAndSignIn: 'Thibitisha',
     redirecting: 'Inaelekeza…',

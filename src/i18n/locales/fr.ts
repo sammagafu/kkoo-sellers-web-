@@ -64,7 +64,7 @@ export default {
     phonePlaceholder: '+255712345678',
     phoneNumber: 'Téléphone',
     otpCode: 'Code',
-    otpPromptSent: 'Vérifiez le code sur votre téléphone.',
+    otpPromptSent: 'Vérifiez WhatsApp sur votre téléphone pour le code.',
     otpPlaceholder: 'Code à 6 chiffres',
     verifyAndSignIn: 'Vérifier',
     redirecting: 'Redirection…',
