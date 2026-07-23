@@ -3,11 +3,18 @@
     <b-card title="Push & promo campaigns">
       <p class="text-muted small mb-3">
         Two creative formats:
-        <strong>In-app advert</strong> (1080×1350 portrait, full-screen popup) and
-        <strong>Promotion banner</strong> (full-screen web carousel / 1920×786 app banner).
+        <strong>In-app advert</strong> / full-screen web carousel (1080×1350 portrait) and
+        <strong>Promotion banner</strong> strip placements (1920×786).
         Choose delivery: buyer web, buyers app, carousel slider, or push.
         Link a flash sale, promotion, or <strong>preorder product</strong> so taps open the right deal.
       </p>
+      <div class="campaign-size-cheat mb-3">
+        <div v-for="row in CAMPAIGN_IMAGE_SIZE_SUMMARY" :key="row.size" class="campaign-size-cheat__row">
+          <strong class="campaign-size-cheat__size">{{ row.size }}</strong>
+          <span class="campaign-size-cheat__use">{{ row.use }}</span>
+          <code class="campaign-size-cheat__placements">{{ row.placements }}</code>
+        </div>
+      </div>
       <div class="d-flex flex-wrap gap-2 mb-3">
         <b-button variant="primary" @click="openCreate">Create campaign</b-button>
         <b-button variant="outline-secondary" :disabled="loading" @click="load">Refresh</b-button>
@@ -126,12 +133,33 @@
         </b-form-group>
         <b-form-group label="Image URL" class="mb-2">
           <b-form-input v-model="form.image_url" placeholder="https://… or /media/…" />
-          <p class="text-muted small mb-0 mt-1">{{ imageSpecHint }}</p>
+          <div class="campaign-image-helper mt-2">
+            <div class="campaign-image-helper__meta">
+              <span class="campaign-image-helper__badge">{{ activeCreative.label }}</span>
+              <span class="campaign-image-helper__aspect">{{ activeCreative.aspectLabel }}</span>
+            </div>
+            <p class="campaign-image-helper__hint mb-2">{{ imageSpecHint }}</p>
+            <div
+              class="campaign-image-helper__frame"
+              :class="{ 'campaign-image-helper__frame--portrait': activeCreative.isPortrait }"
+              :style="{ aspectRatio: imageAspectCss(form.placement) }"
+              aria-hidden="true"
+            >
+              <span>{{ activeCreative.width }} × {{ activeCreative.height }}</span>
+            </div>
+            <p class="text-muted small mb-0 mt-2">
+              Optional if a flash sale, promotion, or product is linked — buyer web can fall back to those covers
+              and show up to 6 product thumbnails on the carousel.
+            </p>
+          </div>
         </b-form-group>
         <b-row>
           <b-col md="6">
             <b-form-group label="Placement" class="mb-2">
               <b-form-select v-model="form.placement" :options="placementOptions" />
+              <p class="text-muted small mb-0 mt-1">
+                Size for this placement: <strong>{{ imageSizeBadge(form.placement) }}</strong>
+              </p>
             </b-form-group>
           </b-col>
           <b-col md="6">
@@ -147,7 +175,7 @@
             </b-form-checkbox>
           </div>
           <p class="text-muted small mb-0 mt-1">
-            Check <strong>Push notification</strong> for FCM/inbox. Advert = portrait popup (1080×1350). Banner = 1920×786.
+            Check <strong>Push notification</strong> for FCM/inbox. Advert / web carousel = portrait (1080×1350). Strip banners = 1920×786.
           </p>
         </b-form-group>
         <b-row>
@@ -258,6 +286,13 @@ import {
 } from '@/api'
 import { formatApiError } from '@/utils/formatApiError'
 import { confirmDestructiveAction } from '@/utils/confirmDestructiveAction'
+import {
+  CAMPAIGN_IMAGE_SIZE_SUMMARY,
+  creativeSpecForPlacement,
+  imageAspectCss,
+  imageSizeBadge,
+  imageUploadHint,
+} from '@/utils/campaignCreative'
 
 type CampaignRow = AppCampaignPayload & { id: number }
 
@@ -280,9 +315,9 @@ const promotionOptions = ref<{ value: number | null; text: string }[]>([
 
 const placementOptions = [
   { value: 'inapp_advert', text: 'Full screen — in-app advert (1080×1350 popup)' },
-  { value: 'home_hero', text: 'Home — full-screen hero carousel (web) / banner (app)' },
+  { value: 'home_hero', text: 'Home — full-screen hero carousel (1080×1350 web)' },
   { value: 'promo_banner', text: 'Home — promo strip below hero (1920×786)' },
-  { value: 'promo_carousel', text: 'Home — promo carousel with deals (full-screen on web)' },
+  { value: 'promo_carousel', text: 'Home — promo carousel (1080×1350 full-screen web)' },
   { value: 'food_tab_top', text: 'Eat tab — top banner on restaurant list (1920×786)' },
   { value: 'grocery_tab_top', text: 'Grocery tab — top banner on store list (1920×786)' },
   { value: 'cart_top', text: 'Cart — top banner before line items (1920×786)' },
@@ -313,7 +348,7 @@ const appKeyOptions = [
 const channelOptions = [
   { value: 'web_advert', text: 'Buyer web — in-app advert (1080×1350)' },
   { value: 'app_advert', text: 'Buyers app — in-app advert (1080×1350)' },
-  { value: 'web_banner', text: 'Buyer web — promo banner/carousel (1920×786)' },
+  { value: 'web_banner', text: 'Buyer web — full-screen carousel (1080×1350) / strip (1920×786)' },
   { value: 'app_banner', text: 'Buyers app — promo banner (1920×786)' },
   { value: 'push', text: 'Push notification' },
 ] as const
@@ -326,13 +361,8 @@ const channels = reactive<Record<string, boolean>>({
   push: false,
 })
 
-const imageSpecHint = computed(() => {
-  const p = form.placement
-  if (p === 'inapp_advert' || p === 'modal') {
-    return 'Upload 1080×1350 px (4:5 portrait). Used for full-screen in-app adverts.'
-  }
-  return 'Upload 1920×786 px (promotion banner size). Same as promotion cover images.'
-})
+const imageSpecHint = computed(() => imageUploadHint(form.placement))
+const activeCreative = computed(() => creativeSpecForPlacement(form.placement))
 
 const fields = [
   { key: 'title', label: 'Title' },
@@ -631,3 +661,103 @@ onMounted(async () => {
   await Promise.all([load(), loadDealOptions()])
 })
 </script>
+
+<style scoped>
+.campaign-size-cheat {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--bs-primary) 5%, var(--bs-body-bg));
+}
+
+.campaign-size-cheat__row {
+  display: grid;
+  gap: 0.15rem 0.75rem;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+}
+
+@media (min-width: 768px) {
+  .campaign-size-cheat__row {
+    grid-template-columns: 7.5rem 1fr;
+  }
+
+  .campaign-size-cheat__placements {
+    grid-column: 2;
+  }
+}
+
+.campaign-size-cheat__size {
+  font-variant-numeric: tabular-nums;
+}
+
+.campaign-size-cheat__use {
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+}
+
+.campaign-size-cheat__placements {
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+.campaign-image-helper {
+  padding: 0.75rem 0.85rem;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 0.65rem;
+  background: var(--bs-tertiary-bg, var(--bs-body-bg));
+}
+
+.campaign-image-helper__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.campaign-image-helper__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--bs-primary) 16%, transparent);
+  color: var(--bs-primary);
+}
+
+.campaign-image-helper__aspect {
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+}
+
+.campaign-image-helper__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--bs-body-color);
+}
+
+.campaign-image-helper__frame {
+  width: min(100%, 18rem);
+  max-height: 8.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bs-border-color);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-primary) 12%, transparent), transparent 55%),
+    var(--bs-body-bg);
+  color: var(--bs-secondary-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.campaign-image-helper__frame--portrait {
+  width: min(100%, 8.5rem);
+  max-height: 12rem;
+}
+</style>
