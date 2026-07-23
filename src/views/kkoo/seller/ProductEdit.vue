@@ -217,6 +217,7 @@ import {
   categorySlugsFromProduct,
 } from '@/utils/catalogProductApi'
 import { formatApiError } from '@/utils/formatApiError'
+import { parseVariantAttributes } from '@/utils/skuDisplay'
 import { toastError, toastSuccess } from '@/utils/toast'
 
 const route = useRoute()
@@ -492,7 +493,7 @@ function hasColorWeightSizeDimensions(spec: unknown): boolean {
 function parseSkus(skus: unknown): { sku_code: string; stock_quantity: number; price_override?: number | null; variant_text?: string; color?: string; weight?: string; size?: string }[] {
   if (!Array.isArray(skus)) return []
   return skus.map((s: Record<string, unknown>) => {
-    const va = (s.variant_attributes && typeof s.variant_attributes === 'object' ? s.variant_attributes : {}) as Record<string, string>
+    const va = parseVariantAttributes(s.variant_attributes)
     return {
       sku_code: String(s.sku_code ?? ''),
       stock_quantity: Number(s.stock_quantity ?? 0),

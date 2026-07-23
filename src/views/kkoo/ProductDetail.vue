@@ -97,7 +97,7 @@
           small
         >
           <template #cell(variant_attributes)="data">
-            {{ data.value && typeof data.value === 'object' ? JSON.stringify(data.value) : (data.value ?? '—') }}
+            {{ formatVariantAttributesDisplay(data.value) }}
           </template>
         </b-table>
         <p v-else class="text-muted">No SKUs.</p>
@@ -127,6 +127,7 @@ import {
   categoryDisplayFromProduct,
 } from '@/utils/catalogProductApi'
 import { formatApiError } from '@/utils/formatApiError'
+import { formatVariantAttributesDisplay } from '@/utils/skuDisplay'
 
 const route = useRoute()
 const router = useRouter()
@@ -159,13 +160,16 @@ const skus = computed(() => {
   return []
 })
 
-const skuFields = [
-  { key: 'id', label: 'ID' },
-  { key: 'sku_code', label: 'Code' },
-  { key: 'stock_quantity', label: 'Stock' },
-  { key: 'price_override', label: 'Price override' },
-  { key: 'variant_attributes', label: 'Variants' },
-]
+const skuFields = computed(() => {
+  const base = [
+    { key: 'id', label: 'ID' },
+    { key: 'sku_code', label: 'Code' },
+    { key: 'stock_quantity', label: 'Stock' },
+    { key: 'price_override', label: 'Price override' },
+  ]
+  const hasVariants = skus.value.some((s) => formatVariantAttributesDisplay(s.variant_attributes ?? s.label))
+  return hasVariants ? [...base, { key: 'variant_attributes', label: 'Variants' }] : base
+})
 
 function formatPrice(val: unknown): string {
   if (val == null) return '—'
