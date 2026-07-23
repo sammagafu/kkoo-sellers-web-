@@ -54,13 +54,7 @@
           </span>
         </template>
         <template #cell(window)="row">
-          <div class="campaign-window">
-            <div class="campaign-window__left">{{ formatDaysLeft(row.item.end_at) }}</div>
-            <div class="campaign-window__meta">
-              <span>Started {{ formatRelativeDate(row.item.start_at) }}</span>
-              <span>Ends {{ formatRelativeDate(row.item.end_at) }}</span>
-            </div>
-          </div>
+          <span class="small">{{ row.item.start_at }} → {{ row.item.end_at }}</span>
         </template>
         <template #cell(active)="row">
           <b-badge :variant="row.item.is_active ? 'success' : 'secondary'">
@@ -68,32 +62,11 @@
           </b-badge>
         </template>
         <template #cell(actions)="row">
-          <div class="campaign-actions">
-            <b-button
-              size="sm"
-              variant="outline-success"
-              :disabled="pushingId === row.item.id || deletingId === row.item.id"
-              @click="pushNow(row.item)"
-            >
-              {{ pushingId === row.item.id ? 'Pushing…' : 'Push' }}
-            </b-button>
-            <b-button
-              size="sm"
-              variant="outline-primary"
-              :disabled="deletingId === row.item.id"
-              @click="openEdit(row.item)"
-            >
-              Edit
-            </b-button>
-            <b-button
-              size="sm"
-              variant="outline-danger"
-              :disabled="deletingId === row.item.id"
-              @click="remove(row.item)"
-            >
-              {{ deletingId === row.item.id ? 'Deleting…' : 'Delete' }}
-            </b-button>
-          </div>
+          <b-button size="sm" variant="outline-success" class="me-1" :disabled="pushingId === row.item.id" @click="pushNow(row.item)">
+            {{ pushingId === row.item.id ? 'Pushing…' : 'Push' }}
+          </b-button>
+          <b-button size="sm" variant="outline-primary" class="me-1" @click="openEdit(row.item)">Edit</b-button>
+          <b-button size="sm" variant="outline-danger" @click="remove(row.item)">Delete</b-button>
         </template>
       </b-table>
       <p v-else-if="!loading" class="text-muted mb-0">No campaigns yet.</p>
@@ -363,7 +336,7 @@ import {
 } from '@/api'
 import { resolveAssetUrl } from '@/utils/assetUrl'
 import { formatApiError } from '@/utils/formatApiError'
-import { formatDaysLeft, formatRelativeDate } from '@/utils/humanizeDate'
+import { confirmDestructiveAction } from '@/utils/confirmDestructiveAction'
 import {
   CAMPAIGN_IMAGE_SIZE_SUMMARY,
   creativeSpecForPlacement,
@@ -371,7 +344,6 @@ import {
   imageSizeBadge,
   imageUploadHint,
 } from '@/utils/campaignCreative'
-import Swal from 'sweetalert2'
 
 type CampaignRow = AppCampaignPayload & { id: number }
 
@@ -383,7 +355,6 @@ const saving = ref(false)
 const pushMsg = ref('')
 const announceMsg = ref('')
 const pushingId = ref<number | null>(null)
-const deletingId = ref<number | null>(null)
 const announcing = ref(false)
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
@@ -459,7 +430,7 @@ const fields = [
   { key: 'placement', label: 'Placement' },
   { key: 'channels', label: 'Channels' },
   { key: 'deal', label: 'Deal' },
-  { key: 'window', label: 'Time left' },
+  { key: 'window', label: 'Window' },
   { key: 'priority', label: 'Priority' },
   { key: 'active', label: 'Active' },
   { key: 'actions', label: '' },
@@ -916,47 +887,17 @@ async function announceDeal() {
 }
 
 async function remove(row: CampaignRow) {
-  const result = await Swal.fire({
-    title: 'Delete this campaign?',
-    html: `<p class="mb-1"><strong>${escapeHtml(row.title)}</strong></p>
-      <p class="small text-muted mb-0">It will be removed from buyer surfaces. Type <strong>delete</strong> to confirm.</p>
-      <input id="swal-campaign-delete" class="swal2-input" placeholder="Type: delete" autocomplete="off" />`,
-    icon: 'warning',
-    showCancelButton: true,
-    focusConfirm: false,
-    confirmButtonText: 'Delete campaign',
-    confirmButtonColor: '#d33',
-    preConfirm: () => {
-      const input = document.getElementById('swal-campaign-delete') as HTMLInputElement | null
-      const word = input?.value.trim().toLowerCase() ?? ''
-      if (word !== 'delete') {
-        Swal.showValidationMessage('Type “delete” to confirm.')
-        return
-      }
-      return true
-    },
+  const ok = await confirmDestructiveAction({
+    title: 'Delete campaign?',
+    text: row.title,
   })
-  if (!result.isConfirmed) return
-
-  deletingId.value = row.id
-  error.value = ''
+  if (!ok) return
   try {
     await campaignsAdminApi.delete(row.id)
-    pushMsg.value = `Deleted “${row.title}”.`
     await load()
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Delete failed')
-  } finally {
-    deletingId.value = null
   }
-}
-
-function escapeHtml(s: string) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 onMounted(async () => {
@@ -965,50 +906,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.campaign-window {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 9rem;
-}
-
-.campaign-window__left {
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.campaign-window__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  font-size: 0.75rem;
-  color: var(--bs-secondary-color);
-}
-
-.campaign-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  min-width: 7.5rem;
-}
-
-.campaign-actions .btn {
-  flex: 1 1 auto;
-  white-space: nowrap;
-}
-
-@media (max-width: 1400px) {
-  .campaign-actions {
-    flex-direction: column;
-    align-items: stretch;
-    min-width: 6.5rem;
-  }
-
-  .campaign-actions .btn {
-    width: 100%;
-  }
-}
-
 .campaign-size-cheat {
   display: grid;
   gap: 0.55rem;

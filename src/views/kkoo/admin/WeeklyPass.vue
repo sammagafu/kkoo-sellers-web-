@@ -251,7 +251,11 @@ async function savePass() {
 async function deactivate(item: WeeklyPassRow) {
   const id = Number(item.id)
   if (!id) return
-  const ok = await confirmDestructiveAction({ title: 'Deactivate weekly pass?', text: `Deactivate "${item.title ?? id}"?` })
+  const ok = await confirmDestructiveAction({
+    title: 'Deactivate weekly pass?',
+    text: `Deactivate "${item.title ?? id}"?`,
+    confirmText: 'Deactivate',
+  })
   if (!ok) return
   try {
     await weeklyPassApi.adminDelete(id)
