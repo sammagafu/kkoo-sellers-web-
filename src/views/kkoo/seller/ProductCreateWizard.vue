@@ -69,6 +69,30 @@
               </b-form-group>
             </b-col>
             <b-col cols="12">
+              <h6 class="mb-2">Pre-order</h6>
+              <b-form-checkbox v-model="form.allow_preorder" class="mb-2">
+                Allow pre-order when out of stock
+              </b-form-checkbox>
+              <b-form-checkbox v-if="form.allow_preorder" v-model="form.preorder_requires_stock" class="mb-2">
+                Cap pre-orders by stock quantity (no oversell)
+              </b-form-checkbox>
+              <b-row v-if="form.allow_preorder">
+                <b-col md="4">
+                  <b-form-group label="Expected available date" class="mb-3">
+                    <b-form-input v-model="form.preorder_eta" type="date" />
+                  </b-form-group>
+                </b-col>
+                <b-col md="8">
+                  <b-form-group label="Pre-order note" class="mb-3">
+                    <b-form-input v-model="form.preorder_note" maxlength="255" placeholder="e.g. Ships in 2 weeks" />
+                  </b-form-group>
+                </b-col>
+              </b-row>
+              <b-form-checkbox v-model="form.requires_prescription" class="mb-2">
+                Requires prescription
+              </b-form-checkbox>
+            </b-col>
+            <b-col cols="12">
               <h6 class="mb-2 d-inline-flex align-items-center">
                 SKUs (at least one)
                 <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-create-skus" aria-label="What is needed"><small>ⓘ</small></b-button>
@@ -245,6 +269,11 @@ const form = reactive({
   base_price: 0 as number | string,
   discount_price: null as number | null | string,
   weight_kg: null as number | null | string,
+  allow_preorder: false,
+  preorder_requires_stock: false,
+  preorder_eta: '' as string,
+  preorder_note: '' as string,
+  requires_prescription: false,
   useVariationTemplate: false,
   skus: [] as { stock_quantity: number; price_override?: number | null; variant_text?: string; color?: string; weight?: string; size?: string }[],
   specifications: [] as { input_type: string; label: string; value: string }[],
@@ -378,6 +407,13 @@ function buildPayload(asDraft: boolean): Record<string, unknown> {
   if (form.weight_kg != null && String(form.weight_kg) !== '') {
     const w = Number(form.weight_kg)
     if (Number.isFinite(w)) payload.weight_kg = w
+  }
+  payload.allow_preorder = form.allow_preorder
+  payload.preorder_requires_stock = form.preorder_requires_stock
+  payload.requires_prescription = form.requires_prescription
+  if (form.allow_preorder) {
+    if (form.preorder_note.trim()) payload.preorder_note = form.preorder_note.trim()
+    if (form.preorder_eta) payload.preorder_eta = form.preorder_eta
   }
   if (form.cover_image?.trim() && !form.cover_file) payload.cover_image = form.cover_image.trim()
   return payload

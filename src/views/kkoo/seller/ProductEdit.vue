@@ -67,6 +67,30 @@
                 </b-form-group>
               </b-col>
               <b-col cols="12">
+                <h6 class="mb-2">Pre-order</h6>
+                <b-form-checkbox v-model="form.allow_preorder" class="mb-2">
+                  Allow pre-order when out of stock
+                </b-form-checkbox>
+                <b-form-checkbox v-if="form.allow_preorder" v-model="form.preorder_requires_stock" class="mb-2">
+                  Cap pre-orders by stock quantity (no oversell)
+                </b-form-checkbox>
+                <b-row v-if="form.allow_preorder">
+                  <b-col md="4">
+                    <b-form-group label="Expected available date" class="mb-3">
+                      <b-form-input v-model="form.preorder_eta" type="date" />
+                    </b-form-group>
+                  </b-col>
+                  <b-col md="8">
+                    <b-form-group label="Pre-order note" class="mb-3">
+                      <b-form-input v-model="form.preorder_note" maxlength="255" placeholder="e.g. Ships in 2 weeks" />
+                    </b-form-group>
+                  </b-col>
+                </b-row>
+                <b-form-checkbox v-model="form.requires_prescription" class="mb-2">
+                  Requires prescription
+                </b-form-checkbox>
+              </b-col>
+              <b-col cols="12">
                 <h6 class="mb-2 d-inline-flex align-items-center">
                   SKUs
                   <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-edit-skus" aria-label="What is needed"><small>ⓘ</small></b-button>
@@ -231,6 +255,11 @@ const form = reactive({
   base_price: 0 as number,
   discount_price: null as number | null,
   weight_kg: null as number | null,
+  allow_preorder: false,
+  preorder_requires_stock: false,
+  preorder_eta: '' as string,
+  preorder_note: '' as string,
+  requires_prescription: false,
   useVariationTemplate: false,
   skus: [] as { sku_code: string; stock_quantity: number; price_override?: number | null; variant_text?: string; color?: string; weight?: string; size?: string }[],
   specifications: [] as { input_type: string; label: string; value: string }[],
@@ -352,6 +381,11 @@ function buildPayload(asDraft: boolean): Record<string, unknown> {
     base_price: form.base_price,
     discount_price: form.discount_price,
     weight_kg: form.weight_kg ?? undefined,
+    allow_preorder: form.allow_preorder,
+    preorder_requires_stock: form.preorder_requires_stock,
+    preorder_note: form.allow_preorder ? form.preorder_note || undefined : '',
+    preorder_eta: form.allow_preorder && form.preorder_eta ? form.preorder_eta : '',
+    requires_prescription: form.requires_prescription,
     specification: { specs },
     skus: form.skus.map((s, i) => ({
       sku_code: s.sku_code,
@@ -509,6 +543,12 @@ onMounted(async () => {
     form.base_price = Number(d.base_price ?? 0)
     form.discount_price = d.discount_price != null ? Number(d.discount_price) : null
     form.weight_kg = d.weight_kg != null ? Number(d.weight_kg) : null
+    form.allow_preorder = Boolean(d.allow_preorder)
+    form.preorder_requires_stock = Boolean(d.preorder_requires_stock)
+    form.preorder_note = String(d.preorder_note ?? '')
+    const eta = d.preorder_eta
+    form.preorder_eta = eta ? String(eta).slice(0, 10) : ''
+    form.requires_prescription = Boolean(d.requires_prescription)
     const images = d.images as string[] | undefined
     const cover = (d.cover_image ?? d.image ?? d.thumbnail ?? d.cover ?? images?.[0]) as string | undefined
     form.cover_image = cover ?? ''
