@@ -117,7 +117,8 @@
       </b-form>
     </b-card>
 
-    <b-modal v-model="showModal" :title="editingId ? 'Edit campaign' : 'Create campaign'" size="lg" @ok="save">
+    <b-modal v-model="showModal" :title="editingId ? 'Edit campaign' : 'Create campaign'" size="lg" @ok="onModalOk">
+      <b-alert v-if="modalError" variant="danger" show class="mb-3">{{ modalError }}</b-alert>
       <b-form>
         <b-form-group label="Title" class="mb-2">
           <b-form-input v-model="form.title" required />
@@ -223,6 +224,15 @@
                 </b-button>
               </div>
               <b-form-input
+                v-model.number="manualProductId"
+                type="number"
+                min="1"
+                class="mb-2"
+                placeholder="Or enter product ID directly"
+                :disabled="form.action_type !== 'preorder'"
+                @change="applyManualProductId"
+              />
+              <b-form-input
                 v-model="productSearchQuery"
                 placeholder="Search by title or slug..."
                 :disabled="form.action_type !== 'preorder'"
@@ -242,13 +252,13 @@
                 </button>
               </div>
               <p v-else-if="productSearchQuery.trim()" class="text-muted small mb-0 mt-1">
-                No products found. Try another search.
+                No products found. Try another search or enter the product ID above.
               </p>
               <p v-if="form.action_type === 'preorder' && editingId && form.remaining_stock != null" class="text-muted small mb-0 mt-1">
                 Remaining stock: {{ Number(form.remaining_stock).toLocaleString() }}
               </p>
               <p v-else-if="form.action_type === 'preorder'" class="text-muted small mb-0 mt-1">
-                Search and pick the capped SKU product for this preorder campaign.
+                Search and pick the capped SKU product, or type its ID, then save.
               </p>
             </b-form-group>
           </b-col>
@@ -340,6 +350,8 @@ type CampaignRow = AppCampaignPayload & { id: number }
 const items = ref<CampaignRow[]>([])
 const loading = ref(false)
 const error = ref('')
+const modalError = ref('')
+const saving = ref(false)
 const pushMsg = ref('')
 const announceMsg = ref('')
 const pushingId = ref<number | null>(null)
@@ -352,6 +364,7 @@ const productSearchQuery = ref('')
 const productSearchLoading = ref(false)
 const productSearchResults = ref<Array<{ id: number; title: string; slug: string }>>([])
 const selectedProductLabel = ref('')
+const manualProductId = ref<number | null>(null)
 let productSearchDebounce: ReturnType<typeof setTimeout> | null = null
 
 const flashSaleOptions = ref<{ value: number | null; text: string }[]>([
@@ -495,21 +508,47 @@ function resetProductSearch() {
   productSearchQuery.value = ''
   productSearchResults.value = []
   selectedProductLabel.value = ''
+  manualProductId.value = null
 }
 
 function clearSelectedProduct() {
   form.product_id = null
+  manualProductId.value = null
   resetProductSearch()
 }
 
 function selectProduct(prod: { id: number; title: string; slug: string }) {
   form.product_id = prod.id
+  manualProductId.value = prod.id
   selectedProductLabel.value = prod.title
   productSearchQuery.value = ''
   productSearchResults.value = []
   if (!form.cta_route?.trim() || form.cta_route.startsWith('/product/s/')) {
     form.cta_route = `/product/s/${prod.slug}`
   }
+}
+
+function applyManualProductId() {
+  const id = Number(manualProductId.value)
+  if (!Number.isFinite(id) || id <= 0) {
+    return
+  }
+  form.product_id = id
+  selectedProductLabel.value = `Product #${id}`
+}
+
+function toRfc3339(raw: string) {
+  const s = String(raw ?? '').trim()
+  if (!s) return ''
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    // Already ISO-ish; normalize space timezone to Z when needed
+    try {
+      return new Date(s).toISOString()
+    } catch {
+      return s
+    }
+  }
+  return s
 }
 
 function debouncedSearchProducts() {
@@ -576,9 +615,13 @@ function appendFormToFormData(fd: FormData) {
     fd.append('promotion_id', String(form.promotion_id))
   }
   fd.append('action_type', form.action_type === 'preorder' ? 'preorder' : '')
-  if (form.action_type === 'preorder' && form.product_id && form.product_id > 0) {
-    fd.append('product_id', String(form.product_id))
-  }
+  // Always send product_id so backend can clear or replace the link.
+  fd.append(
+    'product_id',
+    form.action_type === 'preorder' && form.product_id && form.product_id > 0
+      ? String(form.product_id)
+      : '',
+  )
   fd.append('badge', form.badge ?? '')
   fd.append('cta_label', form.cta_label ?? '')
   fd.append('cta_route', form.cta_route ?? '')
@@ -626,11 +669,13 @@ function resetForm() {
 
 function openCreate() {
   resetForm()
+  modalError.value = ''
   showModal.value = true
 }
 
 function openEdit(row: CampaignRow) {
   editingId.value = row.id
+  modalError.value = ''
   Object.assign(form, {
     title: row.title ?? '',
     subtitle: row.subtitle ?? '',
@@ -644,8 +689,8 @@ function openEdit(row: CampaignRow) {
     product_id: row.product_id ?? null,
     remaining_stock: row.remaining_stock ?? null,
     badge: row.badge ?? '',
-    start_at: String(row.start_at ?? ''),
-    end_at: String(row.end_at ?? ''),
+    start_at: toRfc3339(String(row.start_at ?? '')),
+    end_at: toRfc3339(String(row.end_at ?? '')),
     cta_label: row.cta_label ?? '',
     cta_route: row.cta_route ?? '',
     cta_external_url: row.cta_external_url ?? '',
@@ -663,6 +708,7 @@ function openEdit(row: CampaignRow) {
       : row.product_id
         ? `Product #${row.product_id}`
         : ''
+  manualProductId.value = row.product_id ?? null
   productSearchQuery.value = ''
   productSearchResults.value = []
   imagePreview.value = resolveAssetUrl(row.image_url ?? '') ?? ''
@@ -714,16 +760,26 @@ async function load() {
   }
 }
 
-async function save(ev: Event) {
+async function onModalOk(ev: Event) {
   ev.preventDefault()
+  await save()
+}
+
+async function save() {
+  modalError.value = ''
+  error.value = ''
   if (!form.title?.trim() || !form.start_at || !form.end_at) {
-    error.value = 'Title, start_at, and end_at are required (RFC3339).'
+    modalError.value = 'Title, start_at, and end_at are required (RFC3339).'
     return
   }
-  if (form.action_type === 'preorder' && !(form.product_id && form.product_id > 0)) {
-    error.value = 'Preorder campaigns require a product. Search and select one.'
-    return
+  if (form.action_type === 'preorder') {
+    applyManualProductId()
+    if (!(form.product_id && form.product_id > 0)) {
+      modalError.value = 'Preorder campaigns require a product. Search, pick one, or enter its ID.'
+      return
+    }
   }
+  saving.value = true
   try {
     const hasImageFile = !!imageFile.value
     if (hasImageFile) {
@@ -738,6 +794,8 @@ async function save(ev: Event) {
     } else {
       const payload: AppCampaignPayload & { is_active?: boolean } = {
         ...form,
+        start_at: toRfc3339(form.start_at),
+        end_at: toRfc3339(form.end_at),
         delivery_channels: channelsToString(),
         gift_voucher_id: form.gift_voucher_id && form.gift_voucher_id > 0 ? form.gift_voucher_id : null,
         flash_sale_id: form.flash_sale_id && form.flash_sale_id > 0 ? form.flash_sale_id : null,
@@ -763,7 +821,10 @@ async function save(ev: Event) {
     resetForm()
     await load()
   } catch (e: unknown) {
-    error.value = formatApiError(e, 'Save failed')
+    modalError.value = formatApiError(e, 'Save failed')
+    error.value = modalError.value
+  } finally {
+    saving.value = false
   }
 }
 
