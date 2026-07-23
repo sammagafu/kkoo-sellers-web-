@@ -39,7 +39,8 @@
           <span class="small">
             <template v-if="row.item.action_type === 'preorder'">
               Preorder
-              <template v-if="row.item.product_id"> · product #{{ row.item.product_id }}</template>
+              <template v-if="row.item.product_title"> · {{ row.item.product_title }}</template>
+              <template v-else-if="row.item.product_id"> · product #{{ row.item.product_id }}</template>
               <template v-if="row.item.remaining_stock != null">
                 · {{ Number(row.item.remaining_stock).toLocaleString() }} left
               </template>
@@ -131,8 +132,15 @@
             Leave as Auto to infer from action / flash sale / gift.
           </p>
         </b-form-group>
-        <b-form-group label="Image URL" class="mb-2">
-          <b-form-input v-model="form.image_url" placeholder="https://… or /media/…" />
+        <b-form-group label="Campaign image" class="mb-2">
+          <img
+            v-if="imagePreview"
+            :src="imagePreview"
+            alt="Campaign preview"
+            class="campaign-image-preview mb-2"
+          />
+          <input type="file" accept="image/*" class="form-control mb-2" @change="onImageFileChange" />
+          <b-form-input v-model="form.image_url" placeholder="Or paste image URL (https://… or /media/…)" />
           <div class="campaign-image-helper mt-2">
             <div class="campaign-image-helper__meta">
               <span class="campaign-image-helper__badge">{{ activeCreative.label }}</span>
@@ -200,16 +208,47 @@
             </b-form-group>
           </b-col>
           <b-col md="6">
-            <b-form-group label="Product ID (preorder)" class="mb-2">
+            <b-form-group label="Preorder product" class="mb-2">
+              <div v-if="selectedProductLabel" class="d-flex align-items-center gap-2 mb-2">
+                <b-badge variant="primary" class="text-wrap text-start">
+                  #{{ form.product_id }} · {{ selectedProductLabel }}
+                </b-badge>
+                <b-button
+                  size="sm"
+                  variant="outline-secondary"
+                  :disabled="form.action_type !== 'preorder'"
+                  @click="clearSelectedProduct"
+                >
+                  Clear
+                </b-button>
+              </div>
               <b-form-input
-                v-model.number="form.product_id"
-                type="number"
-                min="0"
-                placeholder="e.g. 146"
+                v-model="productSearchQuery"
+                placeholder="Search by title or slug..."
                 :disabled="form.action_type !== 'preorder'"
+                @input="debouncedSearchProducts"
               />
+              <p v-if="productSearchLoading" class="text-muted small mb-0 mt-1">Searching…</p>
+              <div v-else-if="productSearchResults.length" class="campaign-product-results mt-2">
+                <button
+                  v-for="prod in productSearchResults"
+                  :key="String(prod.id)"
+                  type="button"
+                  class="campaign-product-results__item"
+                  @click="selectProduct(prod)"
+                >
+                  <span class="campaign-product-results__title">#{{ prod.id }} · {{ prod.title }}</span>
+                  <span class="campaign-product-results__slug">{{ prod.slug }}</span>
+                </button>
+              </div>
+              <p v-else-if="productSearchQuery.trim()" class="text-muted small mb-0 mt-1">
+                No products found. Try another search.
+              </p>
               <p v-if="form.action_type === 'preorder' && editingId && form.remaining_stock != null" class="text-muted small mb-0 mt-1">
                 Remaining stock: {{ Number(form.remaining_stock).toLocaleString() }}
+              </p>
+              <p v-else-if="form.action_type === 'preorder'" class="text-muted small mb-0 mt-1">
+                Search and pick the capped SKU product for this preorder campaign.
               </p>
             </b-form-group>
           </b-col>
@@ -275,15 +314,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import {
   campaignsAdminApi,
   pushAnnouncementsApi,
   promotionsAdminApi,
   adminListFlashSales,
+  catalogAdminApi,
   type AppCampaignPayload,
 } from '@/api'
+import { resolveAssetUrl } from '@/utils/assetUrl'
 import { formatApiError } from '@/utils/formatApiError'
 import { confirmDestructiveAction } from '@/utils/confirmDestructiveAction'
 import {
@@ -305,6 +346,13 @@ const pushingId = ref<number | null>(null)
 const announcing = ref(false)
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
+const imageFile = ref<File | null>(null)
+const imagePreview = ref('')
+const productSearchQuery = ref('')
+const productSearchLoading = ref(false)
+const productSearchResults = ref<Array<{ id: number; title: string; slug: string }>>([])
+const selectedProductLabel = ref('')
+let productSearchDebounce: ReturnType<typeof setTimeout> | null = null
 
 const flashSaleOptions = ref<{ value: number | null; text: string }[]>([
   { value: null, text: '— None —' },
@@ -401,6 +449,15 @@ const form = reactive<AppCampaignPayload & { is_active?: boolean }>({
   is_active: true,
 })
 
+watch(
+  () => form.image_url,
+  (url) => {
+    if (!imageFile.value) {
+      imagePreview.value = resolveAssetUrl(url) ?? ''
+    }
+  },
+)
+
 const announce = reactive({
   title: '',
   message: '',
@@ -434,6 +491,107 @@ function applyChannelsFromString(raw?: string) {
   })
 }
 
+function resetProductSearch() {
+  productSearchQuery.value = ''
+  productSearchResults.value = []
+  selectedProductLabel.value = ''
+}
+
+function clearSelectedProduct() {
+  form.product_id = null
+  resetProductSearch()
+}
+
+function selectProduct(prod: { id: number; title: string; slug: string }) {
+  form.product_id = prod.id
+  selectedProductLabel.value = prod.title
+  productSearchQuery.value = ''
+  productSearchResults.value = []
+  if (!form.cta_route?.trim() || form.cta_route.startsWith('/product/s/')) {
+    form.cta_route = `/product/s/${prod.slug}`
+  }
+}
+
+function debouncedSearchProducts() {
+  if (productSearchDebounce) clearTimeout(productSearchDebounce)
+  productSearchDebounce = setTimeout(searchProducts, 300)
+}
+
+async function searchProducts() {
+  const q = productSearchQuery.value.trim()
+  if (!q) {
+    productSearchResults.value = []
+    return
+  }
+  productSearchLoading.value = true
+  try {
+    const { data } = await catalogAdminApi.listProducts({ search: q, page_size: 12 })
+    const raw = Array.isArray(data) ? data : (data as { results?: unknown[] })?.results ?? []
+    productSearchResults.value = (raw as Record<string, unknown>[])
+      .map((row) => ({
+        id: Number(row.id),
+        title: String(row.title ?? row.name ?? ''),
+        slug: String(row.slug ?? ''),
+      }))
+      .filter((row) => row.id > 0 && row.title)
+  } catch {
+    productSearchResults.value = []
+  } finally {
+    productSearchLoading.value = false
+  }
+}
+
+function resetImageUpload() {
+  imageFile.value = null
+  imagePreview.value = ''
+}
+
+function onImageFileChange(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+  imageFile.value = file
+  if (file) {
+    imagePreview.value = URL.createObjectURL(file)
+  } else if (form.image_url) {
+    imagePreview.value = resolveAssetUrl(form.image_url) ?? ''
+  } else {
+    imagePreview.value = ''
+  }
+}
+
+function appendFormToFormData(fd: FormData) {
+  fd.append('title', form.title)
+  fd.append('subtitle', form.subtitle ?? '')
+  fd.append('image_url', form.image_url ?? '')
+  fd.append('placement', form.placement ?? 'promo_banner')
+  fd.append('delivery_channels', channelsToString())
+  if (form.gift_voucher_id && form.gift_voucher_id > 0) {
+    fd.append('gift_voucher_id', String(form.gift_voucher_id))
+  }
+  fd.append('gift_label', form.gift_label ?? '')
+  if (form.flash_sale_id && form.flash_sale_id > 0) {
+    fd.append('flash_sale_id', String(form.flash_sale_id))
+  }
+  if (form.promotion_id && form.promotion_id > 0) {
+    fd.append('promotion_id', String(form.promotion_id))
+  }
+  fd.append('action_type', form.action_type === 'preorder' ? 'preorder' : '')
+  if (form.action_type === 'preorder' && form.product_id && form.product_id > 0) {
+    fd.append('product_id', String(form.product_id))
+  }
+  fd.append('badge', form.badge ?? '')
+  fd.append('cta_label', form.cta_label ?? '')
+  fd.append('cta_route', form.cta_route ?? '')
+  fd.append('cta_external_url', form.cta_external_url ?? '')
+  fd.append('priority', String(form.priority ?? 10))
+  fd.append('start_at', form.start_at)
+  fd.append('end_at', form.end_at)
+  fd.append('target_app_key', form.target_app_key ?? 'marketplace')
+  fd.append('max_impressions_per_user', String(form.max_impressions_per_user ?? 5))
+  fd.append('cooldown_hours', String(form.cooldown_hours ?? 24))
+  fd.append('is_active', String(form.is_active !== false))
+}
+
 function resetForm() {
   editingId.value = null
   Object.assign(form, {
@@ -462,6 +620,8 @@ function resetForm() {
     is_active: true,
   })
   applyChannelsFromString('web_banner,push')
+  resetImageUpload()
+  resetProductSearch()
 }
 
 function openCreate() {
@@ -497,6 +657,16 @@ function openEdit(row: CampaignRow) {
     is_active: row.is_active !== false,
   })
   applyChannelsFromString(row.delivery_channels)
+  selectedProductLabel.value =
+    row.product_title && row.product_id
+      ? row.product_title
+      : row.product_id
+        ? `Product #${row.product_id}`
+        : ''
+  productSearchQuery.value = ''
+  productSearchResults.value = []
+  imagePreview.value = resolveAssetUrl(row.image_url ?? '') ?? ''
+  imageFile.value = null
   showModal.value = true
 }
 
@@ -551,31 +721,43 @@ async function save(ev: Event) {
     return
   }
   if (form.action_type === 'preorder' && !(form.product_id && form.product_id > 0)) {
-    error.value = 'Preorder campaigns require a product ID (capped SKU product).'
+    error.value = 'Preorder campaigns require a product. Search and select one.'
     return
   }
   try {
-    const payload: AppCampaignPayload & { is_active?: boolean } = {
-      ...form,
-      delivery_channels: channelsToString(),
-      gift_voucher_id: form.gift_voucher_id && form.gift_voucher_id > 0 ? form.gift_voucher_id : null,
-      flash_sale_id: form.flash_sale_id && form.flash_sale_id > 0 ? form.flash_sale_id : null,
-      promotion_id: form.promotion_id && form.promotion_id > 0 ? form.promotion_id : null,
-      action_type: form.action_type === 'preorder' ? 'preorder' : '',
-      product_id:
-        form.action_type === 'preorder' && form.product_id && form.product_id > 0
-          ? form.product_id
-          : null,
-      badge: form.badge || '',
-    }
-    delete (payload as { remaining_stock?: number | null }).remaining_stock
-    delete (payload as { product_slug?: string }).product_slug
-    delete (payload as { product_title?: string }).product_title
-    delete (payload as { badge_label?: string }).badge_label
-    if (editingId.value != null) {
-      await campaignsAdminApi.patch(editingId.value, payload)
+    const hasImageFile = !!imageFile.value
+    if (hasImageFile) {
+      const fd = new FormData()
+      appendFormToFormData(fd)
+      fd.append('image', imageFile.value!)
+      if (editingId.value != null) {
+        await campaignsAdminApi.patchWithImage(editingId.value, fd)
+      } else {
+        await campaignsAdminApi.createWithImage(fd)
+      }
     } else {
-      await campaignsAdminApi.create(payload)
+      const payload: AppCampaignPayload & { is_active?: boolean } = {
+        ...form,
+        delivery_channels: channelsToString(),
+        gift_voucher_id: form.gift_voucher_id && form.gift_voucher_id > 0 ? form.gift_voucher_id : null,
+        flash_sale_id: form.flash_sale_id && form.flash_sale_id > 0 ? form.flash_sale_id : null,
+        promotion_id: form.promotion_id && form.promotion_id > 0 ? form.promotion_id : null,
+        action_type: form.action_type === 'preorder' ? 'preorder' : '',
+        product_id:
+          form.action_type === 'preorder' && form.product_id && form.product_id > 0
+            ? form.product_id
+            : null,
+        badge: form.badge || '',
+      }
+      delete (payload as { remaining_stock?: number | null }).remaining_stock
+      delete (payload as { product_slug?: string }).product_slug
+      delete (payload as { product_title?: string }).product_title
+      delete (payload as { badge_label?: string }).badge_label
+      if (editingId.value != null) {
+        await campaignsAdminApi.patch(editingId.value, payload)
+      } else {
+        await campaignsAdminApi.create(payload)
+      }
     }
     showModal.value = false
     resetForm()
@@ -699,6 +881,54 @@ onMounted(async () => {
 }
 
 .campaign-size-cheat__placements {
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+.campaign-image-preview {
+  display: block;
+  width: min(100%, 18rem);
+  max-height: 10rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bs-border-color);
+}
+
+.campaign-product-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 12rem;
+  overflow: auto;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 0.35rem;
+  background: var(--bs-body-bg);
+}
+
+.campaign-product-results__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  text-align: left;
+}
+
+.campaign-product-results__item:hover {
+  background: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.04));
+}
+
+.campaign-product-results__title {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.campaign-product-results__slug {
   font-size: 0.75rem;
   color: var(--bs-secondary-color);
 }

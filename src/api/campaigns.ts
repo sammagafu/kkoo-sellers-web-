@@ -63,8 +63,16 @@ export const campaignsAdminApi = {
   create(data: AppCampaignPayload) {
     return client.post('/admin/campaigns/', data)
   },
+  /** Create campaign with image upload (multipart). Optional image field: image, image_file, cover_image, or cover. */
+  createWithImage(formData: FormData) {
+    return client.post('/admin/campaigns/', formData)
+  },
   patch(id: number, data: Partial<AppCampaignPayload>) {
     return client.patch(`/admin/campaigns/${id}/`, data)
+  },
+  /** Update campaign with optional image upload (multipart). */
+  patchWithImage(id: number, formData: FormData) {
+    return client.patch(`/admin/campaigns/${id}/`, formData)
   },
   delete(id: number) {
     return client.delete(`/admin/campaigns/${id}/`)
