@@ -7,6 +7,8 @@ import client from './client'
 export type CampaignPlacement = 'inapp_advert' | 'promo_banner' | 'promo_carousel' | 'home_hero' | 'rewards_top' | string
 export type CampaignChannel = 'web_advert' | 'app_advert' | 'web_banner' | 'app_banner' | 'push' | string
 
+export type CampaignActionType = '' | 'preorder' | string
+
 export type AppCampaignPayload = {
   id?: number
   title: string
@@ -16,6 +18,19 @@ export type AppCampaignPayload = {
   delivery_channels?: string
   gift_voucher_id?: number | null
   gift_label?: string
+  flash_sale_id?: number | null
+  promotion_id?: number | null
+  /** Buyer action: empty = open CTA route; `preorder` links a capped SKU product. */
+  action_type?: CampaignActionType
+  product_id?: number | null
+  /** Promo chip: preorder | limited | flash | new | trending | gift | sale | hot | exclusive | clearance */
+  badge?: string
+  /** Resolved display text from API (e.g. "Limited offer"). */
+  badge_label?: string
+  /** Read-only on list when action_type=preorder (from linked SKU stock). */
+  remaining_stock?: number | null
+  product_slug?: string
+  product_title?: string
   cta_label?: string
   cta_route?: string
   cta_external_url?: string
