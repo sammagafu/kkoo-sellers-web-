@@ -38,7 +38,12 @@
                     </span>
                   </template>
                   <b-form-textarea v-model="form.description" rows="4" />
-                  <small class="text-muted">{{ (form.description || '').length }} / 200</small>
+                  <small class="text-muted">
+                    {{ (form.description || '').length }} characters
+                    <span :class="(form.description || '').length < 200 ? 'text-danger' : 'text-success'">
+                      (min 200 to publish)
+                    </span>
+                  </small>
                 </b-form-group>
               </b-col>
               <b-col cols="12">
@@ -415,6 +420,11 @@ async function submitProduct(asDraft: boolean) {
   }
   if (form.title.trim().length > 160) {
     submitError.value = 'Product title must be at most 160 characters.'
+    toastError(submitError.value)
+    return
+  }
+  if (!asDraft && (form.description || '').trim().length < 200) {
+    submitError.value = 'Description must be at least 200 characters to publish.'
     toastError(submitError.value)
     return
   }

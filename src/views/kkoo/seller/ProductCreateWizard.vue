@@ -38,7 +38,12 @@
                   </span>
                 </template>
                 <b-form-textarea id="description" v-model="form.description" rows="4" placeholder="Full product description..." />
-                <small class="text-muted">{{ (form.description || '').length }} / 200</small>
+                <small class="text-muted">
+                  {{ (form.description || '').length }} characters
+                  <span :class="(form.description || '').length < 200 ? 'text-danger' : 'text-success'">
+                    (min 200 to publish)
+                  </span>
+                </small>
               </b-form-group>
             </b-col>
             <b-col cols="12">
