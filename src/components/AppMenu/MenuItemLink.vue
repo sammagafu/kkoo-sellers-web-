@@ -28,6 +28,9 @@
       <Icon :icon="item.icon" />
     </span>
     <span class="nav-text">{{ menuLabel }}</span>
+    <b-badge v-if="item.badge" :variant="null" class="text-end" :class="`bg-${item.badge.variant}`">
+      {{ item.badge.text }}
+    </b-badge>
   </a>
 </template>
 

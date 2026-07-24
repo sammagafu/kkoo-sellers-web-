@@ -1,38 +1,14 @@
 <template>
   <nav
     class="admin-toolbar border rounded-3 px-3 py-2 mb-3 d-flex flex-wrap align-items-center gap-2"
-    aria-label="Admin quick navigation"
+    aria-label="Admin page context"
   >
-    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle small">Admin</span>
-    <span class="text-truncate fw-semibold" style="max-width: min(42vw, 280px)" :title="shortPageTitle">{{ shortPageTitle }}</span>
+    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle small">
+      {{ roleBadge }}
+    </span>
+    <span class="text-truncate fw-semibold" style="max-width: min(52vw, 360px)" :title="shortPageTitle">{{ shortPageTitle }}</span>
 
     <div class="d-flex flex-wrap align-items-center gap-1 ms-lg-auto">
-      <b-button size="sm" variant="outline-secondary" :to="{ name: 'dashboards.index' }">Home</b-button>
-      <b-button size="sm" variant="outline-secondary" :to="{ name: 'admin.orders' }">Orders</b-button>
-      <b-button size="sm" variant="outline-secondary" :to="{ name: 'admin.users' }">Users</b-button>
-      <b-button size="sm" variant="outline-secondary" :to="{ name: 'admin.catalog.products' }">Products</b-button>
-      <b-button
-        v-if="canManageSellers"
-        size="sm"
-        variant="outline-secondary"
-        :to="{ name: 'admin.sellers' }"
-      >
-        Sellers
-      </b-button>
-      <b-button size="sm" variant="outline-secondary" :to="{ name: 'admin.crm.dashboard' }">CRM</b-button>
-      <b-dropdown size="sm" variant="outline-secondary" text="More" menu-class="shadow-sm">
-        <b-dropdown-item :to="{ name: 'admin.catalog.categories' }">Categories</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.catalog.brands' }">Brands</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.catalog.import' }">{{ t('catalogImport.hubTitle') }}</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.catalog.media' }">Media</b-dropdown-item>
-        <b-dropdown-divider />
-        <b-dropdown-item :to="{ name: 'admin.kyc-documents' }">KYC</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.promotions' }">Promotions</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.logistics' }">Logistics</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.analytics' }">Analytics</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.redemptions' }">Redemptions</b-dropdown-item>
-        <b-dropdown-item :to="{ name: 'admin.vouchers' }">Vouchers</b-dropdown-item>
-      </b-dropdown>
       <b-button size="sm" variant="outline-primary" @click="showShortcuts = true">Shortcuts</b-button>
     </div>
 
@@ -40,6 +16,7 @@
       <p class="text-muted small mb-3">
         Shortcuts are disabled while focus is in a field, combobox, or when any dialog is open (except this help).
         Press <kbd class="px-1 rounded border bg-light">Esc</kbd> to close this panel.
+        Use the sidebar for full navigation.
       </p>
       <b-table :items="shortcutRows" :fields="shortcutFields" small striped class="mb-0" />
     </b-modal>
@@ -48,12 +25,9 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { canAccessSellerManagement } from '@/assets/data/kkoo-menu'
-
-const { t } = useI18n()
 import { useAdminToolbarShortcuts } from '@/composables/useAdminToolbarShortcuts'
 
 const route = useRoute()
@@ -62,6 +36,7 @@ const auth = useAuthStore()
 const showShortcuts = ref(false)
 
 const canManageSellers = computed(() => canAccessSellerManagement(auth.user))
+const roleBadge = computed(() => (auth.isSuperuser ? 'Superuser' : 'Staff'))
 
 const shortPageTitle = computed(() => {
   const t = route.meta?.title
@@ -110,8 +85,8 @@ useAdminToolbarShortcuts(router, showShortcuts, () => route.path.startsWith('/ad
 
 <style scoped>
 .admin-toolbar {
-  background: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.04);
-  border-color: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.12) !important;
+  background: rgba(92, 48, 143, 0.04);
+  border-color: rgba(92, 48, 143, 0.12) !important;
 }
 kbd {
   font-size: 0.8em;

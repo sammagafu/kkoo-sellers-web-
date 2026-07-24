@@ -127,6 +127,8 @@ export default {
     'admin-group-promotions': 'Promotions',
     'admin-promotions': 'Promotions',
     'admin-ride-promotions': 'Promotions trajet',
+    'admin-flash-sales': 'Ventes flash',
+    'admin-platform-campaigns': 'Push et promos',
     'admin-promotion-bundles': 'Packs promotionnels',
     'admin-group-logistics': 'Logistique',
     'admin-logistics': 'Logistique',

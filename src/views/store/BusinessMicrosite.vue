@@ -335,20 +335,10 @@
                   </span>
                   <span v-if="item.price != null" class="menu-card-price-tag">{{ formatPrice(item.price) }}</span>
                   <div v-if="layoutMode === 'grid'" class="menu-card-quick" @click.stop>
-                    <button type="button" class="menu-card-quick-btn" title="Add to web cart" @click="addToCart(item)">
+                    <button type="button" class="menu-card-quick-btn" title="Add to cart" @click="addToCart(item)">
                       <Icon icon="solar:bag-heart-bold" />
-                      <span>Add</span>
+                      <span>Add to cart</span>
                     </button>
-                    <a
-                      :href="appLink"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="menu-card-quick-btn menu-card-quick-btn--accent"
-                      title="Order in app"
-                      @click.stop
-                    >
-                      <Icon icon="solar:smartphone-2-bold" />
-                    </a>
                   </div>
                 </div>
               </div>
@@ -370,20 +360,10 @@
                   <div v-if="layoutMode === 'rows'" class="menu-card-row-aside" @click.stop>
                     <span v-if="item.price != null" class="menu-card-price-inline">{{ formatPrice(item.price) }}</span>
                     <div class="menu-card-row-actions">
-                      <button type="button" class="menu-card-quick-btn menu-card-quick-btn--row" @click="addToCart(item)">
+                      <button type="button" class="menu-card-quick-btn menu-card-quick-btn--row" title="Add to cart" @click="addToCart(item)">
                         <Icon icon="solar:bag-heart-bold" />
-                        <span>Add</span>
+                        <span>Add to cart</span>
                       </button>
-                      <a
-                        :href="appLink"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="menu-card-quick-btn menu-card-quick-btn--row menu-card-quick-btn--accent-row"
-                        title="Order in app"
-                      >
-                        <Icon icon="solar:smartphone-2-bold" />
-                        <span>Order</span>
-                      </a>
                     </div>
                   </div>
                 </div>
@@ -433,9 +413,6 @@
           <div class="d-flex flex-wrap gap-2 justify-content-center">
             <a :href="buyerWebPath('/checkout')" class="btn btn-primary btn-lg">
               Open web checkout
-            </a>
-            <a :href="appLink" class="btn btn-outline-primary btn-lg" target="_blank" rel="noopener noreferrer">
-              Order in app
             </a>
           </div>
           <p v-if="addMessage" class="text-success small mt-2 mb-0 text-center">{{ addMessage }}</p>
@@ -524,12 +501,12 @@
                   <Icon v-for="star in 5" :key="star" icon="solar:star-bold" class="menu-card-star" :class="{ filled: star <= itemRating(selectedProduct) }" />
                 </div>
                 <p v-if="selectedProduct.description" class="microsite-detail-desc">{{ selectedProduct.description }}</p>
-                <p v-else class="microsite-detail-desc text-muted">Order on KKOO to get this item.</p>
+                <p v-else class="microsite-detail-desc text-muted">Add this item to your cart to continue.</p>
                 <div class="microsite-detail-price" v-if="selectedProduct.price != null">{{ formatPrice(selectedProduct.price) }}</div>
                 <div class="microsite-detail-actions">
-                  <a :href="appLink" target="_blank" rel="noopener noreferrer" class="menu-card-btn menu-card-btn-order">
-                    Order on KKOO
-                  </a>
+                  <button type="button" class="menu-card-btn menu-card-btn-order" @click="addToCartFromDetail">
+                    Add to cart
+                  </button>
                   <button type="button" class="menu-card-btn menu-card-btn-view" @click="selectedProduct = null">Close</button>
                 </div>
               </div>
@@ -836,6 +813,13 @@ async function addToCart(item: MenuItem) {
   }
 }
 
+async function addToCartFromDetail() {
+  const item = selectedProduct.value
+  if (!item) return
+  await addToCart(item)
+  selectedProduct.value = null
+}
+
 const primaryColor = computed(() => {
   const s = store.value as { menu_card_primary_color?: string }
   const theme = storefrontTheme.value as { primary_color?: string }
@@ -903,16 +887,6 @@ async function copyText(text: string): Promise<void> {
   }
   setTimeout(() => { copyMessage.value = '' }, 2500)
 }
-
-// Buyer app/site base URL. "Order on KKOO" sends users here to complete the order.
-// If the buyer app supports store deep links, we append /store/:slugOrId so they land on this store.
-const buyerAppBase = import.meta.env.VITE_APP_ORIGIN || import.meta.env.VITE_BUYER_APP_URL || 'https://kkoo.com'
-const appLink = computed(() => {
-  const base = (buyerAppBase || '').replace(/\/$/, '')
-  const slug = slugOrId.value
-  if (base && slug) return `${base}/store/${encodeURIComponent(slug)}`
-  return base || 'https://kkoo.com'
-})
 
 const salesSurfaceCards = computed(() => {
   const type = payload.value?.store_type
@@ -1545,10 +1519,6 @@ onMounted(load)
   transform: translateY(-1px);
   color: #fff;
 }
-.menu-card--row .menu-card-quick-btn--accent-row {
-  background: var(--microsite-accent, #F7A829);
-  color: var(--microsite-primary, #5C308F);
-}
 @media (max-width: 767px) {
   .menu-card--row {
     grid-template-columns: 4.75rem minmax(0, 1fr);
@@ -1888,6 +1858,7 @@ onMounted(load)
   z-index: 2;
   padding: 0.35rem 0.7rem;
   border-radius: 0.75rem;
+  font-family: var(--kkoo-font-primary, 'Poppins', sans-serif);
   font-size: 0.92rem;
   font-weight: 800;
   color: var(--microsite-primary, #5C308F);
@@ -1940,11 +1911,6 @@ onMounted(load)
   color: #fff;
   background: color-mix(in srgb, var(--microsite-primary, #5C308F) 85%, #000 15%);
 }
-.menu-card-quick-btn--accent {
-  padding: 0 0.7rem;
-  background: var(--microsite-accent, #F7A829);
-  color: var(--microsite-primary, #5C308F);
-}
 .menu-card-quick-btn--ghost {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
@@ -1969,6 +1935,7 @@ onMounted(load)
 }
 .menu-card-price-inline {
   flex-shrink: 0;
+  font-family: var(--kkoo-font-primary, 'Poppins', sans-serif);
   font-size: 1rem;
   font-weight: 800;
   color: var(--microsite-primary, #5C308F);
@@ -2022,11 +1989,12 @@ onMounted(load)
   color: var(--microsite-accent, #F7A829);
 }
 .menu-card-title {
+  font-family: var(--kkoo-font-primary, 'Poppins', sans-serif);
   font-size: clamp(1rem, 0.4vw + 0.92rem, 1.12rem);
   font-weight: 800;
   margin: 0 0 0.35rem;
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: normal;
   color: var(--microsite-text, #1F1B24);
 }
 .menu-card-desc {

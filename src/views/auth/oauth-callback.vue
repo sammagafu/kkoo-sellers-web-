@@ -1,6 +1,6 @@
 <template>
   <AuthLayout>
-    <AuthCard title="Signing you in" subtitle="Connecting your KKOO Account…" show-logo icon="bi-shield-check">
+    <AuthCard title="Signing you in" subtitle="Connecting your KKOO Account…" icon="bi-shield-check">
       <p v-if="error" class="auth-alert auth-alert--danger">{{ error }}</p>
       <p v-else class="text-muted text-center mb-0">{{ t('auth.redirecting') }}</p>
     </AuthCard>

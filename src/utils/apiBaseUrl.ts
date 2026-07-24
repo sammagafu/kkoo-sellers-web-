@@ -12,7 +12,7 @@ function isKkooWebHost(hostname: string): boolean {
 /** Resolve REST base URL from VITE_API_BASE_URL, with sane defaults per environment. */
 export function resolveApiBaseUrl(
   envValue?: string,
-  localFallback = 'http://localhost:8080/api/v1',
+  localFallback = 'http://localhost:8000/api/v1',
 ): string {
   const raw = String(envValue ?? import.meta.env.VITE_API_BASE_URL ?? '').trim()
   if (raw && !raw.startsWith('/')) {

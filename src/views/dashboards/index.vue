@@ -6,14 +6,22 @@
     <!-- Admin Dashboard -->
     <template v-if="isAdminOrStaff">
       <div class="dashboard-page-head mb-3">
-        <h4 class="dashboard-heading mb-1">Admin dashboard</h4>
-        <p class="dashboard-subtitle text-muted mb-0">Overview of platform metrics and activity.</p>
+        <h4 class="dashboard-heading mb-1">{{ adminRoleLabel }} dashboard</h4>
+        <p class="dashboard-subtitle text-muted mb-0">
+          Run the platform from here — workbench, catalog, merchants, and growth.
+          Use the left menu hubs to dig deeper.
+        </p>
       </div>
       <p v-if="overviewDate" class="text-muted small mb-2">Report date: {{ overviewDate }}</p>
 
       <!-- Label: Pending / incomplete (full row) -->
-      <h6 class="dashboard-section-label dashboard-section-label--accent mb-2 mt-4">Pending & action items</h6>
-      <p class="text-muted small mb-2">Sellers, KYC documents, returns, redemptions, and orders waiting for action.</p>
+      <h6 class="dashboard-section-label dashboard-section-label--accent mb-2 mt-4">Needs attention</h6>
+      <p class="text-muted small mb-2">
+        Queues waiting for review
+        <template v-if="canManageSellers"> — sellers, </template>
+        <template v-else> — </template>
+        KYC, returns, redemptions, and orders.
+      </p>
       <b-row v-if="adminCounts.length" class="dashboard-stat-row mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5">
         <b-col v-for="(item, idx) in adminCounts" :key="'count-' + idx" class="mb-3">
           <StatisticsCard :item="item" />
@@ -64,138 +72,40 @@
         </b-col>
       </b-row>
 
-      <!-- Upcoming events -->
-      <h6 class="dashboard-section-label mb-2 mt-4">Upcoming events</h6>
-      <p class="text-muted small mb-2">Your schedule at a glance.</p>
-      <b-row class="mb-4">
-        <b-col xl="4">
-          <b-card class="h-100">
-            <b-list-group flush>
-              <b-list-group-item
-                v-for="event in upcomingEvents"
-                :key="event.id"
-                class="d-flex align-items-center justify-content-between"
-              >
-                <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
-                  <span
-                    class="rounded flex-shrink-0"
-                    style="width: 8px; height: 8px; background: var(--bs-primary);"
-                  ></span>
-                  <span class="text-truncate">{{ event.title }}</span>
-                </div>
-                <small class="text-muted flex-shrink-0 ms-2">{{ event.dateText }}</small>
-              </b-list-group-item>
-              <b-list-group-item v-if="!upcomingEvents.length" class="text-muted">
-                No upcoming events
-              </b-list-group-item>
-            </b-list-group>
-          </b-card>
-        </b-col>
-      </b-row>
-
-      <DashboardQuickActions :items="adminQuickActions" />
+      <DashboardQuickActions
+        title="Admin shortcuts"
+        subtitle="Jump into the queues and tools you use most."
+        :items="adminQuickActions"
+      />
     </template>
 
-    <!-- Rider (Driver) Dashboard -->
-    <template v-else-if="isRider">
-      <b-row class="mb-3">
-        <b-col>
-          <h4 class="dashboard-heading mb-0">Driver Dashboard</h4>
-          <p class="dashboard-subtitle text-muted mb-0">Your earnings and delivery assignments.</p>
-        </b-col>
-      </b-row>
-      <h6 class="dashboard-section-label mb-2 mt-4">Quick links</h6>
-      <b-row>
-        <b-col>
-          <b-card class="dashboard-quick-links mb-0">
-            <b-list-group flush>
-            </b-list-group>
-          </b-card>
-        </b-col>
-      </b-row>
-    </template>
-
-    <!-- Seller Dashboard -->
+    <!-- Seller: tools live on biz portal only -->
     <template v-else-if="isSeller">
-      <b-row class="mb-3">
-        <b-col>
-          <h4 class="dashboard-heading mb-0">Seller dashboard</h4>
-          <p class="dashboard-subtitle text-muted mb-0">Your sales and company overview.</p>
-        </b-col>
-      </b-row>
-
-      <!-- Company profile completion (hidden when complete) -->
-      <b-card v-if="companyCompletionLoaded && companyCompletionPercent < 100" class="mb-4">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="dashboard-page-head mb-4">
+        <h4 class="dashboard-heading mb-1">Seller workspace</h4>
+        <p class="dashboard-subtitle text-muted mb-0">
+          Store, orders, CRM, and products live in the seller portal — not on this admin site.
+        </p>
+      </div>
+      <b-card class="seller-portal-handoff border-0 mb-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
           <div>
-            <h6 class="text-muted text-uppercase small mb-1">Company profile completion</h6>
-            <div class="d-flex align-items-center gap-3">
-              <div class="progress flex-grow-1" style="height: 1.25rem; max-width: 280px;">
-                <div
-                  class="progress-bar"
-                  :class="companyCompletionPercent >= 100 ? 'bg-success' : (companyCompletionPercent >= 50 ? 'bg-info' : 'bg-warning')"
-                  :style="{ width: companyCompletionPercent + '%' }"
-                  role="progressbar"
-                  :aria-valuenow="companyCompletionPercent"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                ></div>
-              </div>
-              <span class="fw-semibold">{{ companyCompletionPercent }}%</span>
-            </div>
+            <h5 class="mb-1">Continue in the seller portal</h5>
+            <p class="text-muted mb-0 small">
+              Manage your shop, inventory, and business CRM on biz.kkooapp.co.tz.
+            </p>
           </div>
-          <b-button variant="outline-primary" size="sm" :to="{ name: 'seller.profile' }">Complete profile</b-button>
+          <div class="d-flex flex-wrap gap-2">
+            <b-button variant="primary" :href="bizSellerDashboardUrl">Open seller portal</b-button>
+            <b-button variant="outline-secondary" :href="bizSellerAccountUrl">Seller account</b-button>
+          </div>
         </div>
       </b-card>
-
-      <h6 class="dashboard-section-label mb-2 mt-4">Your performance</h6>
-      <p class="text-muted small mb-2">Sales, orders, products, and customers.</p>
-      <b-row v-if="sellerStats.length" class="dashboard-stat-row mb-4">
-        <b-col md="6" xl="3" v-for="(item, idx) in sellerStats" :key="idx">
-          <StatisticsCard :item="item" />
-        </b-col>
-      </b-row>
-      <b-row v-else-if="loading" class="mb-4">
-        <b-col><p class="text-muted">Loading dashboard…</p></b-col>
-      </b-row>
-      <b-row v-else-if="sellerError" class="mb-4">
-        <b-col><b-alert variant="warning" show>{{ sellerError }}</b-alert></b-col>
-      </b-row>
-      <b-row v-else class="dashboard-stat-row mb-4">
-        <b-col md="6" xl="3" v-for="(item, idx) in sellerStatsFallback" :key="idx">
-          <StatisticsCard :item="item" />
-        </b-col>
-      </b-row>
-
-      <h6 class="dashboard-section-label mb-2 mt-4">Performance chart</h6>
-      <p class="text-muted small mb-2">Breakdown of your key metrics.</p>
-      <b-row v-if="sellerMetricsChart" class="mb-4">
-        <b-col md="6" xl="5">
-          <b-card class="h-100">
-            <ApexChart :chart="sellerMetricsChart" />
-          </b-card>
-        </b-col>
-      </b-row>
-
-      <h6 class="dashboard-section-label mb-2 mt-4">Quick links</h6>
-      <b-row>
-        <b-col>
-          <b-card class="dashboard-quick-links mb-0">
-            <b-list-group flush>
-              <b-list-group-item :to="{ name: 'seller.dashboard' }" action>Seller dashboard</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.products' }" action>My Products</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.orders' }" action>My Orders</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.analytics' }" action>Analytics</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.profile' }" action>Profile</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.documents' }" action>My Documents (KYC)</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.wholesale' }" action>Wholesale Tiers</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.referral-rewards' }" action>Referral & Rewards</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.share-earnings' }" action>Share Earnings</b-list-group-item>
-              <b-list-group-item :to="{ name: 'seller.search-insights' }" action>Search Insights</b-list-group-item>
-            </b-list-group>
-          </b-card>
-        </b-col>
-      </b-row>
+      <DashboardQuickActions
+        title="Seller tools"
+        subtitle="Everything for your store opens in the biz portal."
+        :items="sellerPortalActions"
+      />
     </template>
 
     <!-- No role / fallback (e.g. buyer) -->
@@ -228,31 +138,22 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import DashboardCommandHero from '@/components/dashboard/DashboardCommandHero.vue'
 import DashboardQuickActions, { type QuickActionItem } from '@/components/dashboard/DashboardQuickActions.vue'
 import StatisticsCard from '@/views/dashboards/components/StatisticsCard.vue'
 import { useAuthStore } from '@/stores/auth'
 import { canAccessSellerManagement } from '@/assets/data/kkoo-menu'
-import { useProfileCompletion } from '@/composables/useProfileCompletion'
-import { analyticsAdminApi, analyticsSellerApi, sellersAdminApi, ordersAdminApi, kycAdminApi, redemptionsAdminApi } from '@/api'
+import { bizSellerAccountUrl, bizSellerDashboardUrl } from '@/config/app-portal-links'
+import { analyticsAdminApi, sellersAdminApi, ordersAdminApi, kycAdminApi, redemptionsAdminApi } from '@/api'
 import type { StatisticCardType, ApexChartType } from '@/types'
 import ApexChart from '@/components/ApexChart.vue'
 
 const auth = useAuthStore()
 const isAdminOrStaff = computed(() => auth.isAdminOrStaff)
 const canManageSellers = computed(() => canAccessSellerManagement(auth.user))
-const isSeller = computed(() => auth.isSeller)
-const isRider = computed(() => false)
-
-const dashboardEventSeeds = [
-  { id: 'seller-sync', title: 'Seller sync check-in', start: Date.now() + 12 * 60 * 60 * 1000 },
-  { id: 'ops-review', title: 'Operations review', start: Date.now() + 24 * 60 * 60 * 1000 },
-  { id: 'stock-follow-up', title: 'Low-stock follow-up', start: Date.now() + 36 * 60 * 60 * 1000 },
-  { id: 'rider-standup', title: 'Rider dispatch stand-up', start: Date.now() + 48 * 60 * 60 * 1000 },
-  { id: 'merchant-support', title: 'Merchant support window', start: Date.now() + 72 * 60 * 60 * 1000 },
-] as const
+const isSeller = computed(() => auth.isSeller && !auth.isAdminOrStaff)
+const adminRoleLabel = computed(() => (auth.isSuperuser ? 'Superuser' : 'Staff'))
 
 const greetingName = computed(() => {
   const u = auth.user
@@ -274,16 +175,11 @@ const userAvatar = computed(() => {
   return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`
 })
 
-const { percentage: companyCompletionPercent, loading: companyCompletionLoading } = useProfileCompletion()
-const companyCompletionLoaded = computed(() => !companyCompletionLoading.value)
-
 const loading = ref(false)
 const loadingCounts = ref(false)
 const adminError = ref('')
-const sellerError = ref('')
 const adminOverviewData = ref<Record<string, unknown> | null>(null)
 const adminCounts = ref<StatisticCardType[]>([])
-const sellerStats = ref<StatisticCardType[]>([])
 
 const overviewDate = computed(() => {
   const d = adminOverviewData.value?.date
@@ -427,62 +323,15 @@ const adminSellersDonutChart = computed<ApexChartType | null>(() => {
   }
 })
 
-/** Seller dashboard: donut of performance metrics. */
-const sellerMetricsChart = computed<ApexChartType | null>(() => {
-  const stats = sellerStats.value
-  if (!stats.length) return null
-  const labels = stats.map((s) => s.title)
-  const series = stats.map((s) => Number(s.statistic) || 0)
-  if (series.every((n) => n === 0)) return null
-  return {
-    height: 280,
-    type: 'donut',
-    series,
-    options: {
-      chart: { type: 'donut' },
-      labels,
-      colors: [primaryColor, secondaryColor, '#10B981', '#7B46B3'],
-      legend: { position: 'bottom' },
-      plotOptions: { pie: { donut: { size: '65%' } } },
-      dataLabels: { enabled: true },
-    },
-  }
-})
-
 const adminStatsFallback: StatisticCardType[] = [
   { title: 'Total Users', icon: 'solar:users-group-two-rounded-bold-duotone', statistic: 0, to: { name: 'admin.users' } },
   { title: 'Revenue', icon: 'solar:wallet-money-bold-duotone', statistic: 0, prefix: 'TZS ', to: { name: 'admin.analytics' } },
   { title: 'Orders', icon: 'solar:cart-large-2-bold-duotone', statistic: 0, to: { name: 'admin.orders' } },
   { title: 'Products', icon: 'solar:box-bold-duotone', statistic: 0, to: { name: 'admin.catalog.products' } },
 ]
-const sellerStatsFallback: StatisticCardType[] = [
-  { title: 'Total Sales', icon: 'solar:wallet-money-bold-duotone', statistic: 0, prefix: 'TZS ', to: { name: 'seller.analytics' } },
-  { title: 'Orders', icon: 'solar:cart-large-2-bold-duotone', statistic: 0, to: { name: 'seller.analytics' } },
-  { title: 'Products', icon: 'solar:box-bold-duotone', statistic: 0, to: { name: 'seller.products' } },
-  { title: 'Customers', icon: 'solar:users-group-two-rounded-bold-duotone', statistic: 0, to: { name: 'seller.analytics' } },
-]
 const defaultStats: StatisticCardType[] = [
   { title: 'Overview', icon: 'solar:chart-square-bold-duotone', statistic: 0 },
 ]
-
-/** Upcoming events for dashboard widget: next 5 from calendar seed data, sorted by start. */
-const upcomingEvents = computed(() => {
-  const now = Date.now()
-  const withStart = dashboardEventSeeds
-    .map((e) => ({
-      id: e.id,
-      title: e.title,
-      start: e.start,
-    }))
-    .filter((e) => e.start >= now)
-    .sort((a, b) => a.start - b.start)
-    .slice(0, 5)
-  return withStart.map((e) => ({
-    id: e.id,
-    title: e.title,
-    dateText: new Date(e.start).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-  }))
-})
 
 /** Get count from list API response: array or { count, results }. */
 function countFromListResponse(data: unknown): number {
@@ -500,30 +349,41 @@ function countFromListResponse(data: unknown): number {
 
 const adminQuickActions = computed<QuickActionItem[]>(() => {
   const items: QuickActionItem[] = [
-  { key: 'users', label: 'Users', icon: 'solar:users-group-two-rounded-broken', tone: 'teal', hint: 'Accounts & roles', to: { name: 'admin.users' } },
-  ...(canManageSellers.value
-    ? [{ key: 'sellers', label: 'Sellers', icon: 'solar:user-id-broken', tone: 'purple' as const, hint: 'Onboarding & verification', to: { name: 'admin.sellers' } }]
-    : []),
-  { key: 'orders', label: 'Orders', icon: 'solar:cart-large-2-broken', tone: 'pink', hint: 'Live commerce queue', to: { name: 'admin.orders' } },
-  { key: 'payouts', label: 'Payouts', icon: 'solar:wallet-money-broken', tone: 'orange', hint: 'Seller settlements', to: { name: 'admin.payouts' } },
-  { key: 'disputes', label: 'Disputes', icon: 'solar:shield-warning-broken', tone: 'danger', hint: 'Trust & resolution', to: { name: 'admin.disputes' } },
-  { key: 'categories', label: 'Categories', icon: 'solar:widget-2-broken', tone: 'info', hint: 'Catalog structure', to: { name: 'admin.catalog.categories' } },
-  { key: 'products', label: 'Products', icon: 'solar:box-broken', tone: 'red', hint: 'Marketplace catalog', to: { name: 'admin.catalog.products' } },
-  { key: 'import', label: 'Import catalog', icon: 'solar:upload-minimalistic-broken', tone: 'warning', hint: 'Bulk product upload', to: { name: 'admin.catalog.import' } },
-  { key: 'media', label: 'Media library', icon: 'solar:gallery-broken', tone: 'secondary', hint: 'Images & assets', to: { name: 'admin.catalog.media' } },
-  { key: 'kyc', label: 'KYC documents', icon: 'solar:document-broken', tone: 'warning', hint: 'Pending reviews', to: { name: 'admin.kyc-documents' } },
-  { key: 'returns', label: 'Returns', icon: 'solar:refresh-broken', tone: 'danger', hint: 'Refund pipeline', to: { name: 'admin.returns' } },
-  { key: 'promotions', label: 'Promotions', icon: 'solar:ticket-sale-broken', tone: 'pink', hint: 'Campaigns & codes', to: { name: 'admin.promotions' } },
-  { key: 'redemptions', label: 'Redemptions', icon: 'solar:gift-broken', tone: 'success', hint: 'Rewards queue', to: { name: 'admin.redemptions' } },
-  { key: 'logistics', label: 'Logistics', icon: 'solar:delivery-broken', tone: 'dark', hint: 'Drivers & dispatch', to: { name: 'admin.logistics' } },
-  { key: 'zones', label: 'Delivery zones', icon: 'solar:map-point-broken', tone: 'teal', hint: 'Coverage & pricing', to: { name: 'admin.logistics.zones' } },
-  { key: 'crm', label: 'CRM', icon: 'solar:chart-2-broken', tone: 'info', hint: 'Business operations', to: { name: 'admin.crm.dashboard' } },
-  { key: 'analytics', label: 'Analytics', icon: 'solar:chart-square-broken', tone: 'primary', hint: 'Platform insights', to: { name: 'admin.analytics' } },
-  { key: 'account', label: 'My account', icon: 'solar:user-circle-broken', tone: 'secondary', hint: 'Profile & security', to: { name: 'account.home' } },
-  { key: 'notifications', label: 'Notifications', icon: 'solar:bell-bing-broken', tone: 'purple', hint: 'Alerts & preferences', to: { name: 'account.notifications' } },
+    { key: 'orders', label: 'Orders', icon: 'solar:cart-large-2-broken', tone: 'pink', hint: 'Live commerce queue', to: { name: 'admin.orders' } },
+    { key: 'users', label: 'Users', icon: 'solar:users-group-two-rounded-broken', tone: 'teal', hint: 'Accounts & roles', to: { name: 'admin.users' } },
+    ...(canManageSellers.value
+      ? [{ key: 'sellers', label: 'Sellers', icon: 'solar:user-id-broken', tone: 'purple' as const, hint: 'Approve & verify merchants', to: { name: 'admin.sellers' } }]
+      : []),
+    { key: 'products', label: 'Products', icon: 'solar:box-broken', tone: 'red', hint: 'Marketplace catalog', to: { name: 'admin.catalog.products' } },
+    { key: 'kyc', label: 'KYC', icon: 'solar:document-broken', tone: 'warning', hint: 'Pending reviews', to: { name: 'admin.kyc-documents' } },
+    { key: 'disputes', label: 'Disputes', icon: 'solar:shield-warning-broken', tone: 'danger', hint: 'Trust & resolution', to: { name: 'admin.disputes' } },
+    { key: 'payouts', label: 'Payouts', icon: 'solar:wallet-money-broken', tone: 'orange', hint: 'Seller settlements', to: { name: 'admin.payouts' } },
+    { key: 'logistics', label: 'Drivers', icon: 'solar:delivery-broken', tone: 'dark', hint: 'Dispatch & fleet', to: { name: 'admin.logistics' } },
+    { key: 'promotions', label: 'Promotions', icon: 'solar:ticket-sale-broken', tone: 'pink', hint: 'Campaigns & codes', to: { name: 'admin.promotions' } },
+    { key: 'crm', label: 'CRM', icon: 'solar:chart-2-broken', tone: 'info', hint: 'Business oversight', to: { name: 'admin.crm.dashboard' } },
+    { key: 'analytics', label: 'Analytics', icon: 'solar:chart-square-broken', tone: 'primary', hint: 'Platform insights', to: { name: 'admin.analytics' } },
   ]
   return items
 })
+
+const sellerPortalActions = computed<QuickActionItem[]>(() => [
+  {
+    key: 'seller-portal',
+    label: 'Seller portal',
+    icon: 'solar:shop-2-broken',
+    tone: 'purple',
+    hint: 'Store, orders & products',
+    href: bizSellerDashboardUrl,
+  },
+  {
+    key: 'seller-account',
+    label: 'Seller account',
+    icon: 'solar:user-circle-broken',
+    tone: 'secondary',
+    hint: 'Profile & security',
+    href: bizSellerAccountUrl,
+  },
+])
 
 const adminCountCards = computed<StatisticCardType[]>(() => {
   const cards: StatisticCardType[] = [
@@ -537,26 +397,6 @@ const adminCountCards = computed<StatisticCardType[]>(() => {
   ]
   return cards
 })
-
-function mapOverviewToStats(
-  data: Record<string, unknown>,
-  cards: { keys: string[]; title: string; icon: string; prefix?: string; to?: { name: string } }[],
-): StatisticCardType[] {
-  return cards.map((card) => ({
-    title: card.title,
-    icon: card.icon,
-    statistic: pickNumber(data, ...card.keys),
-    ...(card.prefix != null && { prefix: card.prefix }),
-    ...(card.to != null && { to: card.to }),
-  }))
-}
-
-const sellerCards = [
-  { keys: ['total_sales', 'sales', 'revenue'], title: 'Total Sales', icon: 'solar:wallet-money-bold-duotone', prefix: 'TZS ', to: { name: 'seller.analytics' } },
-  { keys: ['orders_count', 'orders', 'total_orders'], title: 'Orders', icon: 'solar:cart-large-2-bold-duotone', to: { name: 'seller.analytics' } },
-  { keys: ['products_count', 'products'], title: 'Products', icon: 'solar:box-bold-duotone', to: { name: 'seller.products' } },
-  { keys: ['pending_payout'], title: 'Pending Payout', icon: 'solar:wallet-bold-duotone', prefix: 'TZS ', to: { name: 'seller.analytics' } },
-]
 
 onMounted(async () => {
   if (isAdminOrStaff.value) {
@@ -647,20 +487,6 @@ onMounted(async () => {
       const err = e as { response?: { data?: { detail?: string } }; message?: string }
       adminError.value = err.response?.data?.detail ?? err.message ?? 'Failed to load admin overview'
       adminOverviewData.value = null
-    } finally {
-      loading.value = false
-    }
-  } else if (isSeller.value) {
-    loading.value = true
-    sellerError.value = ''
-    try {
-      const { data } = await analyticsSellerApi.overview()
-      const d = (typeof data === 'object' && data !== null ? data : {}) as Record<string, unknown>
-      sellerStats.value = mapOverviewToStats(d, sellerCards)
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { detail?: string } }; message?: string }
-      sellerError.value = err.response?.data?.detail ?? err.message ?? 'Failed to load seller overview'
-      sellerStats.value = []
     } finally {
       loading.value = false
     }
@@ -825,4 +651,10 @@ onMounted(async () => {
   border-color: var(--bs-border-color);
 }
 
+.dashboard-home .seller-portal-handoff {
+  background: linear-gradient(135deg, rgba(92, 48, 143, 0.08), rgba(247, 168, 41, 0.1));
+  border: 1px solid rgba(92, 48, 143, 0.12) !important;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+}
 </style>

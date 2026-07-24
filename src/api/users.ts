@@ -35,12 +35,27 @@ export const usersAdminApi = {
   },
   /**
    * Ban / suspend / activate via PATCH account_status (Fiber: PUT/PATCH /users/admin/users/:id/).
-   * `reason` is accepted for UI but not persisted unless the backend adds a field.
+   * `reason` is persisted as banned_reason when action is ban.
    */
   userAction(userId: number, data: { action: 'ban' | 'suspend' | 'activate'; reason?: string }) {
     const status =
       data.action === 'ban' ? 'banned' : data.action === 'suspend' ? 'suspended' : 'active'
-    return client.patch(`/users/admin/users/${userId}/`, { account_status: status })
+    const body: Record<string, unknown> = { account_status: status }
+    if (data.action === 'ban' && data.reason) body.banned_reason = data.reason
+    return client.patch(`/users/admin/users/${userId}/`, body)
+  },
+  /** Archive user (DELETE synonym or PATCH archived). */
+  archive(userId: number) {
+    return client.delete(`/users/admin/users/${userId}/`)
+  },
+  listDeletionRequests(params?: { status?: string }) {
+    return client.get<{ results?: unknown[] }>('/users/admin/deletion-requests/', { params })
+  },
+  approveDeletionRequest(id: number, data?: { admin_notes?: string }) {
+    return client.post(`/users/admin/deletion-requests/${id}/approve/`, data ?? {})
+  },
+  rejectDeletionRequest(id: number, data?: { admin_notes?: string }) {
+    return client.post(`/users/admin/deletion-requests/${id}/reject/`, data ?? {})
   },
   /** IMPORT.md: GET /users/admin/import/templates/:type/ — returns CSV attachment. type: users | categories | brands | catalog. */
   getImportTemplate(type: 'users' | 'categories' | 'brands' | 'catalog') {

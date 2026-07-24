@@ -14,12 +14,14 @@
      background-color: $topbar-bg;
      padding-left: $main-nav-width;
      border-bottom: $card-border-width solid $card-border-color;
+     overflow: visible;
 
      .navbar-header {
           display: flex;
           margin: 0 auto;
           align-items: center;
           justify-content: space-between;
+          overflow: visible;
      }
 
      // Search
@@ -57,6 +59,7 @@
           align-items: center;
           justify-content: center;
           height: $topbar-height;
+          overflow: visible;
 
           .topbar-button {
                border: none;

@@ -1,6 +1,6 @@
 <template>
   <AuthLayout>
-    <AuthCard :title="t('auth.lockTitle')" :subtitle="t('auth.lockCopy')" show-logo :logo-height="56">
+    <AuthCard :title="t('auth.lockTitle')" :subtitle="t('auth.lockCopy')" icon="bi-lock">
       <div class="text-center">
         <b-button variant="primary" class="auth-center-card__submit w-100" :to="{ name: 'auth.sign-in' }">
           {{ t('auth.lockCta') }}

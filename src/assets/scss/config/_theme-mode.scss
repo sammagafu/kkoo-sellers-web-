@@ -170,6 +170,7 @@ html[data-menu-color="dark"] {
 
 
 /* Main Menu Dark (Dark Mode Only) – orange accent for icons and words */
+html[data-bs-theme="dark"],
 html[data-bs-theme="dark"][data-menu-color="dark"],
 html[data-bs-theme="dark"][data-menu-color="light"] {
     --#{$prefix}main-nav-bg:                               #1A1230;

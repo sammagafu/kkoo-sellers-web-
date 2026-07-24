@@ -33,7 +33,8 @@ $kkoo-bg-lighter: #f1f5f9;
 // TYPOGRAPHY
 // ============================================================================
 
-// Font Family
+// Font Family — Syne (display) + Poppins (UI/body)
+$kkoo-font-display: "Syne", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 $kkoo-font-primary: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 $kkoo-font-secondary: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
@@ -107,19 +108,27 @@ $kkoo-radius-full: 9999px;        // Pill shape
 // SHADOW SYSTEM
 // ============================================================================
 
-$kkoo-shadow-xs: 0 2px 8px rgba(15, 23, 42, 0.07);
-$kkoo-shadow-sm: 0 2px 12px rgba(92, 48, 143, 0.15);
-$kkoo-shadow-md: 0 4px 16px rgba(92, 48, 143, 0.22);
-$kkoo-shadow-lg: 0 8px 28px rgba(92, 48, 143, 0.35);
-$kkoo-shadow-xl: 0 16px 48px rgba(92, 48, 143, 0.45);
+$kkoo-shadow-xs: 0 1px 3px rgba(15, 23, 42, 0.06);
+$kkoo-shadow-sm: 0 2px 8px rgba(59, 26, 90, 0.08);
+$kkoo-shadow-md: 0 4px 14px rgba(59, 26, 90, 0.1);
+$kkoo-shadow-lg: 0 8px 24px rgba(59, 26, 90, 0.12);
+$kkoo-shadow-xl: 0 16px 40px rgba(59, 26, 90, 0.14);
 
-// Primary button shadow
-$kkoo-shadow-primary: 0 4px 16px rgba(92, 48, 143, 0.38);
-$kkoo-shadow-primary-hover: 0 8px 28px rgba(92, 48, 143, 0.45);
-$kkoo-shadow-primary-active: 0 2px 10px rgba(92, 48, 143, 0.35);
+// Primary button shadow (restrained — no glow stack)
+$kkoo-shadow-primary: 0 2px 10px rgba(92, 48, 143, 0.22);
+$kkoo-shadow-primary-hover: 0 4px 16px rgba(92, 48, 143, 0.28);
+$kkoo-shadow-primary-active: 0 1px 4px rgba(92, 48, 143, 0.2);
 
 // Accent shadow (gold)
-$kkoo-shadow-accent: 0 8px 20px rgba(247, 168, 41, 0.4);
+$kkoo-shadow-accent: 0 2px 10px rgba(247, 168, 41, 0.28);
+
+// Surfaces & focus (canonical across web + native)
+$kkoo-canvas: #f8f2ec;
+$kkoo-surface: #ffffff;
+$kkoo-surface-muted: #f1e7de;
+$kkoo-text-muted: #6a4c86;
+$kkoo-focus: #7b46b3;
+$kkoo-control-height: 2.75rem; // 44px hit target
 
 // ============================================================================
 // TRANSITIONS & ANIMATIONS
@@ -189,7 +198,7 @@ $kkoo-btn-pill-font-weight: 600;
 // Card styling
 $kkoo-card-border-radius: 21px;
 $kkoo-card-padding: 21px;
-$kkoo-card-shadow: 0 4px 24px rgba(92, 48, 143, 0.12);
+$kkoo-card-shadow: 0 2px 12px rgba(59, 26, 90, 0.06);
 
 // Badge/pill styling
 $kkoo-badge-padding: 5px 12px;
@@ -215,6 +224,7 @@ $kkoo-badge-border-accent: rgba(247, 168, 41, 0.35);
   --kkoo-text-dark: #{$kkoo-text-dark};
   
   // Typography
+  --kkoo-font-display: #{$kkoo-font-display};
   --kkoo-font-primary: #{$kkoo-font-primary};
   --kkoo-font-secondary: #{$kkoo-font-secondary};
   
@@ -246,19 +256,77 @@ $kkoo-badge-border-accent: rgba(247, 168, 41, 0.35);
   --kkoo-gradient-primary: #{$kkoo-gradient-primary};
   --kkoo-gradient-accent: #{$kkoo-gradient-accent};
 
-  // Shared surfaces (admin panels, cards)
-  --kkoo-panel-bg: #ffffff;
-  --kkoo-panel-muted: #f8f9fa;
-  --kkoo-panel-border: #e8eaf2;
-  --kkoo-panel-ink: #14213d;
-  --kkoo-panel-sub: #64748b;
+  // Semantic surfaces (all apps)
+  --kkoo-canvas: #{$kkoo-canvas};
+  --kkoo-surface: #{$kkoo-surface};
+  --kkoo-surface-muted: #{$kkoo-surface-muted};
+  --kkoo-text-muted: #{$kkoo-text-muted};
+  --kkoo-focus: #{$kkoo-focus};
+  --kkoo-control-height: #{$kkoo-control-height};
+  --kkoo-on-accent: #{$kkoo-primary-dark};
+
+  // Buyer / shop semantic aliases
+  --buyer-ink: #{$kkoo-primary-dark};
+  --buyer-muted: #{$kkoo-text-muted};
+  --buyer-canvas: #{$kkoo-canvas};
+  --buyer-surface: #{$kkoo-surface};
+  --buyer-border: #{$kkoo-border-light};
+  --buyer-border-strong: rgba(92, 48, 143, 0.14);
+  --buyer-input-bg: #{$kkoo-canvas};
+  --buyer-chip-bg: #{$kkoo-surface-muted};
+  --buyer-search-placeholder: #9a8ab0;
+  --buyer-shadow-color: rgba(59, 26, 90, 0.06);
+  --buyer-gradient-hero: linear-gradient(145deg, #fff 0%, #{$kkoo-canvas} 55%, rgba(247, 168, 41, 0.1) 100%);
+  --buyer-gradient-flash: linear-gradient(145deg, #fff 0%, #fdf8f3 100%);
+  --buyer-card-bg: var(--buyer-surface);
+  --buyer-card-border: var(--buyer-border);
+  --buyer-card-shadow: 0 4px 16px var(--buyer-shadow-color);
+
+  // Shared surfaces (admin-style panels in buyer web)
+  --kkoo-panel-bg: #{$kkoo-surface};
+  --kkoo-panel-muted: #{$kkoo-surface-muted};
+  --kkoo-panel-border: rgba(92, 48, 143, 0.1);
+  --kkoo-panel-ink: #{$kkoo-primary-dark};
+  --kkoo-panel-sub: #{$kkoo-text-muted};
   --kkoo-accent-tint: #fff7e8;
 }
 
-html[data-bs-theme='dark'] {
-  --kkoo-panel-bg: #1c1822;
-  --kkoo-panel-muted: #252030;
-  --kkoo-panel-border: rgba(92, 48, 143, 0.28);
+html[data-bs-theme='dark'],
+html.theme-dark {
+  // Unified KKOO dark palette (landing paper + admin panels)
+  --kkoo-dark-canvas: #100c14;
+  --kkoo-dark-surface: #17121b;
+  --kkoo-dark-surface-raised: #1c1822;
+  --kkoo-dark-surface-muted: #252030;
+  --kkoo-dark-border: rgba(255, 255, 255, 0.09);
+  --kkoo-dark-border-purple: rgba(92, 48, 143, 0.28);
+  --kkoo-dark-card-bg: linear-gradient(
+    180deg,
+    rgba(27, 20, 32, 0.98) 0%,
+    rgba(16, 12, 20, 0.96) 100%
+  );
+  --kkoo-dark-card-border: rgba(255, 255, 255, 0.08);
+  --kkoo-dark-card-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+
+  --buyer-ink: #ede9f5;
+  --buyer-muted: rgba(237, 233, 245, 0.68);
+  --buyer-canvas: var(--kkoo-dark-canvas);
+  --buyer-surface: var(--kkoo-dark-surface-raised);
+  --buyer-border: var(--kkoo-dark-border-purple);
+  --buyer-border-strong: rgba(255, 255, 255, 0.12);
+  --buyer-input-bg: var(--kkoo-dark-surface-muted);
+  --buyer-chip-bg: rgba(255, 255, 255, 0.06);
+  --buyer-search-placeholder: rgba(237, 233, 245, 0.45);
+  --buyer-shadow-color: rgba(0, 0, 0, 0.35);
+  --buyer-gradient-hero: var(--kkoo-dark-card-bg);
+  --buyer-gradient-flash: var(--kkoo-dark-card-bg);
+  --buyer-card-bg: var(--kkoo-dark-card-bg);
+  --buyer-card-border: var(--kkoo-dark-card-border);
+  --buyer-card-shadow: var(--kkoo-dark-card-shadow);
+
+  --kkoo-panel-bg: var(--kkoo-dark-surface-raised);
+  --kkoo-panel-muted: var(--kkoo-dark-surface-muted);
+  --kkoo-panel-border: var(--kkoo-dark-border-purple);
   --kkoo-panel-ink: #ede9f5;
   --kkoo-panel-sub: rgba(237, 233, 245, 0.68);
   --kkoo-accent-tint: rgba(247, 168, 41, 0.16);

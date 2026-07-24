@@ -2,7 +2,7 @@
   <div :class="customClass ?? 'logo-box'">
     <router-link to="/" class="logo-box-link">
       <img
-        :src="logoLightImg"
+        :src="logoSrc"
         :height="logoHeight"
         :style="logoHeight ? { height: `${logoHeight}px` } : undefined"
         :class="logoClass ?? undefined"
@@ -13,7 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import logoLightImg from '@/assets/images/logo-mark-light.svg'
+import { computed } from 'vue'
+import { useLayoutStore } from '@/stores/layout'
+/** Same assets as the index.html splash screen. */
+import logoLight from '@/assets/images/logo-light.svg'
+import logoDark from '@/assets/images/logo-dark.svg'
 
 type PropsType = {
   customClass?: string
@@ -24,4 +28,7 @@ type PropsType = {
 withDefaults(defineProps<PropsType>(), {
   logoHeight: 40,
 })
+
+const layout = useLayoutStore()
+const logoSrc = computed(() => (layout.layout.theme === 'dark' ? logoDark : logoLight))
 </script>

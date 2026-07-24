@@ -3,8 +3,9 @@
     <b-card title="Businesses">
       <p class="text-muted mb-3">SME businesses (multi-tenant). Each business has its own customers, products, invoices, and debts.</p>
       <div class="d-flex flex-wrap gap-2 mb-3">
+        <b-button variant="primary" size="sm" :to="{ name: 'admin.crm.onboarding' }">Register company</b-button>
+        <b-button variant="outline-primary" size="sm" @click="showAddModal = true">Quick add</b-button>
         <b-button variant="outline-secondary" size="sm" @click="load">Refresh</b-button>
-        <b-button variant="primary" size="sm" @click="showAddModal = true">Add business</b-button>
       </div>
       <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
       <b-table v-if="items.length" :items="items" :fields="fields" striped responsive>

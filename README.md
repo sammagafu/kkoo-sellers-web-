@@ -15,6 +15,9 @@ npm install
 npm run dev
 ```
 
+Dev server proxies `/api` → **`http://localhost:8000`** (Docker Compose API).  
+Platform matrix: [../docs/CROSS_APP_INTEGRATION.md](../docs/CROSS_APP_INTEGRATION.md). Auth is WhatsApp OTP; QA phones / `112233` in [TESTER_ACCOUNTS.md](../kkooapp-backend-fiber/docs/TESTER_ACCOUNTS.md).
+
 ## Build
 
 ```bash

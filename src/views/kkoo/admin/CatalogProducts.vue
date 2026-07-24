@@ -495,7 +495,7 @@ import CatalogListPaginationBar from '@/components/CatalogListPaginationBar.vue'
 import ImportBatchProgressPanel from '@/components/ImportBatchProgressPanel.vue'
 import { useCatalogListPagination } from '@/composables/useCatalogListPagination'
 import type { ImportBatchLine } from '@/components/ImportBatchProgressPanel.vue'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -563,13 +563,18 @@ const route = useRoute()
 const search = ref((route.query.search as string) ?? '')
 let loadDebounce: ReturnType<typeof setTimeout> | null = null
 
-watch(() => route.query.search, (q) => {
-  const val = q != null ? String(q).trim() : ''
-  if (val !== search.value) search.value = val
-  clearSelection()
-  resetPage()
-  load()
-}, { immediate: false })
+watch(
+  () => route.query.search,
+  (q) => {
+    const val = q != null ? String(q).trim() : ''
+    if (val !== search.value) search.value = val
+    clearSelection()
+    const wasPage = page.value
+    resetPage()
+    if (wasPage === 1) void load()
+  },
+  { immediate: true },
+)
 
 watch([page, pageSize], () => {
   void load()
@@ -749,8 +754,6 @@ async function load() {
     loading.value = false
   }
 }
-
-onMounted(load)
 
 function exportCsv() {
   exportToCsv(items.value as unknown as Record<string, unknown>[], csvColumns, 'products-export.csv')

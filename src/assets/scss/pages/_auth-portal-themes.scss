@@ -2,23 +2,7 @@
 // Portal-specific auth screen palettes (admin / buyer / seller)
 //
 
-body.authentication-bg[data-kkoo-portal='buyer'] {
-  background: #eff6ff;
-}
-
-html[data-bs-theme='dark'] body.authentication-bg[data-kkoo-portal='buyer'] {
-  background: #0c1220;
-}
-
-body.authentication-bg[data-kkoo-portal='seller'] {
-  background: #fff7ed;
-}
-
-html[data-bs-theme='dark'] body.authentication-bg[data-kkoo-portal='seller'] {
-  background: #140d08;
-}
-
-.auth-shell[data-kkoo-portal='buyer'] {
+.auth-shell--centered[data-kkoo-portal='buyer'] {
   .auth-scene__sky {
     background:
       radial-gradient(circle at 18% 22%, rgba(56, 189, 248, 0.28), transparent 42%),
@@ -137,7 +121,7 @@ html[data-bs-theme='dark'] body.authentication-bg[data-kkoo-portal='seller'] {
   }
 }
 
-.auth-shell[data-kkoo-portal='seller'] {
+.auth-shell--centered[data-kkoo-portal='seller'] {
   .auth-scene__sky {
     background:
       radial-gradient(circle at 18% 22%, rgba(251, 146, 60, 0.26), transparent 42%),
@@ -257,7 +241,7 @@ html[data-bs-theme='dark'] body.authentication-bg[data-kkoo-portal='seller'] {
 }
 
 html[data-bs-theme='dark'] {
-  .auth-shell[data-kkoo-portal='buyer'] {
+  .auth-shell--centered[data-kkoo-portal='buyer'] {
     .auth-scene__sky {
       background: linear-gradient(180deg, #0f2744 0%, #0c1220 55%, #081018 100%);
     }
@@ -275,7 +259,7 @@ html[data-bs-theme='dark'] {
     }
   }
 
-  .auth-shell[data-kkoo-portal='seller'] {
+  .auth-shell--centered[data-kkoo-portal='seller'] {
     .auth-scene__sky {
       background: linear-gradient(180deg, #3d1f0f 0%, #140d08 55%, #0a0705 100%);
     }
@@ -292,18 +276,6 @@ html[data-bs-theme='dark'] {
       color: #fdba74;
     }
   }
-}
-
-.topbar-brand-logo {
-  gap: 0.55rem;
-}
-
-.topbar-brand-title {
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  color: var(--bs-topbar-item-color, var(--bs-body-color));
 }
 
 .buyer-shopping-topbar {

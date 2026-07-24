@@ -127,6 +127,8 @@ export default {
     'admin-group-promotions': 'Promosheni',
     'admin-promotions': 'Promosheni',
     'admin-ride-promotions': 'Promosheni za Usafiri',
+    'admin-flash-sales': 'Mauzo ya Haraka',
+    'admin-platform-campaigns': 'Push na promo',
     'admin-promotion-bundles': 'Vifurushi vya Promosheni',
     'admin-group-logistics': 'Usafirishaji',
     'admin-logistics': 'Usafirishaji',

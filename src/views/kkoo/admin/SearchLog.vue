@@ -49,7 +49,7 @@ const searchLogLoading = ref(false)
 const searchLogError = ref('')
 const searchLogFields = [
   { key: 'id', label: 'ID' },
-  { key: 'query', label: 'Query' },
+  { key: 'keyword', label: 'Query' },
   { key: 'result_count', label: 'Results' },
   { key: 'created_at', label: 'Searched at' },
 ]
@@ -79,7 +79,10 @@ async function loadSearchLog() {
       result_count: zeroResultOnly.value ? 0 : undefined,
       limit: limit.value ? parseInt(limit.value, 10) : 100,
     })
-    searchLogItems.value = normalizeResults(data)
+    searchLogItems.value = normalizeResults(data).filter((row) => {
+      const kw = String(row.keyword ?? row.query ?? '').trim()
+      return kw.length > 0
+    })
   } catch (e: unknown) {
     searchLogError.value = formatApiError(e, 'Failed to load search log')
     searchLogItems.value = []
@@ -98,7 +101,10 @@ async function loadMissing() {
       ...(since.value && { since: since.value }),
     })
     const raw = (data as { missing_keywords?: unknown[] })?.missing_keywords ?? []
-    missingItems.value = raw as Record<string, unknown>[]
+    missingItems.value = (raw as Record<string, unknown>[]).filter((row) => {
+      const kw = String(row.keyword ?? '').trim()
+      return kw.length > 0
+    })
   } catch (e: unknown) {
     missingError.value = formatApiError(e, 'Failed to load')
     missingItems.value = []

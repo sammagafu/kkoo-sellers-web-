@@ -1,22 +1,12 @@
 <template>
   <AuthLayout>
     <AuthCard
+      portal="admin"
       :title="otpSent ? t('auth.verifyTitle') : t('auth.signInWithPhone')"
       :subtitle="otpSent ? t('auth.otpPromptSent') : t('auth.signInSubtitle')"
-      :info-lines="otpSent ? [] : signInInfoLines"
-      :tag-icons="signInTagIcons"
-      show-logo
-      :icon="otpSent ? 'bi-shield-lock' : 'bi-box-arrow-in-right'"
-      :logo-height="68"
       :otp="otpSent"
+      :divider-label="t('auth.dontHaveAccount')"
     >
-      <div class="mb-4">
-        <b-button variant="outline-primary" class="w-100" :disabled="loading" @click="signInWithKkoo">
-          {{ t('auth.signInWithKkooAccount') }}
-        </b-button>
-        <p class="text-muted small text-center mt-2 mb-0">{{ t('auth.orContinueWith') }} OTP</p>
-      </div>
-
       <b-form class="auth-center-form" @submit.prevent="otpSent ? handleVerifyOtp() : handleRequestOtp()" novalidate>
         <div v-if="route.query.reset === 'success'" class="auth-alert auth-alert--success">{{ t('auth.resetSuccess') }}</div>
         <div v-if="route.query.notAllowed === '1'" class="auth-alert auth-alert--warning">{{ t('auth.notAllowedPortal') }}</div>
@@ -24,7 +14,7 @@
         <div v-if="successMessage" class="auth-alert auth-alert--success">{{ successMessage }}</div>
         <div v-if="error.length > 0" class="auth-alert auth-alert--danger">{{ error }}</div>
 
-        <AuthField :label="t('auth.phoneNumber')" icon="bi-telephone">
+        <AuthField :label="t('auth.phoneNumber')" icon="bi-telephone" icon-trailing>
           <b-form-input
             v-model="phone"
             class="auth-field__input"
@@ -37,7 +27,7 @@
         </AuthField>
 
         <template v-if="otpSent">
-          <AuthField :label="t('auth.otpCode')" icon="bi-key" otp>
+          <AuthField :label="t('auth.otpCode')" icon="bi-key" otp icon-trailing>
             <b-form-input
               v-model="otpCode"
               class="auth-field__input auth-field__input--otp"
@@ -71,7 +61,9 @@
 
       <template #alt>
         <router-link :to="{ name: 'auth.sign-up' }" class="auth-alt-btn">{{ t('auth.signUp') }}</router-link>
-        <router-link :to="{ name: 'auth.sign-up', query: { as: 'seller' } }" class="auth-alt-btn">{{ t('auth.registerAsSeller') }}</router-link>
+        <router-link :to="{ name: 'auth.sign-up', query: { as: 'seller' } }" class="auth-alt-btn auth-alt-btn--accent">
+          {{ t('auth.registerAsSeller') }}
+        </router-link>
       </template>
     </AuthCard>
 
@@ -108,8 +100,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api'
+import { formatApiError } from '@/utils/formatApiError'
 import { toastError, toastSuccess } from '@/utils/toast'
-import { startKkooOAuth } from '@/utils/kkooOAuth'
 
 const phone = ref('')
 const otpCode = ref('')
@@ -127,18 +119,6 @@ const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
 
-function signInWithKkoo() {
-  void startKkooOAuth({ returnTo: String(route.query.redirectedFrom ?? route.fullPath) })
-}
-
-const signInInfoLines = computed(() => [
-  t('auth.signInInfo1'),
-  t('auth.signInInfo2'),
-  t('auth.signInInfo3'),
-])
-
-const signInTagIcons = ['bi-shield-check', 'bi-phone', 'bi-shop']
-
 const submitDisabled = computed(() => {
   if (loading.value || redirecting.value) return true
   return otpSent.value ? !otpCode.value.trim() : !phone.value.trim()
@@ -147,7 +127,7 @@ const submitDisabled = computed(() => {
 const submitLabel = computed(() => {
   if (redirecting.value) return t('auth.redirecting')
   if (loading.value) return otpSent.value ? t('auth.verifying') : t('auth.sending')
-  return otpSent.value ? t('auth.verifyAndSignIn') : t('auth.getStarted')
+  return otpSent.value ? t('auth.verifyAndSignIn') : t('auth.sendOtp')
 })
 
 let resendTimer: ReturnType<typeof setInterval> | null = null
@@ -164,6 +144,21 @@ function startResendCooldown(sec = 30) {
   }, 1000)
 }
 
+function otpDeliveryMessage(data: {
+  debug_otp?: string
+  message?: string
+  skipped_resend?: boolean
+  delivered_push?: boolean
+  whatsapp_failed?: boolean
+}) {
+  if (data.debug_otp) return `Test OTP: ${data.debug_otp}`
+  if (data.skipped_resend && data.message) return data.message
+  if (data.whatsapp_failed && data.delivered_push) {
+    return 'Code sent to your KKOO app. Check notifications if WhatsApp did not arrive.'
+  }
+  return t('auth.otpSent')
+}
+
 async function handleRequestOtp() {
   error.value = ''
   successMessage.value = ''
@@ -173,17 +168,13 @@ async function handleRequestOtp() {
   }
   loading.value = true
   try {
-    const res = await authApi.requestOtp(phone.value.trim())
+    const data = await authApi.requestOtp(phone.value.trim())
     otpSent.value = true
-    if (res.debug_otp) {
-      otpCode.value = res.debug_otp
-      successMessage.value = `Test OTP: ${res.debug_otp}`
-    } else {
-      successMessage.value = t('auth.otpSent')
-    }
-    startResendCooldown()
-  } catch {
-    error.value = t('auth.otpSendFailed')
+    if (data.debug_otp) otpCode.value = data.debug_otp
+    successMessage.value = otpDeliveryMessage(data)
+    startResendCooldown(data.cooldown_seconds && data.cooldown_seconds > 0 ? data.cooldown_seconds : 30)
+  } catch (e: unknown) {
+    error.value = formatApiError(e, t('auth.otpSendFailed'))
   } finally {
     loading.value = false
   }

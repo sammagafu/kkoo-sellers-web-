@@ -3,6 +3,7 @@ import { allRoutes } from './routes/index';
 import { useAuthStore, BUYER_ACCOUNT_ROLE } from '@/stores/auth'
 import { ROLES } from '@/acl'
 import { buyerWebPath } from '@/config/cross-app-links'
+import { bizSellerDashboardUrl } from '@/config/app-portal-links'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -51,6 +52,16 @@ router.beforeEach(async (routeTo, _routeFrom, next) => {
       window.location.href = buyerWebPath('/marketplace');
       return;
     }
+    // Pure sellers (no staff/superuser): send to biz seller portal — admin is platform ops only.
+    const isSellerOnly =
+      auth.isSeller &&
+      !auth.isAdminOrStaff &&
+      !auth.hasRole(ROLES.ADMIN) &&
+      !auth.hasRole(ROLES.STAFF);
+    if (isSellerOnly && (hitsAdminHome || routeTo.path.startsWith('/admin'))) {
+      window.location.href = bizSellerDashboardUrl;
+      return;
+    }
   }
 
   const authRequired = routeTo.matched.some((route) => route.meta.authRequired);
@@ -79,6 +90,10 @@ router.beforeEach(async (routeTo, _routeFrom, next) => {
       auth.hasRole(ROLES.ADMIN) ||
       auth.hasRole(ROLES.STAFF);
     if (!canAccessAdmin) {
+      if (auth.isSeller || auth.hasRole(ROLES.SELLER)) {
+        window.location.href = bizSellerDashboardUrl;
+        return;
+      }
       return next({ name: 'account.home', query: { restricted: 'admin' } });
     }
     const isSellerManagementRoute =

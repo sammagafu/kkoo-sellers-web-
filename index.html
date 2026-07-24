@@ -29,6 +29,22 @@
 
     <meta name="theme-color" content="#5c308f" />
 
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('rasket_layout_store');
+          if (!raw) return;
+          var data = JSON.parse(raw);
+          var theme = data && data.theme === 'dark' ? 'dark' : 'light';
+          var root = document.documentElement;
+          root.setAttribute('data-bs-theme', theme);
+          root.classList.toggle('theme-dark', theme === 'dark');
+          root.classList.toggle('theme-light', theme === 'light');
+          root.style.colorScheme = theme;
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- JSON-LD: Organization / WebSite for search -->
     <script type="application/ld+json">
     {
@@ -61,7 +77,7 @@
         justify-content: center;
         z-index: 9999;
         opacity: 1;
-        transition: all 15s linear;
+        transition: opacity 0.7s linear;
         overflow: hidden;
       }
 
@@ -73,12 +89,27 @@
 
       #splash-screen.remove {
         animation: fadeout 0.7s forwards;
-        z-index: 0;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      #splash-screen .splash-logo--dark {
+        display: none;
+      }
+
+      html[data-bs-theme="dark"] #splash-screen .splash-logo--light {
+        display: none;
+      }
+
+      html[data-bs-theme="dark"] #splash-screen .splash-logo--dark {
+        display: block;
       }
 
       @keyframes fadeout {
         to {
+          opacity: 0;
           visibility: hidden;
+          pointer-events: none;
         }
       }
     </style>
@@ -87,16 +118,31 @@
 <div id="app"></div>
 <div id="splash-screen">
     <img
+      class="splash-logo splash-logo--light"
       alt="KKOO logo"
-      src="./src/assets/images/logo-light.svg"
-      style="height: 160px; width: auto;"
+      src="/logo-icon.svg"
+      style="height: 80px; width: auto;"
+    />
+    <img
+      class="splash-logo splash-logo--dark"
+      alt="KKOO logo"
+      src="/logo-icon-dark.svg"
+      style="height: 80px; width: auto;"
     />
   </div>
 <script type="module" src="/src/main.ts"></script>
 <script>
     const appEl = document.querySelector('#app');
+    let splashDismissed = false;
     new MutationObserver(() => {
-      document.querySelector('#splash-screen')?.classList.add('remove');
+      if (splashDismissed) return;
+      const splash = document.querySelector('#splash-screen');
+      if (!splash) return;
+      splashDismissed = true;
+      splash.style.pointerEvents = 'none';
+      splash.style.visibility = 'hidden';
+      splash.classList.add('remove');
+      window.setTimeout(() => splash.remove(), 750);
     }).observe(appEl, { childList: true })
   </script>
 </body>

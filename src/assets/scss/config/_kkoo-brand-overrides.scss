@@ -147,3 +147,185 @@ html[data-bs-theme='dark'] {
     --#{$prefix}alert-border-color: #{rgba($kkoo-primary-light, 0.35)};
   }
 }
+
+// ============================================================================
+// SHARED PRIMITIVES — buttons, inputs, cards, nav (all portals)
+// Hierarchy: primary = purple | secondary = gold + dark ink | ghost/outline = purple
+// ============================================================================
+
+.btn {
+  min-height: $kkoo-control-height;
+  border-radius: $kkoo-radius-md;
+  font-weight: $kkoo-font-semibold;
+  letter-spacing: 0.01em;
+  transition: background-color $kkoo-transition-base, border-color $kkoo-transition-base,
+    box-shadow $kkoo-transition-base, color $kkoo-transition-base, transform $kkoo-transition-fast;
+
+  &:focus-visible {
+    outline: 2px solid var(--kkoo-focus);
+    outline-offset: 2px;
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 1;
+    color: rgba($kkoo-primary-dark, 0.45);
+    background-color: rgba($kkoo-primary, 0.08);
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.btn-primary {
+  box-shadow: $kkoo-shadow-primary;
+
+  &:hover:not(:disabled):not(.disabled) {
+    box-shadow: $kkoo-shadow-primary-hover;
+  }
+
+  &:active:not(:disabled):not(.disabled) {
+    box-shadow: $kkoo-shadow-primary-active;
+  }
+}
+
+.btn-secondary {
+  box-shadow: $kkoo-shadow-accent;
+}
+
+.btn-sm {
+  min-height: 2.25rem;
+  border-radius: $kkoo-radius-sm;
+}
+
+.btn-lg {
+  min-height: 3.25rem;
+  border-radius: $kkoo-radius-lg;
+}
+
+.form-control,
+.form-select {
+  min-height: $kkoo-control-height;
+  border-radius: $kkoo-radius-md;
+  border-color: rgba($kkoo-primary, 0.16);
+  background-color: var(--kkoo-surface, #fff);
+  color: var(--kkoo-panel-ink, #{$kkoo-primary-dark});
+  transition: border-color $kkoo-transition-base, box-shadow $kkoo-transition-base;
+
+  &:focus {
+    border-color: $kkoo-focus;
+    box-shadow: 0 0 0 0.2rem rgba($kkoo-focus, 0.2);
+  }
+
+  &:disabled {
+    background-color: var(--kkoo-surface-muted, #{$kkoo-surface-muted});
+    color: rgba($kkoo-primary-dark, 0.45);
+  }
+
+  &.is-invalid:focus {
+    box-shadow: 0 0 0 0.2rem rgba($kkoo-error, 0.2);
+  }
+}
+
+.form-label {
+  font-weight: $kkoo-font-medium;
+  color: var(--kkoo-panel-ink, #{$kkoo-primary-dark});
+  margin-bottom: $kkoo-rhythm-label;
+}
+
+.invalid-feedback {
+  color: $kkoo-error;
+  font-size: $kkoo-font-size-sm;
+}
+
+.wrapper {
+  .card {
+    border-radius: $kkoo-card-border-radius;
+    box-shadow: $kkoo-card-shadow;
+  }
+
+  // Use theme CSS vars so dark sidebar + dark mode stay gold (not buried purple)
+  .navbar-nav .nav-link.active,
+  .main-nav .nav-link.active,
+  .side-nav .nav-link.active,
+  .vertical-menu .nav-link.active {
+    color: var(--#{$prefix}main-nav-item-active-color, #{$kkoo-primary});
+    font-weight: $kkoo-font-semibold;
+  }
+
+  .main-nav .nav-link.active,
+  .side-nav .nav-link.active,
+  .vertical-menu .nav-link.active {
+    background-color: var(--#{$prefix}main-nav-item-active-bg, #{rgba($kkoo-primary, 0.08)});
+    border-inline-start: 3px solid $kkoo-accent;
+  }
+
+  .main-nav .nav-link.active .nav-icon,
+  .side-nav .nav-link.active .nav-icon,
+  .vertical-menu .nav-link.active .nav-icon {
+    color: var(--#{$prefix}main-nav-item-active-color, #{$kkoo-primary});
+  }
+}
+
+html[data-bs-theme='dark'],
+html.theme-dark {
+  .wrapper .navbar-nav .nav-link.active,
+  .wrapper .main-nav .nav-link.active,
+  .wrapper .side-nav .nav-link.active,
+  .wrapper .vertical-menu .nav-link.active,
+  .wrapper .main-nav .nav-link.active .nav-icon,
+  .wrapper .side-nav .nav-link.active .nav-icon,
+  .wrapper .vertical-menu .nav-link.active .nav-icon {
+    color: $kkoo-secondary !important;
+  }
+
+  .wrapper .main-nav .nav-link.active,
+  .wrapper .side-nav .nav-link.active,
+  .wrapper .vertical-menu .nav-link.active {
+    background-color: rgba($kkoo-secondary, 0.18) !important;
+  }
+}
+
+html:not([data-bs-theme='dark']) body {
+  background-color: var(--kkoo-canvas, #{$kkoo-canvas});
+}
+
+// ============================================================================
+// DISPLAY TYPOGRAPHY — Syne for h1–h3, brand, large numbers
+// Body, labels, and h4–h6 stay on Poppins (--kkoo-font-primary).
+// ============================================================================
+
+h1,
+h2,
+h3,
+.h1,
+.h2,
+.h3,
+.display-1,
+.display-2,
+.display-3,
+.display-4,
+.display-5,
+.display-6,
+.dashboard-heading,
+.stat-card-value,
+.kkoo-display,
+.topbar-brand-title,
+.auth-center-card__title {
+  font-family: var(--kkoo-font-display, #{$kkoo-font-display});
+  letter-spacing: -0.02em;
+}
+
+.topbar-brand-title {
+  letter-spacing: 0.04em;
+}
+
+.shop-product-card__title,
+.shop-product-card__price,
+.store-product-card__title,
+.store-product-card__price,
+.menu-card-title,
+.menu-card-price-tag,
+.menu-card-price-inline {
+  font-family: var(--kkoo-font-primary, #{$kkoo-font-primary}) !important;
+  letter-spacing: normal;
+}

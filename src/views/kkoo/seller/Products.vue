@@ -92,7 +92,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -158,9 +158,20 @@ const csvColumns = [
   { key: 'status', label: 'status' },
 ]
 
-watch(() => route.query.search, (q) => {
-  if (q != null && String(q).trim()) search.value = String(q).trim()
-}, { immediate: true })
+let initialProductsLoad = false
+
+watch(
+  () => route.query.search,
+  (q) => {
+    const val = q != null ? String(q).trim() : ''
+    if (val !== search.value) search.value = val
+    const wasPage = page.value
+    resetPage()
+    void loadProducts(wasPage === 1 && !initialProductsLoad)
+    initialProductsLoad = true
+  },
+  { immediate: true },
+)
 
 watch([page, pageSize], () => {
   void loadProducts()
@@ -220,8 +231,6 @@ async function loadProducts(showLoadedToast = false) {
     loading.value = false
   }
 }
-
-onMounted(() => loadProducts(true))
 
 function exportCsv() {
   exportToCsv(items.value as unknown as Record<string, unknown>[], csvColumns, 'my-products-export.csv')

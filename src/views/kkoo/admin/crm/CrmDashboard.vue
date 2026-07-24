@@ -2,7 +2,9 @@
   <VerticalLayout>
     <b-card title="CRM Dashboard">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <span class="text-muted">Period:</span>
+        <b-button variant="primary" size="sm" :to="{ name: 'admin.crm.onboarding' }">Register company</b-button>
+        <b-button variant="outline-secondary" size="sm" :to="{ name: 'admin.crm.businesses' }">All businesses</b-button>
+        <span class="text-muted ms-md-2">Period:</span>
         <b-form-select v-model="period" :options="periodOptions" value-field="value" text-field="text" size="sm" class="w-auto" @change="load" />
       </div>
       <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>

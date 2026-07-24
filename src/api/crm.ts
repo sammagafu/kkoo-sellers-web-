@@ -47,12 +47,33 @@ export const crmApi = {
     return client.post(`${prefix}/businesses/${businessId}/transfer-ownership/`, data)
   },
 
-  // Invitations (owner or business admin can create/list/revoke; backend should notify company admin and all is_superuser on create/revoke)
+  // Invitations — phone/WhatsApp-first (E.164); backend requires phone_number
   getBusinessInvitations(businessId: number | string) {
     return client.get(`${prefix}/businesses/${businessId}/invitations/`)
   },
-  createBusinessInvitation(businessId: number | string, data: { email: string; role: string }) {
-    return client.post(`${prefix}/businesses/${businessId}/invitations/`, data)
+  createBusinessInvitation(
+    businessId: number | string,
+    data: {
+      phone_number: string
+      role: string
+      channel?: 'whatsapp' | 'sms'
+      language?: string
+      email?: string
+    },
+  ) {
+    return client.post<{
+      id: number
+      phone_number?: string
+      role?: string
+      channel?: string
+      join_url?: string
+      token?: string
+      message_preview?: string
+      expires_at?: string
+    }>(`${prefix}/businesses/${businessId}/invitations/`, {
+      channel: 'sms',
+      ...data,
+    })
   },
   revokeBusinessInvitation(businessId: number | string, invitationId: number | string) {
     return client.delete(`${prefix}/businesses/${businessId}/invitations/${invitationId}/`)

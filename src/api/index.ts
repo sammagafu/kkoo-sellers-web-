@@ -130,3 +130,4 @@ export {
   createCommunityFeatureRequest,
   supportCommunityFeatureRequest,
 } from './community'
+export { discoverEventsAdminApi, discoverEventsPublicApi, type PlatformEventRow } from './events'

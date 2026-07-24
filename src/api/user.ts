@@ -62,4 +62,13 @@ export const userApi = {
       formData,
     )
   },
+  checkSlugAvailability(slug: string) {
+    return client.get<{ available?: boolean; slug?: string; reason?: string }>(
+      '/users/seller/profile/slug-availability/',
+      { params: { slug } },
+    )
+  },
+  claimStoreHandle(handle: string) {
+    return client.patch('/users/seller/profile/store-link-menu/', { handle, menu_slug: handle })
+  },
 }

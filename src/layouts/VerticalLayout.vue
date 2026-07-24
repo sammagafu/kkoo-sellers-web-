@@ -13,8 +13,8 @@
           class="mb-3"
           @dismissed="markSellerWarningShown"
         >
-          <p class="mb-2 mb-md-0 me-md-3 d-md-inline"><strong>Complete registration</strong> — verify your profile to unlock seller tools.</p>
-          <router-link :to="{ name: 'seller.profile' }" class="alert-link fw-semibold">Finalize registration →</router-link>
+          <p class="mb-2 mb-md-0 me-md-3 d-md-inline"><strong>Complete registration</strong> — finish seller setup in the seller portal.</p>
+          <a :href="bizSellerDashboardUrl" class="alert-link fw-semibold">Open seller portal →</a>
         </b-alert>
         <b-alert
           v-if="profileCompletion.showBanner && !showSellerFinalizeWarning"
@@ -73,6 +73,7 @@ import RightSideBar from "@/layouts/partials/RightSideBar.vue";
 import AdminToolbar from '@/layouts/partials/AdminToolbar.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useProfileCompletion } from '@/composables/useProfileCompletion'
+import { bizSellerDashboardUrl } from '@/config/app-portal-links'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -85,7 +86,8 @@ const profileUpdateTo = computed<RouteLocationRaw>(() => {
 const SELLER_WARNING_KEY = 'kkoo_seller_finalize_warning_shown'
 
 const showSellerFinalizeWarning = computed(() => {
-  if (!auth.isSeller || auth.isSellerVerified) return false
+  // Platform admins may also have a seller profile — nudge them to biz, not dead local routes.
+  if (!auth.isSeller || auth.isSellerVerified || !auth.isAdminOrStaff) return false
   try {
     return !sessionStorage.getItem(SELLER_WARNING_KEY)
   } catch {

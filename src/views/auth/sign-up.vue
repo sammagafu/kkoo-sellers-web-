@@ -1,13 +1,11 @@
 <template>
   <AuthLayout>
     <AuthCard
+      portal="admin"
       :title="pageTitle"
       :subtitle="pageSubtitle"
-      :info-lines="signUpInfoLines"
-      :tag-icons="signUpTagIcons"
-      :logo-height="64"
       wide
-      show-logo
+      :divider-label="t('auth.alreadyHaveAccount')"
     >
       <div class="auth-role-toggle" role="group" :aria-label="t('auth.joinAs')">
         <button
@@ -25,7 +23,7 @@
       <b-form class="auth-center-form" @submit.prevent="handleSubmit" novalidate>
         <div v-if="error.length > 0" class="auth-alert auth-alert--danger">{{ error }}</div>
 
-        <AuthField :label="t('auth.phoneNumber')" icon="bi-telephone">
+        <AuthField :label="t('auth.phoneNumber')" icon="bi-telephone" icon-trailing>
           <b-form-input
             v-model="phone"
             class="auth-field__input"
@@ -38,7 +36,7 @@
         </AuthField>
 
         <div class="auth-form-grid auth-form-grid--2">
-          <AuthField :label="t('auth.firstName')" icon="bi-person">
+          <AuthField :label="t('auth.firstName')" icon="bi-person" icon-trailing>
             <b-form-input
               v-model="firstName"
               class="auth-field__input"
@@ -47,7 +45,7 @@
               autocomplete="given-name"
             />
           </AuthField>
-          <AuthField :label="t('auth.lastName')" icon="bi-person">
+          <AuthField :label="t('auth.lastName')" icon="bi-person" icon-trailing>
             <b-form-input
               v-model="lastName"
               class="auth-field__input"
@@ -105,14 +103,6 @@ const roleOptions = computed(() => [
   { value: 'buyer' as const, label: t('auth.roleBuyer') },
   { value: 'seller' as const, label: t('auth.roleSeller') },
 ])
-
-const signUpInfoLines = computed(() => [
-  t('auth.signUpInfo1'),
-  t('auth.signUpInfo2'),
-  t('auth.signUpInfo3'),
-])
-
-const signUpTagIcons = ['bi-bag', 'bi-phone', 'bi-shield-check']
 
 function parseRoleQuery(q: unknown): Role | null {
   const v = typeof q === 'string' ? q.toLowerCase().trim() : ''

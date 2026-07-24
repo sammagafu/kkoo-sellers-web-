@@ -10,23 +10,6 @@
             </button>
           </div>
 
-          <router-link
-            to="/"
-            class="topbar-brand-logo d-flex align-items-center flex-shrink-0 text-decoration-none"
-            aria-label="KKOO home"
-            title="Home"
-          >
-            <img
-              class="topbar-brand-logo-img"
-              :src="topbarLogoSrc"
-              alt=""
-              width="32"
-              height="32"
-              decoding="async"
-            />
-            <span class="topbar-brand-title">KKOO</span>
-          </router-link>
-
           <PortalBadge portal="admin" />
 
           <!-- CRM company (multi-business users) -->
@@ -242,8 +225,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRouter, type RouteLocationRaw } from 'vue-router';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter, useRoute, type RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Icon } from "@iconify/vue";
 import simplebar from 'simplebar-vue';
@@ -268,18 +251,26 @@ import DropDown from "@/components/DropDown.vue";
 import PortalBadge from '@/components/PortalBadge.vue';
 import CrmCompanySwitcher from '@/components/crm/CrmCompanySwitcher.vue';
 import { resolveAssetUrl } from '@/utils/assetUrl';
-import logoLight from '@/assets/images/logo-mark-light.svg';
-import logoDark from '@/assets/images/logo-mark-dark.svg';
 
 const router = useRouter();
+const route = useRoute();
 const searchQuery = ref('');
+const auth = useAuthStore();
+
+watch(
+  () => [route.name, route.query.search] as const,
+  ([name, q]) => {
+    const routeName = name != null ? String(name) : ''
+    if (routeName !== 'admin.catalog.products' && routeName !== 'seller.products') return
+    searchQuery.value = q != null ? String(q).trim() : ''
+  },
+  { immediate: true },
+)
 
 function onSearchSubmit() {
   const q = searchQuery.value?.trim();
   if (!q) return;
-  const auth = useAuthStore();
-  const isAdmin = auth.role === ROLES.ADMIN || auth.role === ROLES.STAFF;
-  if (isAdmin) {
+  if (auth.isAdminOrStaff) {
     router.push({ name: 'admin.catalog.products', query: { search: q } });
   } else {
     router.push({ name: 'seller.products', query: { search: q } });
@@ -287,10 +278,7 @@ function onSearchSubmit() {
 }
 
 const useLayout = useLayoutStore();
-const auth = useAuthStore();
 
-/** KKOO mark: light SVG on light topbar, dark variant when app theme is dark (readable on topbar bg). */
-const topbarLogoSrc = computed(() => (useLayout.layout.theme === 'dark' ? logoDark : logoLight));
 const profileCompletion = useProfileCompletion();
 const { storeLink: sellerStoreLinkUrl, hasStoreLink: hasSellerStoreLink } = useSellerStoreLink();
 /** Unwrap for router-link :to (template expects RouteLocationRaw, not ComputedRef). */
@@ -458,11 +446,3 @@ html[data-bs-theme="dark"] .topbar-profile-progress-bar-wrap :deep(.progress-bar
 }
 </style>
 
-<style>
-.topbar-brand-logo-img {
-  height: 32px;
-  width: 32px;
-  object-fit: contain;
-  display: block;
-}
-</style>

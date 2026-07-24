@@ -1,19 +1,20 @@
 <template>
-  <div class="auth-shell auth-shell--centered account-pages account-pages--auth w-100" data-kkoo-portal="admin">
-    <AuthScene />
-
-    <main class="auth-center-stage">
-      <AuthViewportFit>
-        <slot />
-      </AuthViewportFit>
+  <div class="auth-shell auth-shell--split account-pages account-pages--auth w-100" data-kkoo-portal="admin">
+    <aside class="auth-split-pattern" aria-hidden="true" />
+    <main class="auth-split-form">
+      <div class="auth-split-form__inner">
+        <AuthViewportFit>
+          <slot />
+        </AuthViewportFit>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import AuthScene from '@/components/auth/AuthScene.vue'
 import AuthViewportFit from '@/components/auth/AuthViewportFit.vue'
+
 const body = document.body
 const root = document.documentElement
 

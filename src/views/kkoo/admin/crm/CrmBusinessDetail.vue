@@ -74,11 +74,23 @@
 
       <hr class="my-4" />
       <h6 class="mb-2">Invitations</h6>
-      <p class="text-muted small mb-2">Business owner and company admin can invite by email. When you invite or revoke, the backend notifies company admin and all platform superusers.</p>
+      <p class="text-muted small mb-2">
+        Invite teammates by WhatsApp number (E.164). Delivery defaults to SMS so it works without Meta WhatsApp templates.
+        Copy the join link if delivery fails.
+      </p>
       <b-alert v-if="invitationsError" variant="danger" show>{{ invitationsError }}</b-alert>
-      <b-alert v-if="inviteByEmailError" variant="danger" show>{{ inviteByEmailError }}</b-alert>
+      <b-alert v-if="inviteError" variant="danger" show>{{ inviteError }}</b-alert>
+      <b-alert v-if="lastJoinUrl" variant="success" show>
+        Invitation created.
+        <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+          <code class="small text-break">{{ lastJoinUrl }}</code>
+          <b-button size="sm" variant="outline-success" @click="copyJoinUrl">Copy link</b-button>
+        </div>
+      </b-alert>
       <b-table v-if="invitations.length" :items="invitations" :fields="invitationFields" striped size="sm" class="mb-3">
-        <template #cell(role)="data">{{ data.item.role ?? '—' }}</template>
+        <template #cell(phone_number)="data">{{ data.item.phone_number || '—' }}</template>
+        <template #cell(role)="data">{{ crmRoleLabel(data.item.role) }}</template>
+        <template #cell(channel)="data">{{ data.item.channel || '—' }}</template>
         <template #cell(created_at)="data">{{ formatInvitationDate(data.item.created_at) }}</template>
         <template #cell(actions)="data">
           <b-button size="sm" variant="outline-danger" :disabled="revokeInvitationLoading === data.item.id" @click="revokeInvitation(data.item.id)">Revoke</b-button>
@@ -87,11 +99,18 @@
       <p v-else-if="invitationsLoading" class="text-muted small">Loading invitations…</p>
       <p v-else class="text-muted small">No pending invitations.</p>
       <div class="d-flex flex-wrap align-items-end gap-2 mt-2">
-        <b-form-group label="Invite by email" class="mb-0">
+        <b-form-group label="Invite by phone" class="mb-0">
           <b-input-group>
-            <b-form-input v-model="inviteEmail" type="email" placeholder="email@example.com" class="me-1" style="min-width: 180px;" />
-            <b-form-select v-model="inviteRole" :options="inviteRoleOptions" style="max-width: 120px;" class="me-1" />
-            <b-button variant="primary" size="sm" :disabled="inviteByEmailSaving || !inviteEmailTrimmed" @click="inviteByEmail">Invite</b-button>
+            <b-form-input
+              v-model="invitePhone"
+              type="tel"
+              placeholder="+2557…"
+              class="me-1"
+              style="min-width: 160px;"
+            />
+            <b-form-select v-model="inviteRole" :options="inviteRoleOptions" style="max-width: 140px;" class="me-1" />
+            <b-form-select v-model="inviteChannel" :options="inviteChannelOptions" style="max-width: 120px;" class="me-1" />
+            <b-button variant="primary" size="sm" :disabled="inviteSaving || !invitePhoneTrimmed" @click="inviteByPhone">Invite</b-button>
           </b-input-group>
         </b-form-group>
       </div>
@@ -136,6 +155,8 @@ import { useRoute } from 'vue-router'
 import { crmApi } from '@/api'
 import { getApiFieldErrors } from '@/types/crm'
 import { CRM_ROLE_OPTIONS, crmRoleLabel, KKOO_CRM_ROLES } from '@/config/crmRoles'
+import { isLikelyE164, normalizeInvitePhone } from '@/utils/phone'
+import { formatApiError } from '@/utils/formatApiError'
 
 const route = useRoute()
 const id = computed<string | undefined>(() => { const p = route.params.id; return Array.isArray(p) ? p[0] : (p ?? undefined) })
@@ -167,16 +188,31 @@ const transferNewOwnerId = ref<number | null>(null)
 const transferSaving = ref(false)
 const transferError = ref('')
 
-const invitations = ref<{ id: number | string; email?: string; role?: string; created_at?: string }[]>([])
+const invitations = ref<{ id: number | string; phone_number?: string; email?: string; channel?: string; role?: string; created_at?: string }[]>([])
 const invitationsLoading = ref(false)
 const invitationsError = ref('')
-const inviteEmail = ref('')
+const invitePhone = ref('')
 const inviteRole = ref(KKOO_CRM_ROLES.RUNNER)
-const inviteByEmailSaving = ref(false)
-const inviteByEmailError = ref('')
+const inviteChannel = ref<'sms' | 'whatsapp'>('sms')
+const inviteSaving = ref(false)
+const inviteError = ref('')
+const lastJoinUrl = ref('')
 const revokeInvitationLoading = ref<number | string | null>(null)
 
-const inviteEmailTrimmed = computed(() => inviteEmail.value?.trim() ?? '')
+const invitePhoneTrimmed = computed(() => normalizeInvitePhone(invitePhone.value))
+
+const inviteChannelOptions = [
+  { value: 'sms', text: 'SMS' },
+  { value: 'whatsapp', text: 'WhatsApp' },
+]
+
+const invitationFields = [
+  { key: 'phone_number', label: 'Phone' },
+  { key: 'role', label: 'Role' },
+  { key: 'channel', label: 'Channel' },
+  { key: 'created_at', label: 'Invited' },
+  { key: 'actions', label: 'Actions' },
+]
 
 const planOptions = [
   { value: '', text: '—' },
@@ -187,13 +223,6 @@ const planOptions = [
 ]
 const memberRoleOptions = CRM_ROLE_OPTIONS.map((r) => ({ value: r.value, text: r.text }))
 const inviteRoleOptions = memberRoleOptions
-
-const invitationFields = [
-  { key: 'email', label: 'Email' },
-  { key: 'role', label: 'Role' },
-  { key: 'created_at', label: 'Invited' },
-  { key: 'actions', label: 'Actions' },
-]
 
 const memberFields = [
   { key: 'user_id', label: 'User ID' },
@@ -343,31 +372,57 @@ async function loadInvitations() {
   invitationsError.value = ''
   try {
     const { data } = await crmApi.getBusinessInvitations(id.value)
-    const raw = data as { results?: { id: number | string; email?: string; role?: string; created_at?: string }[] } | { id: number | string; email?: string; role?: string; created_at?: string }[]
+    const raw = data as {
+      results?: { id: number | string; phone_number?: string; email?: string; channel?: string; role?: string; created_at?: string }[]
+    } | { id: number | string; phone_number?: string; email?: string; channel?: string; role?: string; created_at?: string }[]
     invitations.value = Array.isArray(raw) ? raw : raw?.results ?? []
   } catch (e: unknown) {
-    invitationsError.value = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? 'Failed to load invitations'
+    invitationsError.value = formatApiError(e) || 'Failed to load invitations'
     invitations.value = []
   } finally {
     invitationsLoading.value = false
   }
 }
 
-async function inviteByEmail() {
-  if (!id.value || !inviteEmailTrimmed.value) return
-  inviteByEmailSaving.value = true
-  inviteByEmailError.value = ''
+async function inviteByPhone() {
+  if (!id.value || !invitePhoneTrimmed.value) return
+  if (!isLikelyE164(invitePhoneTrimmed.value)) {
+    inviteError.value = 'Enter a valid phone in E.164 format (e.g. +2557…).'
+    return
+  }
+  inviteSaving.value = true
+  inviteError.value = ''
+  lastJoinUrl.value = ''
   try {
-    await crmApi.createBusinessInvitation(id.value, { email: inviteEmailTrimmed.value, role: inviteRole.value })
-    inviteEmail.value = ''
+    const { data } = await crmApi.createBusinessInvitation(id.value, {
+      phone_number: invitePhoneTrimmed.value,
+      role: inviteRole.value,
+      channel: inviteChannel.value,
+    })
+    invitePhone.value = ''
+    lastJoinUrl.value = String(data?.join_url ?? '')
     await loadInvitations()
     await loadBusiness()
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string; error_code?: string } } }
     const code = err.response?.data?.error_code
-    inviteByEmailError.value = code === 'plan_user_limit_reached' ? 'Plan user limit reached. Upgrade plan to add more members.' : (err.response?.data?.error ?? (e as { message?: string }).message ?? 'Failed to send invitation')
+    inviteError.value =
+      code === 'plan_user_limit_reached'
+        ? 'Plan user limit reached. Upgrade plan to add more members.'
+        : code === 'crm_whatsapp_not_configured'
+          ? 'WhatsApp invites are not configured. Switch channel to SMS.'
+          : formatApiError(e) || 'Failed to send invitation'
   } finally {
-    inviteByEmailSaving.value = false
+    inviteSaving.value = false
+  }
+}
+
+async function copyJoinUrl() {
+  if (!lastJoinUrl.value) return
+  try {
+    await navigator.clipboard.writeText(lastJoinUrl.value)
+  } catch {
+    /* ignore */
   }
 }
 
@@ -378,7 +433,7 @@ async function revokeInvitation(invitationId: number | string) {
     await crmApi.revokeBusinessInvitation(id.value, invitationId)
     await loadInvitations()
   } catch (e: unknown) {
-    invitationsError.value = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? 'Failed to revoke invitation'
+    invitationsError.value = formatApiError(e) || 'Failed to revoke invitation'
   } finally {
     revokeInvitationLoading.value = null
   }

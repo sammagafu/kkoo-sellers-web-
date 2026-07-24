@@ -34,20 +34,27 @@ export const authApi = {
       phone_number: string
       country_code?: string
       channel: 'whatsapp'
-      also_push?: boolean
-      app_key?: string
-    } = { phone_number, channel: 'whatsapp' }
-    if (options?.country_code) body.country_code = options.country_code
-    if (options?.also_push) {
-      body.also_push = true
-      body.app_key = options.app_key ?? 'admin_panel'
+      also_push: boolean
+      app_key: string
+    } = {
+      phone_number,
+      channel: 'whatsapp',
+      also_push: options?.also_push ?? true,
+      app_key: options?.app_key ?? 'admin_panel',
     }
-    return client.post<{
-      message?: string
-      debug_otp?: string
-      skipped_resend?: boolean
-      cooldown_seconds?: number
-    }>('/users/otp/request/', body)
+    if (options?.country_code) body.country_code = options.country_code
+    return client
+      .post<{
+        message?: string
+        debug_otp?: string
+        skipped_resend?: boolean
+        cooldown_seconds?: number
+        delivered_push?: boolean
+        whatsapp_failed?: boolean
+        error_code?: string
+        simulated?: boolean
+      }>('/users/otp/request/', body)
+      .then((r) => r.data)
   },
   /** POST /users/otp/verify/ – phone_number, otp_code → { user, tokens } */
   verifyOtp(phone_number: string, otp_code: string) {

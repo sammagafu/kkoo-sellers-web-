@@ -218,6 +218,7 @@ const statusOptions = [
   { value: 'active', text: 'Active' },
   { value: 'suspended', text: 'Suspended' },
   { value: 'banned', text: 'Banned' },
+  { value: 'archived', text: 'Archived' },
 ]
 
 const userDisplayName = computed(() => {

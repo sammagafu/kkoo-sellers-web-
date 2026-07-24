@@ -1,16 +1,22 @@
 //
 // authentication.scss — viewport shell + shared auth scene container
 //
+@import 'auth-split';
 @import 'auth-centered';
 @import 'auth-portal-themes';
 
 html.auth-viewport-lock {
   overflow: hidden;
   height: 100%;
+  height: 100dvh;
 }
 
-html.auth-viewport-lock #app {
+html.auth-viewport-lock body,
+html.auth-viewport-lock #app,
+html.auth-viewport-lock .kkoo-app-shell {
   height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -31,18 +37,36 @@ body.authentication-bg {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 0;
-    height: 100%;
+    min-height: 100dvh;
+    height: 100dvh;
+    max-height: 100dvh;
     min-width: 0;
     position: relative;
     z-index: 1;
-    padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
-      max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+    padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    box-sizing: border-box;
   }
+
+  /* Split auth — pattern left, form right (overrides centered flex shell above) */
+  .account-pages.auth-shell--split {
+    display: grid;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+  }
+}
+
+body.authentication-bg:has(.auth-shell--split) {
+  background: #2a1240;
 }
 
 html[data-bs-theme='dark'] body.authentication-bg {
   background: #100c14;
+}
+
+html[data-bs-theme='dark'] body.authentication-bg:has(.auth-shell--split) {
+  background: #0a0610;
 }
 
 .auth-scene {
@@ -57,10 +81,17 @@ html[data-bs-theme='dark'] body.authentication-bg {
   position: relative;
   box-sizing: border-box;
   width: 100%;
+  min-height: 100dvh;
   height: 100dvh;
   max-height: 100dvh;
-  min-height: 0;
   overflow: hidden;
+}
+
+.auth-shell.auth-shell--centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Utility template pages (maintenance, coming-soon) */

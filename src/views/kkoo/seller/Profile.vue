@@ -276,13 +276,23 @@
               </div>
               <p v-else class="mb-4 small text-muted">Set a Menu / store slug below and save to get your store link.</p>
 
-              <h6 class="section-label mb-2 mt-4">Menu / store slug</h6>
-              <p class="text-muted small mb-2">Friendly URL for your store or menu (e.g. my-kitchen). Used in your store link above.</p>
+              <h6 class="section-label mb-2 mt-4">Public store handle</h6>
+              <p class="text-muted small mb-2">One handle for your store and menu URL (e.g. my-kitchen). Claiming sets both store_slug and menu_slug.</p>
               <b-row>
                 <b-col md="6">
-                  <b-form-group label="Menu / store slug" label-for="menu_slug">
-                    <b-form-input id="menu_slug" v-model="form.menu_slug" placeholder="e.g. my-store" />
+                  <b-form-group label="Handle" label-for="menu_slug">
+                    <b-form-input id="menu_slug" v-model="form.menu_slug" placeholder="e.g. my-store" @input="slugAvail = null" />
                   </b-form-group>
+                  <p v-if="slugAvail === true" class="text-success small">Handle is available.</p>
+                  <p v-else-if="slugAvail === false" class="text-danger small">{{ slugAvailReason || 'Handle is taken or invalid.' }}</p>
+                  <div class="d-flex gap-2 mb-3">
+                    <b-button size="sm" variant="outline-secondary" :disabled="checkingSlug" @click="checkSlug">
+                      {{ checkingSlug ? 'Checking…' : 'Check availability' }}
+                    </b-button>
+                    <b-button size="sm" variant="outline-primary" :disabled="claimingSlug" @click="claimHandle">
+                      {{ claimingSlug ? 'Claiming…' : 'Claim handle' }}
+                    </b-button>
+                  </div>
                 </b-col>
               </b-row>
 
@@ -405,6 +415,10 @@ const logoPreviewError = ref(false)
 const logoFileInput = ref<HTMLInputElement | null>(null)
 const logoUploading = ref(false)
 const logoUploadError = ref('')
+const checkingSlug = ref(false)
+const claimingSlug = ref(false)
+const slugAvail = ref<boolean | null>(null)
+const slugAvailReason = ref('')
 
 const availableBanks = ref<PayoutMethodOption[]>([])
 const availableProviders = ref<PayoutMethodOption[]>([])
@@ -606,6 +620,52 @@ function copyStoreLink(): void {
     .catch(() => {
       error.value = 'Could not copy to clipboard. Try selecting the link manually.'
     })
+}
+
+async function checkSlug(): Promise<void> {
+  const slug = form.menu_slug?.trim()
+  if (!slug) {
+    slugAvail.value = false
+    slugAvailReason.value = 'Enter a handle first.'
+    return
+  }
+  checkingSlug.value = true
+  slugAvail.value = null
+  slugAvailReason.value = ''
+  try {
+    const { data } = await userApi.checkSlugAvailability(slug)
+    slugAvail.value = data?.available === true
+    slugAvailReason.value = data?.reason === 'taken' ? 'Already taken.' : data?.reason === 'invalid_format' ? 'Invalid format.' : ''
+    if (data?.slug && data.slug !== form.menu_slug) form.menu_slug = data.slug
+  } catch (e: unknown) {
+    slugAvail.value = false
+    slugAvailReason.value = getApiErrorDetail(e) || 'Check failed'
+  } finally {
+    checkingSlug.value = false
+  }
+}
+
+async function claimHandle(): Promise<void> {
+  const slug = form.menu_slug?.trim()
+  if (!slug) {
+    error.value = 'Enter a handle to claim.'
+    return
+  }
+  claimingSlug.value = true
+  error.value = ''
+  try {
+    const { data } = await userApi.claimStoreHandle(slug)
+    const profile = (data as { profile?: Record<string, unknown> })?.profile
+    if (profile?.menu_slug) form.menu_slug = String(profile.menu_slug)
+    else if (profile?.store_slug) form.menu_slug = String(profile.store_slug)
+    slugAvail.value = true
+    successMessage.value = 'Handle claimed for store and menu.'
+    setTimeout(() => { successMessage.value = '' }, 3000)
+  } catch (e: unknown) {
+    error.value = getApiErrorDetail(e) || 'Claim failed'
+  } finally {
+    claimingSlug.value = false
+  }
 }
 
 function onLogoPreviewError(): void {

@@ -2,10 +2,11 @@
   <VerticalLayout>
     <b-card title="Users">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <p class="text-muted mb-0 me-auto">List users, ban, suspend or activate.</p>
+        <p class="text-muted mb-0 me-auto">List users, ban, suspend, archive or activate.</p>
         <b-form-input v-model="search" placeholder="Search..." class="w-auto" style="max-width: 180px;" @input="debouncedLoad" />
         <b-form-select v-model="filterStatus" :options="statusOptions" class="w-auto" @change="onFilterChange" />
         <b-form-select v-model="filterIsSeller" :options="sellerOptions" class="w-auto" @change="onFilterChange" />
+        <b-button variant="outline-secondary" size="sm" :to="{ name: 'admin.deletion-requests' }">Deletion requests</b-button>
         <b-button variant="outline-secondary" size="sm" @click="exportCsv">Export CSV</b-button>
         <b-dropdown variant="outline-secondary" size="sm" text="Import templates" menu-class="shadow-sm">
           <b-dropdown-item @click="downloadApiImportTemplate">Official template (API)</b-dropdown-item>
@@ -63,6 +64,7 @@
           <b-button size="sm" variant="outline-primary" class="me-1" :to="{ name: 'admin.users.detail', params: { id: String(data.item.id) } }">View profile</b-button>
           <b-button v-if="data.item.account_status !== 'active'" size="sm" variant="outline-success" class="me-1" @click="action(data.item, 'activate')">Activate</b-button>
           <b-button v-if="data.item.account_status !== 'suspended'" size="sm" variant="outline-warning" class="me-1" @click="openActionModal(data.item, 'suspend')">Suspend</b-button>
+          <b-button v-if="data.item.account_status !== 'archived'" size="sm" variant="outline-secondary" class="me-1" @click="archiveUser(data.item)">Archive</b-button>
           <b-button v-if="data.item.account_status !== 'banned'" size="sm" variant="outline-danger" @click="openActionModal(data.item, 'ban')">Ban</b-button>
         </template>
       </b-table>
@@ -156,6 +158,7 @@ const statusOptions = [
   { value: 'active', text: 'Active' },
   { value: 'suspended', text: 'Suspended' },
   { value: 'banned', text: 'Banned' },
+  { value: 'archived', text: 'Archived' },
 ]
 const sellerOptions = [
   { value: '', text: 'All' },
@@ -463,6 +466,22 @@ async function action(item: UserRow, actionType: 'ban' | 'suspend' | 'activate')
     toastSuccess(actionType === 'activate' ? 'User activated' : actionType === 'ban' ? 'User banned' : 'User suspended')
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Action failed')
+    toastError(error.value)
+  }
+}
+
+async function archiveUser(item: UserRow) {
+  const ok = await confirmDestructiveAction({
+    title: `Archive user #${item.id}?`,
+    text: 'Account will be archived and public store handles released. Reversible via activate/restore.',
+  })
+  if (!ok) return
+  try {
+    await usersAdminApi.archive(item.id)
+    await load()
+    toastSuccess('User archived')
+  } catch (e: unknown) {
+    error.value = formatApiError(e, 'Archive failed')
     toastError(error.value)
   }
 }

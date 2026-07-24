@@ -117,11 +117,11 @@ export default defineConfig({
     proxy: {
       // Dev only — production uses Docker nginx (docker/nginx.conf.template) + host nginx
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
