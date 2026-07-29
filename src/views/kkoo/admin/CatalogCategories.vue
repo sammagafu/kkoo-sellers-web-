@@ -963,15 +963,18 @@ async function saveCategory(ev: Event) {
 }
 
 async function confirmDelete(item: Category) {
+  const childCount = childrenOfSlug(item.slug).length
   const ok = await confirmDestructiveAction({
     title: 'Delete category?',
-    text: `Delete "${item.name}"? Products linked to this category may no longer be categorized.`,
+    text: childCount
+      ? `Delete "${item.name}" and ${childCount} subcategor${childCount === 1 ? 'y' : 'ies'}? Products linked to these categories may no longer be categorized.`
+      : `Delete "${item.name}"? Products linked to this category may no longer be categorized.`,
   })
   if (!ok) return
   try {
     await catalogAdminCategoriesApi.delete(item.slug)
     await load()
-    toastSuccess('Category deleted')
+    toastSuccess(childCount ? 'Category and subcategories deleted' : 'Category deleted')
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Delete failed')
     toastError(error.value)
@@ -979,24 +982,38 @@ async function confirmDelete(item: Category) {
 }
 
 async function bulkDeleteSelected() {
-  const slugs = selected.value.map((c) => c.slug).filter((s) => typeof s === 'string' && s.trim().length > 0)
+  const rows = [...selected.value]
+  const slugs = rows
+    .map((c) => c.slug)
+    .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
   if (!slugs.length) return
+  // Delete deepest rows first so parents remaining in the selection still resolve.
+  slugs.sort((a, b) => {
+    const da = rows.find((r) => r.slug === a)?.__depth ?? 0
+    const db = rows.find((r) => r.slug === b)?.__depth ?? 0
+    return db - da
+  })
   const ok = await confirmDestructiveAction({
     title: `Delete ${slugs.length} categories?`,
-    text: `This will permanently delete ${slugs.length} categor${slugs.length === 1 ? 'y' : 'ies'}.`,
+    text: `This permanently deletes the selected categor${slugs.length === 1 ? 'y' : 'ies'} and any of their subcategories.`,
   })
   if (!ok) return
   error.value = ''
   try {
     const results = await Promise.allSettled(slugs.map((slug) => catalogAdminCategoriesApi.delete(slug)))
     const failed = results.filter((r) => r.status === 'rejected').length
+    const deleted = results.length - failed
     selected.value = []
     await load()
     if (failed) {
       error.value = `${failed} delete(s) failed. Refresh and try again.`
+      toastError(error.value)
+    } else {
+      toastSuccess(`Deleted ${deleted} categor${deleted === 1 ? 'y' : 'ies'}`)
     }
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Bulk delete failed')
+    toastError(error.value)
   }
 }
 </script>
