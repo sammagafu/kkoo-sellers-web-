@@ -52,6 +52,7 @@ export const kkooAdminRoutes = [
     { path: '/admin/analytics', name: 'admin.analytics', meta: { title: setTitle('Analytics'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/Analytics.vue') },
     { path: '/admin/vouchers', name: 'admin.vouchers', meta: { title: setTitle('Vouchers'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/Vouchers.vue') },
     { path: '/admin/discover-events', name: 'admin.discover-events', meta: { title: setTitle('Dar Events'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/DiscoverEvents.vue') },
+    { path: '/admin/careers', name: 'admin.careers', meta: { title: setTitle('Temp jobs'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/Careers.vue') },
     { path: '/admin/verticals/shop', name: 'admin.verticals.shop', meta: { title: setTitle('Shop'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/verticals/AdminVerticalShop.vue') },
     { path: '/admin/verticals/groceries', name: 'admin.verticals.groceries', meta: { title: setTitle('Groceries'), ...kkooMeta }, component: () => import('@/views/kkoo/admin/verticals/AdminVerticalGroceries.vue') },
     // New canonical URL: /admin/restaurants

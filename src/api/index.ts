@@ -131,3 +131,9 @@ export {
   supportCommunityFeatureRequest,
 } from './community'
 export { discoverEventsAdminApi, discoverEventsPublicApi, type PlatformEventRow } from './events'
+export {
+  careersAdminApi,
+  type CareerPostingRow,
+  type CareerApplicationRow,
+  type CareerPostingPayload,
+} from './careers'

@@ -86,6 +86,7 @@ const adminMenu: MenuItemType[] = [
           { key: 'admin-ride-promotions', label: 'Ride promotions', route: { name: 'admin.ride-promotions' }, parentKey: 'admin-hub-growth-marketing' },
           { key: 'admin-promotion-bundles', label: 'Promotion bundles', route: { name: 'admin.promotions.bundles' }, parentKey: 'admin-hub-growth-marketing' },
           { key: 'admin-discover-events', label: 'Dar events', route: { name: 'admin.discover-events' }, parentKey: 'admin-hub-growth-marketing' },
+          { key: 'admin-careers', label: 'Temp jobs', route: { name: 'admin.careers' }, parentKey: 'admin-hub-growth-marketing' },
         ],
       },
       {
