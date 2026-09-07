@@ -31,6 +31,7 @@ jobs:
           key: ${{ secrets.DO_SSH_KEY }}
           script: |
             set -e
+            export GIT_SSH_COMMAND='ssh -o Hostname=ssh.github.com -o Port=443 -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes'
             cd "${{ secrets.DO_APP_DIR }}"
             git pull
             npm ci
