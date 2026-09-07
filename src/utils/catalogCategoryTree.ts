@@ -2,6 +2,18 @@ export type CatalogCategoryNode = {
   slug: string
   name: string
   children: CatalogCategoryNode[]
+  icon?: string
+  categoryKind?: string
+}
+
+export type FlatCategoryOption = {
+  slug: string
+  name: string
+  pathLabel: string
+  depth: number
+  icon?: string
+  categoryKind?: string
+  hasChildren: boolean
 }
 
 type FlatCategory = {
@@ -10,6 +22,9 @@ type FlatCategory = {
   id?: number | string
   parent_id?: number | string | null
   parent?: { id?: number | string; slug?: string } | number | string | null
+  icon?: string
+  category_kind?: string
+  categoryKind?: string
 }
 
 type CategoryIndexEntry = {
@@ -29,9 +44,11 @@ function normalizeTreeNodes(nodes: unknown[]): CatalogCategoryNode[] {
       const n = raw as Record<string, unknown>
       const slug = String(n.slug ?? '').trim()
       const name = String(n.name ?? slug).trim()
+      const icon = String(n.icon ?? '').trim() || undefined
+      const categoryKind = String(n.category_kind ?? n.categoryKind ?? '').trim() || undefined
       const childrenRaw = n.children ?? n.subcategories ?? []
       const children = Array.isArray(childrenRaw) ? normalizeTreeNodes(childrenRaw) : []
-      return { slug, name, children }
+      return { slug, name, children, icon, categoryKind }
     })
     .filter((n) => n.slug && n.name)
 }
@@ -45,7 +62,11 @@ export function buildCategoryTreeFromFlat(flat: FlatCategory[]): CatalogCategory
     const name = String(row.name ?? slug).trim()
     if (!slug || !name) continue
     const id = String(row.id ?? slug)
-    byId.set(id, { slug, name, children: [] })
+    const icon = String((row as FlatCategory).icon ?? '').trim() || undefined
+    const categoryKind =
+      String((row as FlatCategory).category_kind ?? (row as FlatCategory).categoryKind ?? '').trim() ||
+      undefined
+    byId.set(id, { slug, name, children: [], icon, categoryKind })
     let parentId: string | null = null
     if (row.parent_id != null && row.parent_id !== '') {
       parentId = String(row.parent_id)
@@ -192,4 +213,75 @@ export function filterCategoriesByQuery<T extends { slug: string; name: string }
   const q = query.trim().toLowerCase()
   if (!q) return items
   return items.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q))
+}
+
+export function getCategoryPathLabel(roots: CatalogCategoryNode[], slug: string): string {
+  const walk = (nodes: CatalogCategoryNode[], trail: string[]): string | null => {
+    for (const n of nodes) {
+      const next = [...trail, n.name]
+      if (n.slug === slug) return next.join(' › ')
+      const found = walk(n.children, next)
+      if (found) return found
+    }
+    return null
+  }
+  return walk(roots, []) ?? slug
+}
+
+export function flattenCategoryTree(roots: CatalogCategoryNode[]): FlatCategoryOption[] {
+  const out: FlatCategoryOption[] = []
+  const walk = (nodes: CatalogCategoryNode[], trail: string[], depth: number) => {
+    for (const n of nodes) {
+      const pathParts = [...trail, n.name]
+      out.push({
+        slug: n.slug,
+        name: n.name,
+        pathLabel: pathParts.join(' › '),
+        depth,
+        icon: n.icon,
+        categoryKind: n.categoryKind,
+        hasChildren: n.children.length > 0,
+      })
+      walk(n.children, pathParts, depth + 1)
+    }
+  }
+  walk(roots, [], 0)
+  return out
+}
+
+/** Prefer global taxonomy roots; seller menu sections appear under shopMenu. */
+export function partitionRoots(roots: CatalogCategoryNode[]): {
+  browseRoots: CatalogCategoryNode[]
+  shopMenuRoots: CatalogCategoryNode[]
+} {
+  const browseRoots: CatalogCategoryNode[] = []
+  const shopMenuRoots: CatalogCategoryNode[] = []
+  for (const r of roots) {
+    if ((r.categoryKind ?? '').toLowerCase() === 'menu') {
+      shopMenuRoots.push(r)
+    } else {
+      browseRoots.push(r)
+    }
+  }
+  return { browseRoots, shopMenuRoots }
+}
+
+export function rootNameCounts(roots: CatalogCategoryNode[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const r of roots) {
+    const key = r.name.trim().toLowerCase()
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return counts
+}
+
+export function disambiguatedRootLabel(
+  node: CatalogCategoryNode,
+  nameCounts: Map<string, number>
+): string {
+  const key = node.name.trim().toLowerCase()
+  if ((nameCounts.get(key) ?? 0) > 1) {
+    return `${node.name} · ${node.slug.replace(/-/g, ' ')}`
+  }
+  return node.name
 }

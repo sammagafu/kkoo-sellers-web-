@@ -32,18 +32,12 @@
             <b-col cols="12">
               <b-form-group class="mb-3">
                 <template #label>
-                  <span class="d-inline-flex align-items-center">Description (min 200 characters for publish)
+                  <span class="d-inline-flex align-items-center">Description
                     <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-create-desc" aria-label="What is needed"><small>ⓘ</small></b-button>
-                    <b-tooltip target="help-create-desc" triggers="click" placement="top">At least 200 characters are required to publish. You can save as draft with less.</b-tooltip>
+                    <b-tooltip target="help-create-desc" triggers="click" placement="top">A short caption is enough. You can add more later.</b-tooltip>
                   </span>
                 </template>
-                <b-form-textarea id="description" v-model="form.description" rows="4" placeholder="Full product description..." />
-                <small class="text-muted">
-                  {{ (form.description || '').length }} characters
-                  <span :class="(form.description || '').length < 200 ? 'text-danger' : 'text-success'">
-                    (min 200 to publish)
-                  </span>
-                </small>
+                <b-form-textarea id="description" v-model="form.description" rows="3" placeholder="Short note for buyers (optional)" />
               </b-form-group>
             </b-col>
             <b-col cols="12">
@@ -393,7 +387,7 @@ function buildPayload(asDraft: boolean): Record<string, unknown> {
   if (form.useVariationTemplate) (specs as Record<string, unknown>).variant_dimensions = [...VARIANT_DIMENSIONS]
   const payload: Record<string, unknown> = {
     title: form.title,
-    description: form.description || '',
+    description: (form.description || '').trim() || form.title.trim(),
     category_slugs: form.categories?.length ? [...form.categories] : undefined,
     brand: form.brand || undefined,
     base_price: Number(form.base_price) || 0,
@@ -427,9 +421,6 @@ function buildPayload(asDraft: boolean): Record<string, unknown> {
 function validateBeforeSubmit(asDraft: boolean): string | null {
   if (!form.title.trim()) return 'Product title is required.'
   if (form.title.trim().length > 160) return 'Product title must be at most 160 characters.'
-  if (!asDraft && (form.description || '').length < 200) {
-    return 'Description must be at least 200 characters to publish.'
-  }
   if (!asDraft && (!form.skus.length || form.skus.some((s) => Number(s.stock_quantity ?? 0) < 0))) {
     return 'Add at least one SKU with stock quantity ≥ 0.'
   }

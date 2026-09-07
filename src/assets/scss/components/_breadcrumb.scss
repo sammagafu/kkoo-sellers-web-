@@ -6,9 +6,16 @@
 .breadcrumb-item {
     >a {
         color: var(--#{$prefix}body-color);
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.65rem;
+        border-radius: $border-radius-pill;
+        text-decoration: none;
+        transition: background-color 0.15s ease, color 0.15s ease;
 
         &:hover {
             color: $primary;
+            background-color: rgba(var(--#{$prefix}primary-rgb), 0.08);
         }
     }
 
@@ -20,6 +27,16 @@
     }
 
     &.active {
-        color: $breadcrumb-active-color;
+        color: $white;
+
+        > span,
+        > a {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.65rem;
+            border-radius: $border-radius-pill;
+            background-color: $primary;
+            color: $white;
+        }
     }
 }

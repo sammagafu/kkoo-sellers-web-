@@ -787,19 +787,21 @@ async function save(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
-  border-radius: 12px;
+  padding: 0.65rem 0.95rem;
+  border-radius: 999px;
   color: var(--bs-body-color);
   border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .seller-profile-nav .nav-link:hover {
   background: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.08);
   color: var(--bs-primary);
 }
 .seller-profile-nav .nav-link.active {
-  background: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.12);
-  color: var(--bs-primary);
-  border-color: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.3);
+  background: var(--bs-primary);
+  color: #fff;
+  border-color: var(--bs-primary);
+  box-shadow: 0 2px 8px rgba(92, 48, 143, 0.28);
 }
 .nav-link-icon-wrap {
   width: 2rem;
@@ -807,16 +809,19 @@ async function save(): Promise<void> {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 999px;
   background: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.1);
 }
 .seller-profile-nav .nav-link.active .nav-link-icon-wrap {
-  background: rgba(var(--bs-primary-rgb, 92, 48, 143), 0.2);
+  background: rgba(255, 255, 255, 0.22);
 }
 .nav-link-icon {
   width: 1.25rem;
   height: 1.25rem;
   color: var(--bs-primary);
+}
+.seller-profile-nav .nav-link.active .nav-link-icon {
+  color: #fff;
 }
 .seller-profile-tab-pane {
   min-height: 200px;

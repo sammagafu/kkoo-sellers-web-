@@ -1,242 +1,259 @@
 <template>
   <VerticalLayout>
-    <b-card :title="isAdmin ? 'Edit product (Admin)' : 'Edit product'" class="mb-0">
-      <p v-if="error" class="text-danger">{{ error }}</p>
-      <p v-else-if="!loaded" class="text-muted">Loading...</p>
-      <template v-else>
-        <p class="text-muted">Update product information, specification, and images. You can save as draft.</p>
-        <form-wizard
-          ref="wizardRef"
-          color="#5C308F"
-          back-button-text="Back"
-          next-button-text="Next"
-          finish-button-text="Save product"
-          @on-complete="onComplete"
+    <div class="product-post">
+      <header class="product-post__header">
+        <p class="product-post__kicker">
+          {{ t('catalog.addProduct.stepKicker', { step, total: displayTotal }) }}
+        </p>
+        <h1 class="product-post__title">{{ stepTitle }}</h1>
+        <p v-if="stepLede" class="product-post__lede">{{ stepLede }}</p>
+        <div
+          class="product-post__progress"
+          role="progressbar"
+          :aria-valuenow="stepProgress"
+          aria-valuemin="0"
+          aria-valuemax="100"
         >
-          <tab-content title="Product information">
-            <div class="d-flex justify-content-end mb-2">
-              <b-button variant="outline-secondary" size="sm" @click="saveDraft">Save as draft</b-button>
+          <div class="product-post__bar">
+            <div class="product-post__bar-fill" :style="{ width: `${stepProgress}%` }" />
+          </div>
+        </div>
+      </header>
+
+      <p v-if="error" class="product-post__error">{{ error }}</p>
+      <p v-else-if="!loaded" class="product-post__lede">{{ t('common.loading') }}</p>
+
+      <template v-else>
+        <!-- 1: Images -->
+        <div v-show="step === 1" class="product-post__stage">
+          <button
+            v-if="!coverPreviewUrl"
+            type="button"
+            class="product-post__photo-empty"
+            @click="triggerGallery"
+            @dragover.prevent
+            @drop.prevent="onDrop"
+          >
+            <span class="product-post__photo-icon" aria-hidden="true">
+              <i class="bx bx-image-add" />
+            </span>
+            <strong>{{ t('catalog.addProduct.photoTitle') }}</strong>
+            <span>{{ t('catalog.addProduct.photoHint') }}</span>
+          </button>
+          <div v-else class="product-post__photo-filled">
+            <img :src="coverPreviewUrl" :alt="form.title || t('catalog.addProduct.photoTitle')" />
+            <button type="button" class="product-post__photo-clear" @click="triggerGallery">
+              {{ t('catalog.addProduct.changePhoto') }}
+            </button>
+          </div>
+
+          <div class="product-post__photo-actions">
+            <button type="button" class="product-post__chip" @click="triggerCamera">
+              <i class="bx bx-camera" aria-hidden="true" />
+              {{ t('catalog.addProduct.takePhoto') }}
+            </button>
+            <button type="button" class="product-post__chip" @click="triggerGallery">
+              <i class="bx bx-images" aria-hidden="true" />
+              {{ t('catalog.addProduct.fromGallery') }}
+            </button>
+          </div>
+          <p class="product-post__cover-note">{{ t('catalog.addProduct.coverNote') }}</p>
+          <input
+            ref="cameraInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            class="d-none"
+            @change="onCoverFileChange"
+          />
+          <input
+            ref="galleryInput"
+            type="file"
+            accept="image/*"
+            multiple
+            class="d-none"
+            @change="onCoverFileChange"
+          />
+        </div>
+
+        <!-- 2: Name + caption/details -->
+        <div v-show="step === 2" class="product-post__fields">
+          <label class="product-post__field">
+            <span>{{ t('catalog.addProduct.nameLabel') }}</span>
+            <input
+              v-model="form.title"
+              type="text"
+              maxlength="160"
+              :placeholder="t('catalog.addProduct.namePlaceholder')"
+              autocomplete="off"
+              inputmode="text"
+            />
+          </label>
+
+          <label class="product-post__field">
+            <span>{{ t('catalog.addProduct.captionLabel') }}</span>
+            <textarea
+              v-model="form.description"
+              rows="4"
+              maxlength="500"
+              :placeholder="t('catalog.addProduct.captionPlaceholder')"
+            />
+          </label>
+
+          <label class="product-post__field">
+            <span>{{ t('catalog.addProduct.priceLabel') }}</span>
+            <div class="product-post__price">
+              <span class="product-post__currency">TZS</span>
+              <input
+                v-model="priceDisplay"
+                type="text"
+                inputmode="numeric"
+                :placeholder="t('catalog.addProduct.pricePlaceholder')"
+                @input="onPriceInput"
+              />
             </div>
-            <b-row>
-              <b-col md="6">
-                <b-form-group class="mb-3">
-                  <template #label>
-                    <span class="d-inline-flex align-items-center">Title
-                      <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-edit-title" aria-label="What is needed"><small>ⓘ</small></b-button>
-                      <b-tooltip target="help-edit-title" triggers="click" placement="top">The product name as shown to buyers (max 160 characters).</b-tooltip>
-                    </span>
-                  </template>
-                  <b-form-input v-model="form.title" maxlength="160" required />
-                </b-form-group>
-              </b-col>
-              <b-col cols="12">
-                <b-form-group class="mb-3">
-                  <template #label>
-                    <span class="d-inline-flex align-items-center">Description
-                      <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-edit-desc" aria-label="What is needed"><small>ⓘ</small></b-button>
-                      <b-tooltip target="help-edit-desc" triggers="click" placement="top">At least 200 characters are required to publish. You can save as draft with less.</b-tooltip>
-                    </span>
-                  </template>
-                  <b-form-textarea v-model="form.description" rows="4" />
-                  <small class="text-muted">
-                    {{ (form.description || '').length }} characters
-                    <span :class="(form.description || '').length < 200 ? 'text-danger' : 'text-success'">
-                      (min 200 to publish)
-                    </span>
-                  </small>
-                </b-form-group>
-              </b-col>
-              <b-col cols="12">
-                <CatalogCategoryPicker v-model="form.categories" :use-admin-categories="isAdmin" />
-              </b-col>
-              <b-col md="6">
-                <b-form-group label="Brand" class="mb-3">
-                  <b-form-select v-model="form.brand" :options="brandOptions" value-field="slug" text-field="name">
-                    <template #first><b-form-select-option :value="''">— Select —</b-form-select-option></template>
-                  </b-form-select>
-                </b-form-group>
-              </b-col>
-              <b-col md="4">
-                <b-form-group label="Base price" class="mb-3">
-                  <b-form-input v-model.number="form.base_price" type="number" step="0.01" min="0" />
-                </b-form-group>
-              </b-col>
-              <b-col md="4">
-                <b-form-group label="Discount price" class="mb-3">
-                  <b-form-input v-model.number="form.discount_price" type="number" step="0.01" min="0" />
-                </b-form-group>
-              </b-col>
-              <b-col md="4">
-                <b-form-group label="Weight (kg)" class="mb-3">
-                  <b-form-input v-model.number="form.weight_kg" type="number" step="0.01" min="0" />
-                </b-form-group>
-              </b-col>
-              <b-col cols="12">
-                <h6 class="mb-2">Pre-order</h6>
-                <b-form-checkbox v-model="form.allow_preorder" class="mb-2">
-                  Allow pre-order when out of stock
-                </b-form-checkbox>
-                <b-form-checkbox v-if="form.allow_preorder" v-model="form.preorder_requires_stock" class="mb-2">
-                  Cap pre-orders by stock quantity (no oversell)
-                </b-form-checkbox>
-                <b-row v-if="form.allow_preorder">
-                  <b-col md="4">
-                    <b-form-group label="Expected available date" class="mb-3">
-                      <b-form-input v-model="form.preorder_eta" type="date" />
-                    </b-form-group>
-                  </b-col>
-                  <b-col md="8">
-                    <b-form-group label="Pre-order note" class="mb-3">
-                      <b-form-input v-model="form.preorder_note" maxlength="255" placeholder="e.g. Ships in 2 weeks" />
-                    </b-form-group>
-                  </b-col>
-                </b-row>
-                <b-form-checkbox v-model="form.requires_prescription" class="mb-2">
-                  Requires prescription
-                </b-form-checkbox>
-              </b-col>
-              <b-col cols="12">
-                <h6 class="mb-2 d-inline-flex align-items-center">
-                  SKUs
-                  <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-edit-skus" aria-label="What is needed"><small>ⓘ</small></b-button>
-                  <b-tooltip target="help-edit-skus" triggers="click" placement="top">Each row is one SKU (code is auto-generated). Set stock and optional variant (Color, Weight, Size or custom Variant). Price override is optional.</b-tooltip>
-                </h6>
-                <b-form-checkbox v-model="form.useVariationTemplate" class="mb-2">
-                  Use variation template (Color, Weight, Size)
-                </b-form-checkbox>
-                <div v-for="(sku, idx) in form.skus" :key="idx" class="border rounded p-3 mb-3">
-                  <b-row>
-                    <template v-if="form.useVariationTemplate">
-                      <b-col md="2"><b-form-group label="Color" class="mb-2"><b-form-input v-model="sku.color" placeholder="e.g. Red" /></b-form-group></b-col>
-                      <b-col md="2"><b-form-group label="Weight" class="mb-2"><b-form-input v-model="sku.weight" placeholder="e.g. 50g" /></b-form-group></b-col>
-                      <b-col md="2"><b-form-group label="Size" class="mb-2"><b-form-input v-model="sku.size" placeholder="e.g. S, M, L" /></b-form-group></b-col>
-                    </template>
-                    <template v-else>
-                      <b-col md="2"><b-form-group label="Variant" class="mb-2"><b-form-input v-model="sku.variant_text" placeholder="size:M" /></b-form-group></b-col>
-                    </template>
-                    <b-col md="2"><b-form-group label="Stock" class="mb-2"><b-form-input v-model.number="sku.stock_quantity" type="number" min="0" /></b-form-group></b-col>
-                    <b-col md="2"><b-form-group label="Price override" class="mb-2"><b-form-input v-model.number="sku.price_override" type="number" step="0.01" min="0" /></b-form-group></b-col>
-                    <b-col md="2" class="d-flex align-items-end"><b-button variant="outline-danger" size="sm" @click="removeSku(idx)">Remove</b-button></b-col>
-                  </b-row>
-                </div>
-                <b-button variant="outline-primary" @click="addSku">+ Add SKU</b-button>
-              </b-col>
-            </b-row>
-          </tab-content>
-          <tab-content title="Specification">
-            <div class="d-flex justify-content-end mb-2">
-              <b-button variant="outline-secondary" size="sm" @click="saveDraft">Save as draft</b-button>
-            </div>
-            <p class="text-muted mb-3 d-inline-flex align-items-center">
-              Add or edit specification entries (input type, label, value).
-              <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-edit-spec" aria-label="What is needed"><small>ⓘ</small></b-button>
-              <b-tooltip target="help-edit-spec" triggers="click" placement="top">Optional. Key-value specs (e.g. Material: Cotton). Use Text, Number, or Long text. Label = spec name, Value = spec value.</b-tooltip>
-            </p>
-            <div v-for="(spec, idx) in form.specifications" :key="idx" class="border rounded p-3 mb-3">
-              <b-row>
-                <b-col md="3">
-                  <b-form-group label="Input type" class="mb-2">
-                    <b-form-select v-model="spec.input_type" :options="specInputTypeOptions" />
-                  </b-form-group>
-                </b-col>
-                <b-col md="3">
-                  <b-form-group label="Label" class="mb-2">
-                    <b-form-input v-model="spec.label" />
-                  </b-form-group>
-                </b-col>
-                <b-col md="4">
-                  <b-form-group v-if="spec.input_type === 'textarea'" label="Value" class="mb-2">
-                    <b-form-textarea v-model="spec.value" rows="2" />
-                  </b-form-group>
-                  <b-form-group v-else label="Value" class="mb-2">
-                    <b-form-input v-model="spec.value" :type="spec.input_type === 'number' ? 'number' : 'text'" step="any" />
-                  </b-form-group>
-                </b-col>
-                <b-col md="2" class="d-flex align-items-end">
-                  <b-button variant="outline-danger" size="sm" @click="removeSpec(idx)">Remove</b-button>
-                </b-col>
-              </b-row>
-            </div>
-            <b-button variant="outline-primary" @click="addSpec">+ Add specification</b-button>
-          </tab-content>
-          <tab-content title="Images &amp; cover">
-            <div class="d-flex justify-content-end mb-2">
-              <b-button variant="outline-secondary" size="sm" @click="saveDraft">Save as draft</b-button>
-            </div>
-            <p class="text-muted mb-2 d-inline-flex align-items-center">
-              Cover and gallery images (file or URL).
-              <b-button variant="link" class="p-0 ms-1 text-secondary align-baseline" size="sm" id="help-edit-images" aria-label="What is needed"><small>ⓘ</small></b-button>
-              <b-tooltip target="help-edit-images" triggers="click" placement="top">Optional. Upload a cover image or paste a URL. Add more images for the gallery. One URL per line in the text area.</b-tooltip>
-            </p>
-            <b-form-group label="Cover image" class="mb-3">
-              <div v-if="coverPreviewUrl" class="mb-2">
-                <img :src="coverPreviewUrl" alt="Cover" class="product-wizard-cover-preview" />
-              </div>
-              <b-form-input v-model="form.cover_image" placeholder="Cover image URL" class="mb-2" />
-              <input type="file" accept="image/*" class="form-control mb-2" @change="onCoverFileChange" />
-            </b-form-group>
-            <b-form-group label="Gallery images (multi upload)">
-              <input type="file" accept="image/*" multiple class="form-control mb-2" @change="onGalleryFilesChange" />
-              <div v-if="form.gallery_files.length" class="d-flex flex-wrap gap-2 mt-2">
-                <div v-for="(file, i) in form.gallery_files" :key="i" class="gallery-thumb-wrap">
-                  <img :src="galleryPreview(file)" alt="" class="gallery-thumb" />
-                  <b-button size="sm" variant="outline-danger" class="mt-1" @click="removeGalleryFile(i)">Remove</b-button>
-                </div>
-              </div>
-            </b-form-group>
-            <b-form-group label="Additional image URLs (one per line)">
-              <b-form-textarea v-model="form.additional_images_text" rows="2" placeholder="https://..." />
-            </b-form-group>
-            <p v-if="submitError" class="text-danger mt-2 mb-0">{{ submitError }}</p>
-          </tab-content>
-        </form-wizard>
-        <ImageUploadProgressBar
-          :visible="imageUploadActive"
-          subtitle="Uploading images…"
-          :percent="imageUploadPercent"
-          :pulse-striped="imageUploadPulse"
-        />
+          </label>
+
+          <button type="button" class="product-post__more-toggle" @click="showMore = !showMore">
+            {{ showMore ? t('catalog.addProduct.hideMore') : t('catalog.addProduct.showMore') }}
+            <i :class="showMore ? 'bx bx-chevron-up' : 'bx bx-chevron-down'" aria-hidden="true" />
+          </button>
+
+          <div v-if="showMore" class="product-post__more">
+            <label class="product-post__field">
+              <span>{{ t('catalog.addProduct.optionsLabel') }}</span>
+              <input
+                v-model="form.optionsText"
+                type="text"
+                :placeholder="t('catalog.addProduct.optionsPlaceholder')"
+                autocomplete="off"
+              />
+              <small>{{ t('catalog.addProduct.optionsHint') }}</small>
+            </label>
+            <label class="product-post__field">
+              <span>{{ t('catalog.addProduct.stockLabel') }}</span>
+              <input v-model.number="form.stock" type="number" min="0" step="1" inputmode="numeric" />
+            </label>
+            <label class="product-post__check">
+              <input v-model="form.available_on_marketplace" type="checkbox" />
+              <span>{{ t('catalog.editProduct.showMarketplace') }}</span>
+            </label>
+            <label class="product-post__check">
+              <input v-model="form.available_on_microsite" type="checkbox" />
+              <span>{{ t('catalog.editProduct.showMicrosite') }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3: Category -->
+        <div v-show="step === 3" class="product-post__fields">
+          <CatalogCategoryPicker
+            v-model="form.categories"
+            selection-mode="roots"
+            :use-admin-categories="isAdmin"
+            :label="t('catalog.addProduct.categoryQuestion')"
+            :hint="t('catalog.addProduct.categoryHint')"
+            @selection-meta="onCategoryMeta"
+          />
+        </div>
+
+        <!-- 4: Subcategory -->
+        <div v-show="step === 4" class="product-post__fields">
+          <CatalogCategoryPicker
+            v-model="form.categories"
+            selection-mode="children"
+            :parent-slug="mainCategorySlug"
+            :use-admin-categories="isAdmin"
+            :label="t('catalog.addProduct.subcategoryQuestion')"
+            :hint="t('catalog.addProduct.subcategoryHint')"
+          />
+        </div>
+
+        <p v-if="submitError" class="product-post__error">{{ submitError }}</p>
+
+        <div class="product-post__actions">
+          <button
+            v-if="!isLastStep"
+            type="button"
+            class="product-post__cta"
+            :disabled="!canAdvance"
+            @click="nextStep"
+          >
+            {{ t('common.continue') }}
+          </button>
+          <template v-else>
+            <button
+              type="button"
+              class="product-post__cta"
+              :disabled="submitting || !canPublish"
+              @click="submitProduct(false)"
+            >
+              {{ submitting ? t('catalog.editProduct.saving') : t('catalog.editProduct.save') }}
+            </button>
+            <button
+              type="button"
+              class="product-post__ghost"
+              :disabled="submitting || !form.title.trim()"
+              @click="submitProduct(true)"
+            >
+              {{ t('catalog.editProduct.saveDraft') }}
+            </button>
+          </template>
+          <button v-if="step > 1" type="button" class="product-post__ghost" @click="prevStep">
+            {{ t('common.back') }}
+          </button>
+        </div>
+
+        <p class="product-post__foot">{{ t('catalog.addProduct.reviewNote') }}</p>
       </template>
-    </b-card>
+    </div>
+
+    <ImageUploadProgressBar
+      :visible="imageUploadActive"
+      :subtitle="t('catalog.addProduct.uploading')"
+      :percent="imageUploadPercent"
+      :pulse-striped="imageUploadPulse"
+    />
   </VerticalLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-
-const { t } = useI18n()
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import CatalogCategoryPicker from '@/components/kkoo/CatalogCategoryPicker.vue'
 import ImageUploadProgressBar from '@/components/ImageUploadProgressBar.vue'
-import { FormWizard, TabContent } from 'vue3-form-wizard'
-import 'vue3-form-wizard/dist/style.css'
-import { catalogPublicApi, catalogSellerApi, catalogAdminApi } from '@/api'
+import { catalogSellerApi, catalogAdminApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { sellerOwnsProduct } from '@/utils/catalogProductAccess'
 import { resolveAssetUrl } from '@/utils/assetUrl'
 import { useMultipartUploadProgress } from '@/composables/useMultipartUploadProgress'
-import {
-  brandSlugFromProduct,
-  categorySlugsFromProduct,
-} from '@/utils/catalogProductApi'
+import { brandSlugFromProduct, categorySlugsFromProduct } from '@/utils/catalogProductApi'
 import { formatApiError } from '@/utils/formatApiError'
 import { parseVariantAttributes } from '@/utils/skuDisplay'
 import { toastError, toastSuccess } from '@/utils/toast'
 
-const route = useRoute()
+const DEFAULT_STOCK = 99
+const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const slugParam = computed(() => (route.params.slug as string) || '')
 const isAdmin = computed(() => route.path.startsWith('/admin/catalog'))
+
 const loaded = ref(false)
 const error = ref('')
 const submitError = ref('')
 const submitting = ref(false)
-const brandOptions = ref<{ slug: string; name: string }[]>([])
+const showMore = ref(false)
+const step = ref(1)
+const priceDisplay = ref('')
+const cameraInput = ref<HTMLInputElement | null>(null)
+const galleryInput = ref<HTMLInputElement | null>(null)
+const categoryHasChildren = ref(false)
 const galleryUrlByFile = new WeakMap<File, string>()
 let coverObjectUrl: string | null = null
-const wizardRef = ref<InstanceType<typeof FormWizard> | null>(null)
+
 const {
   uploadActive: imageUploadActive,
   uploadPercent: imageUploadPercent,
@@ -246,33 +263,78 @@ const {
   endUpload: endImageUpload,
 } = useMultipartUploadProgress()
 
-const specInputTypeOptions = [
-  { value: 'text', text: 'Text' },
-  { value: 'number', text: 'Number' },
-  { value: 'textarea', text: 'Long text' },
-]
-
 const form = reactive({
   title: '',
-  slug: '',
   description: '',
   categories: [] as string[],
   brand: '',
+  course_type: '',
   base_price: 0 as number,
   discount_price: null as number | null,
   weight_kg: null as number | null,
+  available_on_marketplace: true,
+  available_on_microsite: true,
   allow_preorder: false,
   preorder_requires_stock: false,
-  preorder_eta: '' as string,
-  preorder_note: '' as string,
+  preorder_eta: '',
+  preorder_note: '',
   requires_prescription: false,
-  useVariationTemplate: false,
-  skus: [] as { sku_code: string; stock_quantity: number; price_override?: number | null; variant_text?: string; color?: string; weight?: string; size?: string }[],
-  specifications: [] as { input_type: string; label: string; value: string }[],
+  optionsText: '',
+  stock: DEFAULT_STOCK,
   cover_image: '',
   cover_file: null as File | null,
   gallery_files: [] as File[],
-  additional_images_text: '',
+  existingSkus: [] as Array<{
+    sku_code: string
+    stock_quantity: number
+    price_override?: number | null
+    variant_attributes?: Record<string, string>
+  }>,
+})
+
+const mainCategorySlug = computed(() => form.categories[0] || '')
+const hasSubcategoryPick = computed(() => form.categories.length > 1)
+const hasCover = computed(() => !!form.cover_file || !!form.cover_image?.trim())
+
+const displayTotal = computed(() => (categoryHasChildren.value ? 4 : step.value >= 3 ? 3 : 4))
+const stepProgress = computed(() => Math.round((step.value / displayTotal.value) * 100))
+const isLastStep = computed(() => {
+  if (step.value === 4) return true
+  if (step.value === 3 && !categoryHasChildren.value && form.categories.length > 0) return true
+  return false
+})
+
+const stepTitle = computed(() => {
+  if (step.value === 1) return t('catalog.addProduct.step1Title')
+  if (step.value === 2) return t('catalog.addProduct.step2Title')
+  if (step.value === 3) return t('catalog.addProduct.step3Title')
+  return t('catalog.addProduct.step4Title')
+})
+
+const stepLede = computed(() => {
+  if (step.value === 1) return t('catalog.addProduct.step1Lede')
+  if (step.value === 2) return t('catalog.addProduct.step2Lede')
+  if (step.value === 3) return t('catalog.addProduct.step3Lede')
+  return t('catalog.addProduct.step4Lede')
+})
+
+const canAdvance = computed(() => {
+  if (step.value === 1) return hasCover.value
+  if (step.value === 2) return !!form.title.trim() && Number(form.base_price) > 0
+  if (step.value === 3) return form.categories.length > 0
+  if (step.value === 4) {
+    if (!categoryHasChildren.value) return true
+    return hasSubcategoryPick.value
+  }
+  return true
+})
+
+const canPublish = computed(() => {
+  if (!form.title.trim() || Number(form.base_price) <= 0 || !hasCover.value || !form.categories.length) {
+    return false
+  }
+  if (categoryHasChildren.value && !hasSubcategoryPick.value) return false
+  return true
 })
 
 const coverPreviewUrl = ref('')
@@ -291,10 +353,11 @@ watch(
       coverPreviewUrl.value = resolveAssetUrl(form.cover_image || '') ?? ''
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 onBeforeUnmount(() => {
+  window.removeEventListener('paste', onPasteImage)
   if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl)
   for (const file of form.gallery_files) {
     const url = galleryUrlByFile.get(file)
@@ -302,107 +365,139 @@ onBeforeUnmount(() => {
   }
 })
 
-function addSku() {
-  form.skus.push({
-    sku_code: '',
-    stock_quantity: 0,
-    price_override: null,
-    variant_text: '',
-    color: '',
-    weight: '',
-    size: '',
-  })
+function onCategoryMeta(meta: { slug: string; hasChildren: boolean }) {
+  categoryHasChildren.value = !!meta.hasChildren
+  if (meta.slug && form.categories.length > 1 && meta.hasChildren) {
+    // Re-picking a root with children resets subs until step 4.
+    const root = meta.slug
+    if (form.categories[0] !== root) form.categories = [root]
+  }
 }
-function removeSku(idx: number) {
-  form.skus.splice(idx, 1)
+
+function formatPriceDisplay(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return ''
+  return n.toLocaleString('en-TZ')
 }
-function addSpec() {
-  form.specifications.push({ input_type: 'text', label: '', value: '' })
+
+function onPriceInput(ev: Event) {
+  const raw = (ev.target as HTMLInputElement).value.replace(/[^\d]/g, '')
+  const n = raw ? Number(raw) : 0
+  form.base_price = n
+  priceDisplay.value = raw ? formatPriceDisplay(n) : ''
 }
-function removeSpec(idx: number) {
-  form.specifications.splice(idx, 1)
+
+function nextStep() {
+  if (!canAdvance.value) return
+  if (step.value === 3 && !categoryHasChildren.value) return
+  step.value = Math.min(4, step.value + 1)
 }
+
+function prevStep() {
+  step.value = Math.max(1, step.value - 1)
+}
+
+function triggerCamera() {
+  cameraInput.value?.click()
+}
+function triggerGallery() {
+  galleryInput.value?.click()
+}
+
+function setCoverFile(file: File | null) {
+  form.cover_file = file
+  if (file) form.cover_image = ''
+}
+
 function onCoverFileChange(ev: Event) {
   const input = ev.target as HTMLInputElement
-  form.cover_file = input.files?.[0] ?? null
-  if (form.cover_file) form.cover_image = ''
-}
-function onGalleryFilesChange(ev: Event) {
-  const input = ev.target as HTMLInputElement
   const files = input.files ? Array.from(input.files) : []
-  form.gallery_files.push(...files)
+  if (files.length) {
+    setCoverFile(files[0])
+    if (files.length > 1) form.gallery_files.push(...files.slice(1))
+  }
   input.value = ''
 }
-function galleryPreview(file: File): string {
-  let url = galleryUrlByFile.get(file)
-  if (!url) {
-    url = URL.createObjectURL(file)
-    galleryUrlByFile.set(file, url)
-  }
-  return url
-}
-function removeGalleryFile(idx: number) {
-  const file = form.gallery_files[idx]
-  const url = file ? galleryUrlByFile.get(file) : undefined
-  if (url) {
-    URL.revokeObjectURL(url)
-    galleryUrlByFile.delete(file)
-  }
-  form.gallery_files.splice(idx, 1)
+
+function onDrop(ev: DragEvent) {
+  const file = ev.dataTransfer?.files?.[0]
+  if (file?.type.startsWith('image/')) setCoverFile(file)
 }
 
-function buildSpecificationObject(): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
-  for (const s of form.specifications) {
-    if (s.label?.trim()) out[s.label.trim()] = s.value ?? ''
-  }
-  return out
+function onPasteImage(ev: ClipboardEvent) {
+  const item = Array.from(ev.clipboardData?.items ?? []).find((i) => i.type.startsWith('image/'))
+  const file = item?.getAsFile()
+  if (!file) return
+  ev.preventDefault()
+  setCoverFile(file)
 }
 
-const VARIANT_DIMENSIONS = ['color', 'weight', 'size'] as const
+function optionValues(): string[] {
+  return form.optionsText
+    .split(/[,/|]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 12)
+}
+
+function caption(): string {
+  const desc = form.description.trim()
+  return desc || form.title.trim()
+}
+
+function buildSkus() {
+  const stock = Math.max(0, Number(form.stock) || 0)
+  const options = optionValues()
+  if (options.length > 0) {
+    return options.map((opt) => ({
+      stock_quantity: stock || DEFAULT_STOCK,
+      variant_attributes: { option: opt },
+    }))
+  }
+  if (form.existingSkus.length) {
+    return form.existingSkus.map((s) => ({
+      sku_code: s.sku_code,
+      stock_quantity: stock,
+      price_override: s.price_override ?? null,
+      variant_attributes: s.variant_attributes || {},
+    }))
+  }
+  return [{ stock_quantity: stock || DEFAULT_STOCK, variant_attributes: {} }]
+}
 
 function buildPayload(asDraft: boolean): Record<string, unknown> {
-  const variantAttrs = form.skus.map((s) => {
-    if (form.useVariationTemplate) {
-      const attrs: Record<string, string> = {}
-      if (s.color?.trim()) attrs.color = s.color.trim()
-      if (s.weight?.trim()) attrs.weight = s.weight.trim()
-      if (s.size?.trim()) attrs.size = s.size.trim()
-      return attrs
-    }
-    const attrs: Record<string, string> = {}
-    if (s.variant_text) {
-      const [k, v] = s.variant_text.split(':').map((x) => x.trim())
-      if (k) attrs[k] = v || ''
-    }
-    return attrs
-  })
-  const specs = { ...buildSpecificationObject() }
-  if (form.useVariationTemplate) (specs as Record<string, unknown>).variant_dimensions = [...VARIANT_DIMENSIONS]
-  const payload: Record<string, unknown> = {
-    title: form.title,
-    description: form.description || '',
-    category_slugs: form.categories?.length ? [...form.categories] : undefined,
+  return {
+    title: form.title.trim(),
+    description: caption(),
+    category_slugs: [...form.categories],
     brand: form.brand || undefined,
-    base_price: form.base_price,
+    course_type: form.course_type || undefined,
+    base_price: Number(form.base_price) || 0,
     discount_price: form.discount_price,
     weight_kg: form.weight_kg ?? undefined,
+    available_on_marketplace: form.available_on_marketplace,
+    available_on_microsite: form.available_on_microsite,
     allow_preorder: form.allow_preorder,
     preorder_requires_stock: form.preorder_requires_stock,
     preorder_note: form.allow_preorder ? form.preorder_note || undefined : '',
     preorder_eta: form.allow_preorder && form.preorder_eta ? form.preorder_eta : '',
     requires_prescription: form.requires_prescription,
-    specification: { specs },
-    skus: form.skus.map((s, i) => ({
-      sku_code: s.sku_code,
-      stock_quantity: Number(s.stock_quantity) || 0,
-      price_override: s.price_override != null && String(s.price_override) !== '' ? Number(s.price_override) : null,
-      variant_attributes: variantAttrs[i] || {},
-    })),
+    skus: buildSkus(),
+    status: asDraft ? 'draft' : 'published',
+    ...(form.cover_image?.trim() && !form.cover_file ? { cover_image: form.cover_image.trim() } : {}),
   }
-  payload.status = asDraft ? 'draft' : 'published'
-  if (form.cover_image?.trim() && !form.cover_file) payload.cover_image = form.cover_image.trim()
-  return payload
+}
+
+function validateBeforeSubmit(asDraft: boolean): string | null {
+  if (!form.title.trim()) return t('catalog.addProduct.needName')
+  if (form.title.trim().length > 160) return t('catalog.addProduct.nameTooLong')
+  const price = Number(form.base_price)
+  if (!asDraft && (!Number.isFinite(price) || price <= 0)) return t('catalog.addProduct.needPrice')
+  if (!asDraft && !hasCover.value) return t('catalog.addProduct.needPhoto')
+  if (!asDraft && !form.categories.length) return t('catalog.addProduct.needCategory')
+  if (!asDraft && categoryHasChildren.value && !hasSubcategoryPick.value) {
+    return t('catalog.addProduct.needSubcategory')
+  }
+  return null
 }
 
 async function submitProduct(asDraft: boolean) {
@@ -413,42 +508,37 @@ async function submitProduct(asDraft: boolean) {
     submitError.value = 'Invalid product'
     return
   }
-  if (!form.title.trim()) {
-    submitError.value = 'Product title is required.'
-    toastError(submitError.value)
+  const validationError = validateBeforeSubmit(asDraft)
+  if (validationError) {
+    submitError.value = validationError
+    toastError(validationError)
     return
   }
-  if (form.title.trim().length > 160) {
-    submitError.value = 'Product title must be at most 160 characters.'
-    toastError(submitError.value)
-    return
-  }
-  if (!asDraft && (form.description || '').trim().length < 200) {
-    submitError.value = 'Description must be at least 200 characters to publish.'
-    toastError(submitError.value)
-    return
-  }
+
   const payload = buildPayload(asDraft)
   submitting.value = true
   try {
     if (form.cover_file || form.gallery_files.length) {
       const fd = new FormData()
-      fd.append('title', form.title)
-      fd.append('description', form.description || '')
-      fd.append('base_price', String(form.base_price))
+      fd.append('title', String(payload.title))
+      fd.append('description', String(payload.description))
+      fd.append('base_price', String(payload.base_price))
       fd.append('status', asDraft ? 'draft' : 'published')
-      fd.append('specification', JSON.stringify(payload.specification || {}))
       fd.append('skus', JSON.stringify(payload.skus || []))
+      fd.append('available_on_marketplace', form.available_on_marketplace ? 'true' : 'false')
+      fd.append('available_on_microsite', form.available_on_microsite ? 'true' : 'false')
+      fd.append('allow_preorder', form.allow_preorder ? 'true' : 'false')
+      fd.append('preorder_requires_stock', form.preorder_requires_stock ? 'true' : 'false')
+      fd.append('requires_prescription', form.requires_prescription ? 'true' : 'false')
       if (form.categories?.length) fd.append('category_slugs', JSON.stringify(form.categories))
       if (form.brand) fd.append('brand', form.brand)
+      if (form.course_type) fd.append('course_type', form.course_type)
       if (form.cover_file) fd.append('cover_image', form.cover_file)
       else if (form.gallery_files.length) fd.append('cover_image', form.gallery_files[0])
       form.gallery_files.forEach((file, i) => {
         if (form.cover_file) fd.append('images', file)
         else if (i > 0) fd.append('images', file)
       })
-      if (form.discount_price != null) fd.append('discount_price', String(form.discount_price))
-      if (form.weight_kg != null) fd.append('weight_kg', String(form.weight_kg))
       beginImageUpload()
       try {
         if (isAdmin.value) await catalogAdminApi.updateProductWithCover(slug, fd, { onUploadProgress: onImageUploadProgress })
@@ -460,47 +550,17 @@ async function submitProduct(asDraft: boolean) {
       if (isAdmin.value) await catalogAdminApi.updateProduct(slug, payload)
       else await catalogSellerApi.updateProduct(slug, payload)
     }
-    toastSuccess(asDraft ? 'Draft saved' : 'Product updated')
+    toastSuccess(asDraft ? t('catalog.editProduct.draftSaved') : t('catalog.editProduct.updated'))
     await router.push(isAdmin.value ? { name: 'admin.catalog.products' } : { name: 'seller.products' })
   } catch (e: unknown) {
-    submitError.value = formatApiError(e, 'Failed to save')
+    submitError.value = formatApiError(e, t('catalog.editProduct.saveFailed'))
     toastError(submitError.value)
   } finally {
     submitting.value = false
   }
 }
 
-async function saveDraft() {
-  await submitProduct(true)
-}
-async function onComplete() {
-  await submitProduct(false)
-}
-
-function parseSpecification(spec: unknown): { input_type: string; label: string; value: string }[] {
-  if (!spec || typeof spec !== 'object') return []
-  const raw = spec as Record<string, unknown>
-  const specs = (raw.specs && typeof raw.specs === 'object' ? raw.specs : raw) as Record<string, unknown>
-  return Object.entries(specs)
-    .filter(([key]) => key !== 'variant_dimensions')
-    .map(([label, value]) => ({
-      input_type: typeof value === 'number' ? 'number' : 'text',
-      label,
-      value: String(value ?? ''),
-    }))
-}
-
-function hasColorWeightSizeDimensions(spec: unknown): boolean {
-  if (!spec || typeof spec !== 'object') return false
-  const raw = spec as Record<string, unknown>
-  const specs = (raw.specs && typeof raw.specs === 'object' ? raw.specs : raw) as Record<string, unknown>
-  const dims = specs.variant_dimensions
-  if (!Array.isArray(dims)) return false
-  const set = new Set(dims.map((d: unknown) => String(d).toLowerCase()))
-  return set.has('color') && set.has('weight') && set.has('size')
-}
-
-function parseSkus(skus: unknown): { sku_code: string; stock_quantity: number; price_override?: number | null; variant_text?: string; color?: string; weight?: string; size?: string }[] {
+function parseExistingSkus(skus: unknown) {
   if (!Array.isArray(skus)) return []
   return skus.map((s: Record<string, unknown>) => {
     const va = parseVariantAttributes(s.variant_attributes)
@@ -508,31 +568,25 @@ function parseSkus(skus: unknown): { sku_code: string; stock_quantity: number; p
       sku_code: String(s.sku_code ?? ''),
       stock_quantity: Number(s.stock_quantity ?? 0),
       price_override: s.price_override != null ? Number(s.price_override) : null,
-      variant_text: Object.entries(va)
-        .map(([k, v]) => `${k}:${v}`)
-        .join(', '),
-      color: va.color ?? '',
-      weight: va.weight ?? '',
-      size: va.size ?? '',
+      variant_attributes: va,
     }
   })
 }
 
+function optionsTextFromSkus(
+  skus: Array<{ variant_attributes?: Record<string, string> }>,
+): string {
+  const opts = skus
+    .map((s) => s.variant_attributes?.option || s.variant_attributes?.size || s.variant_attributes?.color || '')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  return [...new Set(opts)].join(', ')
+}
+
 onMounted(async () => {
-  try {
-    const { data: brandData } = isAdmin.value
-      ? await catalogAdminApi.listBrands()
-      : await catalogPublicApi.listBrands()
-    const brands = brandData as { results?: { slug: string; name: string }[] } | { slug: string; name: string }[]
-    brandOptions.value = (Array.isArray(brands) ? brands : (brands?.results ?? [])).map((b) => ({
-      slug: b.slug,
-      name: b.name,
-    }))
-  } catch {
-    brandOptions.value = []
-  }
+  window.addEventListener('paste', onPasteImage)
   if (!slugParam.value) {
-    error.value = 'Invalid product slug'
+    error.value = 'Invalid product'
     return
   }
   try {
@@ -543,31 +597,33 @@ onMounted(async () => {
     const auth = useAuthStore()
     if (!isAdmin.value && !sellerOwnsProduct(d, auth.user?.id)) {
       error.value = t('catalog.productAccessDenied')
-      router.push({ name: 'seller.products' })
+      await router.push({ name: 'seller.products' })
       return
     }
-    form.title = (d.title as string) ?? ''
-    if (d.slug) form.slug = String(d.slug)
-    form.description = (d.description as string) ?? ''
+    form.title = String(d.title ?? '')
+    form.description = String(d.description ?? '')
     form.categories = categorySlugsFromProduct(d)
     form.brand = brandSlugFromProduct(d)
+    form.course_type = String(d.course_type ?? '')
     form.base_price = Number(d.base_price ?? 0)
     form.discount_price = d.discount_price != null ? Number(d.discount_price) : null
     form.weight_kg = d.weight_kg != null ? Number(d.weight_kg) : null
+    form.available_on_marketplace = d.available_on_marketplace !== false
+    form.available_on_microsite = d.available_on_microsite !== false
     form.allow_preorder = Boolean(d.allow_preorder)
     form.preorder_requires_stock = Boolean(d.preorder_requires_stock)
     form.preorder_note = String(d.preorder_note ?? '')
-    const eta = d.preorder_eta
-    form.preorder_eta = eta ? String(eta).slice(0, 10) : ''
+    form.preorder_eta = d.preorder_eta ? String(d.preorder_eta).slice(0, 10) : ''
     form.requires_prescription = Boolean(d.requires_prescription)
     const images = d.images as string[] | undefined
     const cover = (d.cover_image ?? d.image ?? d.thumbnail ?? d.cover ?? images?.[0]) as string | undefined
     form.cover_image = cover ?? ''
-    form.useVariationTemplate = hasColorWeightSizeDimensions(d.specification)
-    form.specifications = parseSpecification(d.specification)
-    if (form.specifications.length === 0) addSpec()
-    form.skus = parseSkus(d.skus)
-    if (form.skus.length === 0) addSku()
+    form.existingSkus = parseExistingSkus(d.skus)
+    form.stock = form.existingSkus[0]?.stock_quantity ?? DEFAULT_STOCK
+    form.optionsText = optionsTextFromSkus(form.existingSkus)
+    priceDisplay.value = formatPriceDisplay(form.base_price)
+    // If product already has a subcategory, assume parent has children for step flow.
+    categoryHasChildren.value = form.categories.length > 1
     loaded.value = true
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Failed to load product')
@@ -576,22 +632,277 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.product-wizard-cover-preview {
-  max-width: 200px;
-  max-height: 140px;
-  object-fit: contain;
-  border-radius: 4px;
-  border: 1px solid var(--bs-border-color, #dee2e6);
+.product-post {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 0 0 var(--kkoo-spacing-2xl, 3.4rem);
 }
-.gallery-thumb-wrap {
-  width: 80px;
+.product-post__header {
+  margin-bottom: var(--kkoo-spacing-lg, 1.3rem);
+}
+.product-post__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kkoo-primary, #5c308f);
+}
+.product-post__title {
+  margin: 0 0 0.35rem;
+  font-family: var(--kkoo-font-display, Poppins, sans-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--kkoo-text-dark, #111827);
+}
+.product-post__lede {
+  margin: 0;
+  color: var(--kkoo-text-muted, #6a4c86);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.product-post__progress {
+  display: block;
+  margin-top: var(--kkoo-spacing-md, 0.8rem);
+}
+.product-post__bar {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(92, 48, 143, 0.12);
+  overflow: hidden;
+}
+.product-post__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #5c308f, #f7a829);
+  transition: width 0.35s ease;
+}
+.product-post__stage {
+  margin: var(--kkoo-spacing-lg, 1.3rem) 0;
+}
+.product-post__cover-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.8rem;
+  color: var(--kkoo-text-muted, #6a4c86);
+}
+.product-post__photo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 16rem;
+  padding: 1.5rem;
+  border: 2px dashed rgba(92, 48, 143, 0.28);
+  border-radius: var(--kkoo-radius-lg, 21px);
+  background:
+    linear-gradient(180deg, rgba(248, 242, 236, 0.9), #fff 55%),
+    radial-gradient(circle at 20% 0%, rgba(247, 168, 41, 0.18), transparent 42%);
+  color: var(--kkoo-primary, #5c308f);
   text-align: center;
+  cursor: pointer;
 }
-.gallery-thumb {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: 4px;
-  border: 1px solid var(--bs-border-color, #dee2e6);
+.product-post__photo-empty strong {
+  font-size: 1.05rem;
+}
+.product-post__photo-empty span:last-child {
+  color: var(--kkoo-text-muted, #6a4c86);
+  font-size: 0.875rem;
+}
+.product-post__photo-icon {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+.product-post__photo-filled {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--kkoo-radius-lg, 21px);
+  background: #111;
+  aspect-ratio: 1;
+}
+.product-post__photo-filled img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.product-post__photo-clear {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.78);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.product-post__photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.product-post__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(92, 48, 143, 0.18);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--kkoo-primary, #5c308f);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.product-post__fields {
+  margin-bottom: 0.5rem;
+}
+.product-post__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.product-post__field > span:first-child {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--kkoo-text-dark, #111827);
+}
+.product-post__field input,
+.product-post__field textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(92, 48, 143, 0.16);
+  border-radius: var(--kkoo-radius-md, 13px);
+  background: #fff;
+  font-size: 1rem;
+}
+.product-post__field textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+.product-post__field input:focus,
+.product-post__field textarea:focus {
+  outline: 2px solid var(--kkoo-primary, #5c308f);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.product-post__field small {
+  color: var(--kkoo-text-muted, #6a4c86);
+  font-size: 0.8rem;
+}
+.product-post__price {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid rgba(92, 48, 143, 0.16);
+  border-radius: var(--kkoo-radius-md, 13px);
+  background: #fff;
+  overflow: hidden;
+}
+.product-post__price input {
+  border: 0;
+  border-radius: 0;
+  min-height: 48px;
+  flex: 1;
+}
+.product-post__price input:focus {
+  outline: none;
+}
+.product-post__price:focus-within {
+  outline: 2px solid var(--kkoo-primary, #5c308f);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.product-post__currency {
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  background: var(--kkoo-canvas, #f8f2ec);
+  color: var(--kkoo-primary, #5c308f);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.product-post__more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.25rem 0 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kkoo-primary, #5c308f);
+  font-weight: 600;
+  min-height: 44px;
+}
+.product-post__more {
+  padding-top: 0.25rem;
+}
+.product-post__check {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--kkoo-text-dark, #111827);
+}
+.product-post__error {
+  color: #b42318;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+.product-post__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.product-post__cta,
+.product-post__ghost {
+  min-height: 48px;
+  border-radius: var(--kkoo-radius-md, 13px);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.product-post__cta {
+  border: 0;
+  background: var(--kkoo-primary, #5c308f);
+  color: #fff;
+  box-shadow: var(--kkoo-shadow-primary, 0 2px 10px rgba(92, 48, 143, 0.22));
+}
+.product-post__cta:disabled {
+  background: #9b86b5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.product-post__ghost {
+  border: 1px solid rgba(92, 48, 143, 0.2);
+  background: transparent;
+  color: var(--kkoo-primary, #5c308f);
+}
+.product-post__foot {
+  margin: 0.85rem 0 0;
+  text-align: center;
+  color: var(--kkoo-text-muted, #6a4c86);
+  font-size: 0.8rem;
+}
+.product-post__chip:focus-visible,
+.product-post__photo-empty:focus-visible,
+.product-post__cta:focus-visible,
+.product-post__ghost:focus-visible,
+.product-post__more-toggle:focus-visible {
+  outline: 2px solid var(--kkoo-primary, #5c308f);
+  outline-offset: 2px;
+}
+.product-post__chip i {
+  font-size: 1.15rem;
 }
 </style>

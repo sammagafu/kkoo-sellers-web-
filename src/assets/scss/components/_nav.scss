@@ -39,11 +39,14 @@
 
 .nav-pills {
     background: var(--#{$prefix}tertiary-bg);
-    border-radius: $border-radius-sm;
+    border-radius: $border-radius-pill;
+    padding: 0.25rem;
+    gap: 0.25rem;
 
     .nav-link {
         background-color: transparent;
         color: var(--#{$prefix}link-color);
+        border-radius: $border-radius-pill;
     }
 
     .nav-link.active,
@@ -51,6 +54,7 @@
         color: $white;
         background-color: $primary;
         box-shadow: $box-shadow-sm;
+        border-radius: $border-radius-pill;
     }
 }
 

@@ -296,6 +296,7 @@
 .cat-pill {
   cursor: grab;
   border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
 }
 .drop-root-zone {
   border: 2px dashed rgba(108, 117, 125, 0.35);

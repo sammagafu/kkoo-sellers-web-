@@ -37,7 +37,7 @@ describe('catalogCategoryTree', () => {
   })
 
   it('combines main and subs for API payload', () => {
-    expect(combineMainAndSubs('electronics', ['android'])).toEqual(['android'])
+    expect(combineMainAndSubs('electronics', ['android'])).toEqual(['electronics', 'android'])
     expect(combineMainAndSubs('electronics', [])).toEqual(['electronics'])
   })
 })

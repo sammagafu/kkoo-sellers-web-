@@ -1203,7 +1203,7 @@ $nav-tabs-link-active-color:        var(--#{$prefix}primary);
 $nav-tabs-link-active-bg:           var(--#{$prefix}secondary-bg);
 $nav-tabs-link-active-border-color: var(--#{$prefix}border-color) var(--#{$prefix}border-color) $nav-tabs-link-active-bg;
 
-$nav-pills-border-radius:           $border-radius;
+$nav-pills-border-radius:           $border-radius-pill;
 $nav-pills-link-active-color:       $component-active-color;
 $nav-pills-link-active-bg:          $component-active-bg;
 
