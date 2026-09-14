@@ -95,7 +95,6 @@ export default {
     signUpSubmitBuyer: 'Create account',
     signUpSubmitSeller: 'Register',
     signUpSubmitting: 'Creating…',
-    alreadyHaveAccount: 'Have an account?',
     lockTitle: 'Session locked',
     lockCopy: 'Sign in again with your code.',
     lockCta: 'Sign in',

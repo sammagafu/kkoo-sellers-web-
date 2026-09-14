@@ -1,8 +1,26 @@
-import type { MenuItemType } from '@/types/menu'
+import type { MenuItemType, SellerMenuVertical } from '@/types/menu'
 import type { User } from '@/types/auth'
 import { ROLES } from '@/acl'
 import type { CrmRolePermissions } from '@/config/crmRoles'
 import { bizSellerAccountUrl, bizSellerDashboardUrl } from '@/config/app-portal-links'
+
+const KNOWN_SELLER_TYPES = new Set<SellerMenuVertical>([
+  'marketplace',
+  'grocery',
+  'restaurant',
+  'hotel',
+  'pharmacy',
+])
+
+export function normalizeSellerMenuVertical(raw?: string | null): SellerMenuVertical | null {
+  const t = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+  if (!t) return null
+  if (t === 'shop' || t === 'seller') return 'marketplace'
+  if (KNOWN_SELLER_TYPES.has(t as SellerMenuVertical)) return t as SellerMenuVertical
+  return null
+}
 
 const base: MenuItemType[] = [
   { key: 'kkoo-menu', label: 'PLATFORM', isTitle: true },

@@ -1,5 +1,13 @@
 import type {RouteType} from '@/types/index'
 
+/** Seller business types used by product create/edit copy. */
+export type SellerMenuVertical =
+    | 'marketplace'
+    | 'grocery'
+    | 'restaurant'
+    | 'hotel'
+    | 'pharmacy'
+
 export type MenuItemType = {
     key: string
     label: string
