@@ -2,18 +2,7 @@ export type CatalogCategoryNode = {
   slug: string
   name: string
   children: CatalogCategoryNode[]
-  icon?: string
-  categoryKind?: string
-}
-
-export type FlatCategoryOption = {
-  slug: string
-  name: string
-  pathLabel: string
-  depth: number
-  icon?: string
-  categoryKind?: string
-  hasChildren: boolean
+  id?: number
 }
 
 type FlatCategory = {
@@ -22,9 +11,6 @@ type FlatCategory = {
   id?: number | string
   parent_id?: number | string | null
   parent?: { id?: number | string; slug?: string } | number | string | null
-  icon?: string
-  category_kind?: string
-  categoryKind?: string
 }
 
 type CategoryIndexEntry = {
@@ -33,8 +19,35 @@ type CategoryIndexEntry = {
   rootSlug: string
 }
 
+export type FlatCategoryHit = {
+  slug: string
+  name: string
+  rootSlug: string
+  pathLabel: string
+  depth: number
+  id?: number
+}
+
+/**
+ * Parse public nested tree, or rebuild from a flat admin-style list when `children` are missing.
+ */
 export function parseCategoryListResponse(data: unknown): CatalogCategoryNode[] {
   const roots = Array.isArray(data) ? data : ((data as { results?: unknown[] })?.results ?? [])
+  if (!Array.isArray(roots) || !roots.length) return []
+
+  const hasNestedChildren = roots.some((raw) => {
+    const n = raw as Record<string, unknown>
+    const kids = n.children ?? n.subcategories
+    return Array.isArray(kids) && kids.length > 0
+  })
+  const looksFlatWithParents = roots.some((raw) => {
+    const n = raw as Record<string, unknown>
+    return n.parent_id != null && n.parent_id !== '' && n.parent_id !== 0
+  })
+
+  if (!hasNestedChildren && looksFlatWithParents) {
+    return buildCategoryTreeFromFlat(roots as Parameters<typeof buildCategoryTreeFromFlat>[0])
+  }
   return normalizeTreeNodes(roots)
 }
 
@@ -44,11 +57,10 @@ function normalizeTreeNodes(nodes: unknown[]): CatalogCategoryNode[] {
       const n = raw as Record<string, unknown>
       const slug = String(n.slug ?? '').trim()
       const name = String(n.name ?? slug).trim()
-      const icon = String(n.icon ?? '').trim() || undefined
-      const categoryKind = String(n.category_kind ?? n.categoryKind ?? '').trim() || undefined
+      const id = n.id != null && n.id !== '' ? Number(n.id) : undefined
       const childrenRaw = n.children ?? n.subcategories ?? []
       const children = Array.isArray(childrenRaw) ? normalizeTreeNodes(childrenRaw) : []
-      return { slug, name, children, icon, categoryKind }
+      return { slug, name, children, id: Number.isFinite(id) ? id : undefined }
     })
     .filter((n) => n.slug && n.name)
 }
@@ -62,11 +74,13 @@ export function buildCategoryTreeFromFlat(flat: FlatCategory[]): CatalogCategory
     const name = String(row.name ?? slug).trim()
     if (!slug || !name) continue
     const id = String(row.id ?? slug)
-    const icon = String((row as FlatCategory).icon ?? '').trim() || undefined
-    const categoryKind =
-      String((row as FlatCategory).category_kind ?? (row as FlatCategory).categoryKind ?? '').trim() ||
-      undefined
-    byId.set(id, { slug, name, children: [], icon, categoryKind })
+    const numericId = row.id != null && row.id !== '' ? Number(row.id) : undefined
+    byId.set(id, {
+      slug,
+      name,
+      children: [],
+      id: Number.isFinite(numericId) ? numericId : undefined,
+    })
     let parentId: string | null = null
     if (row.parent_id != null && row.parent_id !== '') {
       parentId = String(row.parent_id)
@@ -178,10 +192,8 @@ export function categorySlugsEqual(a: string[] | undefined, b: string[] | undefi
 export function combineMainAndSubs(main: string | null | undefined, subs: string[]): string[] {
   const subList = [...new Set(subs.map((s) => s.trim()).filter(Boolean))]
   const m = String(main ?? '').trim()
-  if (subList.length) {
-    if (m && !subList.includes(m)) return [m, ...subList]
-    return subList
-  }
+  // Prefer leaf selections only; main is implied by the tree when subs are present.
+  if (subList.length) return subList
   return m ? [m] : []
 }
 
@@ -206,82 +218,37 @@ export function getCategoryDescendants(node: CatalogCategoryNode): Array<{ slug:
   return out
 }
 
-export function filterCategoriesByQuery<T extends { slug: string; name: string }>(
+/** Flatten tree for global search (main + all nested). */
+export function flattenCategories(roots: CatalogCategoryNode[]): FlatCategoryHit[] {
+  const out: FlatCategoryHit[] = []
+  const walk = (nodes: CatalogCategoryNode[], pathNames: string[], rootSlug: string) => {
+    for (const n of nodes) {
+      const nextPath = [...pathNames, n.name]
+      const nextRoot = pathNames.length === 0 ? n.slug : rootSlug
+      out.push({
+        slug: n.slug,
+        name: n.name,
+        rootSlug: nextRoot,
+        pathLabel: nextPath.join(' › '),
+        depth: pathNames.length,
+        id: n.id,
+      })
+      walk(n.children, nextPath, nextRoot)
+    }
+  }
+  walk(roots, [], '')
+  return out
+}
+
+export function filterCategoriesByQuery<T extends { slug: string; name: string; pathLabel?: string; label?: string }>(
   items: T[],
   query: string
 ): T[] {
   const q = query.trim().toLowerCase()
   if (!q) return items
-  return items.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q))
-}
-
-export function getCategoryPathLabel(roots: CatalogCategoryNode[], slug: string): string {
-  const walk = (nodes: CatalogCategoryNode[], trail: string[]): string | null => {
-    for (const n of nodes) {
-      const next = [...trail, n.name]
-      if (n.slug === slug) return next.join(' › ')
-      const found = walk(n.children, next)
-      if (found) return found
-    }
-    return null
-  }
-  return walk(roots, []) ?? slug
-}
-
-export function flattenCategoryTree(roots: CatalogCategoryNode[]): FlatCategoryOption[] {
-  const out: FlatCategoryOption[] = []
-  const walk = (nodes: CatalogCategoryNode[], trail: string[], depth: number) => {
-    for (const n of nodes) {
-      const pathParts = [...trail, n.name]
-      out.push({
-        slug: n.slug,
-        name: n.name,
-        pathLabel: pathParts.join(' › '),
-        depth,
-        icon: n.icon,
-        categoryKind: n.categoryKind,
-        hasChildren: n.children.length > 0,
-      })
-      walk(n.children, pathParts, depth + 1)
-    }
-  }
-  walk(roots, [], 0)
-  return out
-}
-
-/** Prefer global taxonomy roots; seller menu sections appear under shopMenu. */
-export function partitionRoots(roots: CatalogCategoryNode[]): {
-  browseRoots: CatalogCategoryNode[]
-  shopMenuRoots: CatalogCategoryNode[]
-} {
-  const browseRoots: CatalogCategoryNode[] = []
-  const shopMenuRoots: CatalogCategoryNode[] = []
-  for (const r of roots) {
-    if ((r.categoryKind ?? '').toLowerCase() === 'menu') {
-      shopMenuRoots.push(r)
-    } else {
-      browseRoots.push(r)
-    }
-  }
-  return { browseRoots, shopMenuRoots }
-}
-
-export function rootNameCounts(roots: CatalogCategoryNode[]): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const r of roots) {
-    const key = r.name.trim().toLowerCase()
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-  return counts
-}
-
-export function disambiguatedRootLabel(
-  node: CatalogCategoryNode,
-  nameCounts: Map<string, number>
-): string {
-  const key = node.name.trim().toLowerCase()
-  if ((nameCounts.get(key) ?? 0) > 1) {
-    return `${node.name} · ${node.slug.replace(/-/g, ' ')}`
-  }
-  return node.name
+  const terms = q.split(/\s+/).filter(Boolean)
+  return items.filter((c) => {
+    const hay = [c.name, c.slug, c.pathLabel ?? '', c.label ?? ''].join(' ').toLowerCase()
+    return terms.every((term) => hay.includes(term))
+  })
 }

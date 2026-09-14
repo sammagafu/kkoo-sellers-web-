@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildCategoryTreeFromFlat,
   combineMainAndSubs,
+  filterCategoriesByQuery,
+  flattenCategories,
   getCategoryDescendants,
   splitSlugsToMainAndSubs,
 } from './catalogCategoryTree'
@@ -39,5 +41,19 @@ describe('catalogCategoryTree', () => {
   it('combines main and subs for API payload', () => {
     expect(combineMainAndSubs('electronics', ['android'])).toEqual(['electronics', 'android'])
     expect(combineMainAndSubs('electronics', [])).toEqual(['electronics'])
+  })
+
+  it('flattens tree with path labels for search', () => {
+    const hits = flattenCategories(roots)
+    expect(hits.map((h) => h.slug)).toEqual(['electronics', 'phones', 'android'])
+    expect(hits.find((h) => h.slug === 'android')?.pathLabel).toBe('Electronics › Phones › Android')
+    expect(hits.find((h) => h.slug === 'android')?.rootSlug).toBe('electronics')
+  })
+
+  it('filters by multi-term query across path', () => {
+    const hits = flattenCategories(roots)
+    expect(filterCategoriesByQuery(hits, 'pain').map((h) => h.slug)).toEqual([])
+    expect(filterCategoriesByQuery(hits, 'and').map((h) => h.slug)).toEqual(['android'])
+    expect(filterCategoriesByQuery(hits, 'electronics android').map((h) => h.slug)).toEqual(['android'])
   })
 })
