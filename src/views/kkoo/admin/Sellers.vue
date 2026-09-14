@@ -1,11 +1,16 @@
 <template>
   <VerticalLayout>
-    <b-card title="Seller Management">
-      <p class="text-muted mb-3">View sellers and approve or reject verification. When rejecting, provide a reason (why the user is not verified).</p>
+    <b-card title="Sellers">
+      <p class="text-muted mb-3">
+        Find shops, open their profile, approve them to sell, or send them back with a clear reason.
+        Document checks live under
+        <router-link :to="{ name: 'admin.kyc-documents' }">Verify documents</router-link>.
+      </p>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <b-form-input v-model="search" placeholder="Search by name, phone, business..." class="w-auto" style="max-width: 220px;" @keyup.enter="load" />
+        <b-form-input v-model="search" placeholder="Search shop, phone, name…" class="w-auto" style="max-width: 220px;" @keyup.enter="load" />
         <b-form-select v-model="statusFilter" :options="statusOptions" class="w-auto" @change="load" />
         <b-button variant="outline-primary" size="sm" @click="load">Refresh</b-button>
+        <b-button variant="outline-secondary" size="sm" :to="{ name: 'admin.kyc-documents' }">Review documents</b-button>
         <b-dropdown
           v-if="selected.length"
           variant="primary"
@@ -13,8 +18,8 @@
           :text="`Bulk (${selected.length})`"
           menu-class="shadow-sm"
         >
-          <b-dropdown-item @click="bulkApproveSelected">Approve selected (pending)</b-dropdown-item>
-          <b-dropdown-item @click="openBulkRejectModal">Reject selected…</b-dropdown-item>
+          <b-dropdown-item @click="bulkApproveSelected">Approve selected (waiting)</b-dropdown-item>
+          <b-dropdown-item @click="openBulkRejectModal">Send selected back…</b-dropdown-item>
         </b-dropdown>
       </div>
       <p v-if="error" class="text-danger">{{ error }}</p>
@@ -32,14 +37,14 @@
         </template>
         <template #cell(verification_status)="data">
           <b-badge :variant="data.item.is_verified ? 'success' : (data.item.verification_status === 'rejected' ? 'danger' : 'warning')">
-            {{ data.item.is_verified ? 'Verified' : (data.item.verification_status === 'rejected' ? 'Rejected' : 'Pending') }}
+            {{ data.item.is_verified ? 'Can sell' : (data.item.verification_status === 'rejected' ? 'Needs fix' : 'Waiting') }}
           </b-badge>
         </template>
         <template #cell(actions)="data">
-          <b-button size="sm" variant="outline-primary" class="me-1" :to="{ name: 'admin.sellers.detail', params: { id: String(data.item.id) } }">View</b-button>
+          <b-button size="sm" variant="outline-primary" class="me-1" :to="{ name: 'admin.sellers.detail', params: { id: String(data.item.id) } }">Open</b-button>
           <template v-if="!data.item.is_verified && data.item.verification_status !== 'rejected'">
             <b-button size="sm" variant="outline-success" class="me-1" :disabled="actionLoading === data.item.id" @click="approve(data.item)">Approve</b-button>
-            <b-button size="sm" variant="outline-danger" :disabled="actionLoading === data.item.id" @click="openRejectModal(data.item)">Reject</b-button>
+            <b-button size="sm" variant="outline-danger" :disabled="actionLoading === data.item.id" @click="openRejectModal(data.item)">Send back</b-button>
           </template>
         </template>
       </b-table>
@@ -48,14 +53,14 @@
       <p v-if="displayItems.length" class="text-muted small mt-2">Showing {{ displayItems.length }} seller(s)</p>
     </b-card>
 
-    <b-modal v-model="rejectModalShow" title="Reject seller verification" @ok="onRejectOk" @hidden="clearReject">
-      <p class="text-muted small">Provide a reason so the seller knows why they are not verified.</p>
-      <b-form-textarea v-model="rejectReason" placeholder="Reason (why not verified)..." rows="3" />
+    <b-modal v-model="rejectModalShow" title="Send seller back" @ok="onRejectOk" @hidden="clearReject">
+      <p class="text-muted small">Tell them what to fix so they can sell.</p>
+      <b-form-textarea v-model="rejectReason" placeholder="e.g. Business license photo is unclear…" rows="3" />
     </b-modal>
 
-    <b-modal v-model="bulkRejectModalShow" title="Reject selected sellers" @ok="onBulkRejectOk" @hidden="clearBulkReject">
-      <p class="text-muted small">This reason will be applied to each pending seller in your selection.</p>
-      <b-form-textarea v-model="bulkRejectReason" placeholder="Reason (required)..." rows="3" required />
+    <b-modal v-model="bulkRejectModalShow" title="Send selected sellers back" @ok="onBulkRejectOk" @hidden="clearBulkReject">
+      <p class="text-muted small">This note is applied to each waiting seller you selected.</p>
+      <b-form-textarea v-model="bulkRejectReason" placeholder="Reason (required)…" rows="3" required />
     </b-modal>
   </VerticalLayout>
 </template>
@@ -99,18 +104,18 @@ const bulkRejectModalShow = ref(false)
 const bulkRejectReason = ref('')
 
 const statusOptions = [
-  { value: '', text: 'All statuses' },
-  { value: 'pending', text: 'Pending' },
-  { value: 'approved', text: 'Approved' },
-  { value: 'rejected', text: 'Rejected' },
+  { value: '', text: 'All shops' },
+  { value: 'pending', text: 'Waiting' },
+  { value: 'approved', text: 'Can sell' },
+  { value: 'rejected', text: 'Needs fix' },
 ]
 
 const fields = [
   { key: 'id', label: 'ID' },
-  { key: 'user_display', label: 'User' },
-  { key: 'business_name', label: 'Business' },
+  { key: 'user_display', label: 'Owner' },
+  { key: 'business_name', label: 'Shop' },
   { key: 'verification_status', label: 'Status' },
-  { key: 'actions', label: 'Actions' },
+  { key: 'actions', label: '' },
 ]
 
 const displayItems = computed(() => {

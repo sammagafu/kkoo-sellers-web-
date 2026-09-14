@@ -399,10 +399,12 @@ interface SellerProfileForm {
 }
 
 const SELLER_TYPE_OPTIONS = [
-  { value: '', text: 'Marketplace (default)' },
-  { value: 'marketplace', text: 'Marketplace' },
+  { value: '', text: 'Choose type…' },
+  { value: 'marketplace', text: 'Shop (default)' },
   { value: 'restaurant', text: 'Restaurant' },
   { value: 'grocery', text: 'Grocery' },
+  { value: 'pharmacy', text: 'Pharmacy' },
+  { value: 'hotel', text: 'Hotel' },
 ] as const
 
 const loading = ref(false)

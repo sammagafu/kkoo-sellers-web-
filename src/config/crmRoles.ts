@@ -22,18 +22,18 @@ export type CrmRolePermissions = {
 export const CRM_ROLE_OPTIONS = [
   {
     value: KKOO_CRM_ROLES.STEWARD,
-    text: 'KKOO Steward',
-    description: 'Team lead — full access.',
+    text: 'Manager',
+    description: 'Full access — settings, team, and money tools.',
   },
   {
     value: KKOO_CRM_ROLES.RUNNER,
-    text: 'KKOO Runner',
-    description: 'Daily sales and stock.',
+    text: 'Staff',
+    description: 'Day-to-day sales, stock, and invoices.',
   },
   {
     value: KKOO_CRM_ROLES.WATCHER,
-    text: 'KKOO Watcher',
-    description: 'View only.',
+    text: 'View only',
+    description: 'Can see reports, cannot change data.',
   },
 ] as const
 
@@ -59,13 +59,13 @@ export function normalizeCrmRole(role: string | null | undefined): KkooCrmRole {
 export function crmRoleLabel(role: string | null | undefined): string {
   switch (normalizeCrmRole(role)) {
     case 'owner':
-      return 'Business Owner'
+      return 'Owner'
     case KKOO_CRM_ROLES.STEWARD:
-      return 'KKOO Steward'
+      return 'Manager'
     case KKOO_CRM_ROLES.RUNNER:
-      return 'KKOO Runner'
+      return 'Staff'
     case KKOO_CRM_ROLES.WATCHER:
-      return 'KKOO Watcher'
+      return 'View only'
     default:
       return String(role ?? 'Team member')
   }

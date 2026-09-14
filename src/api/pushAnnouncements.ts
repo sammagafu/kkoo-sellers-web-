@@ -12,9 +12,12 @@ export type AnnounceSalePayload = {
   targets?: {
     mode?: 'subscribers' | 'users'
     user_ids?: number[]
+    seller_user_ids?: number[]
     include_buyers?: boolean
     include_sellers?: boolean
+    include_riders?: boolean
     require_push?: boolean
+    platforms?: Array<'android' | 'ios' | string>
   }
 }
 

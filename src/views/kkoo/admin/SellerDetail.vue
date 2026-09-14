@@ -81,18 +81,19 @@
         <p v-else class="text-muted mb-0">No documents uploaded.</p>
       </b-card>
 
-      <b-card v-if="!seller.is_verified && seller.verification_status !== 'rejected'" title="Review & decision" class="mb-4">
-        <p class="text-muted small mb-3">After reviewing the documents, approve or reject this seller.</p>
-        <div class="d-flex gap-2">
-          <b-button variant="success" :disabled="actionLoading" @click="approve">Approve seller</b-button>
-          <b-button variant="danger" :disabled="actionLoading" @click="openRejectModal">Reject</b-button>
+      <b-card v-if="!seller.is_verified && seller.verification_status !== 'rejected'" title="Decision" class="mb-4">
+        <p class="text-muted small mb-3">After checking documents, let them sell or ask them to fix something.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <b-button variant="success" :disabled="actionLoading" @click="approve">Looks good — approve</b-button>
+          <b-button variant="outline-danger" :disabled="actionLoading" @click="openRejectModal">Send back</b-button>
+          <b-button variant="outline-secondary" :to="{ name: 'admin.kyc-documents' }">Open document queue</b-button>
         </div>
       </b-card>
     </template>
 
-    <b-modal v-model="rejectModalShow" title="Reject seller verification" @ok="onRejectOk" @hidden="clearReject">
-      <p class="text-muted small">Provide a reason so the seller knows why they are not verified.</p>
-      <b-form-textarea v-model="rejectReason" placeholder="Reason (why not verified)..." rows="3" />
+    <b-modal v-model="rejectModalShow" title="Send seller back" @ok="onRejectOk" @hidden="clearReject">
+      <p class="text-muted small">Tell them what to fix.</p>
+      <b-form-textarea v-model="rejectReason" placeholder="e.g. License photo is blurry…" rows="3" />
     </b-modal>
   </VerticalLayout>
 </template>
@@ -261,9 +262,9 @@ const verificationBadgeVariant = computed(() => {
 const verificationBadgeText = computed(() => {
   const s = seller.value
   if (!s) return '—'
-  if (s.is_verified) return 'Verified'
-  if (s.verification_status === 'rejected') return 'Rejected'
-  return 'Pending'
+  if (s.is_verified) return 'Can sell'
+  if (s.verification_status === 'rejected') return 'Needs fix'
+  return 'Waiting'
 })
 
 /**

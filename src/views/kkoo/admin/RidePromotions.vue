@@ -1,7 +1,7 @@
 <template>
   <VerticalLayout>
-    <b-card title="Ride / delivery promotions">
-      <p class="text-muted">Promo codes that apply to delivery/ride fees.</p>
+    <b-card title="Delivery fee discounts">
+      <p class="text-muted">Codes that cut the delivery / ride fee. Keep the name short so drivers and buyers understand it.</p>
       <b-alert v-if="endpointUnavailable" variant="info" show class="mb-3">
         <strong>Endpoint not available.</strong> The backend does not yet expose
         <code>GET /api/v1/promotions/admin/ride-promotions/</code>. Add this route in kkoo-fiber to list and manage ride/delivery promotions.

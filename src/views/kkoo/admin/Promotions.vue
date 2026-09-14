@@ -1,14 +1,16 @@
 <template>
   <VerticalLayout>
-    <b-card title="Promotions">
+    <b-card title="Discount promotions">
       <b-tabs v-model="activeTab" content-class="pt-3">
-        <b-tab title="Promotions">
+        <b-tab title="Discounts">
           <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <p class="text-muted mb-0 me-auto">Create, edit and delete promotions.</p>
-            <b-form-input v-model="searchPromos" placeholder="Search promotions..." class="w-auto" style="max-width: 200px;" />
-            <b-button variant="outline-secondary" size="sm" @click="exportPromosCsv">Export CSV</b-button>
-            <b-button variant="outline-secondary" size="sm" @click="downloadPromosTemplate">CSV template</b-button>
-            <b-button variant="primary" size="sm" @click="openPromoCreate">Create promotion</b-button>
+            <p class="text-muted mb-0 me-auto">
+              Checkout discounts (percent off). For push banners, use
+              <router-link :to="{ name: 'admin.platform-campaigns' }">Push &amp; promo campaigns</router-link>.
+            </p>
+            <b-form-input v-model="searchPromos" placeholder="Search…" class="w-auto" style="max-width: 200px;" />
+            <b-button variant="outline-secondary" size="sm" @click="exportPromosCsv">Export</b-button>
+            <b-button variant="primary" size="sm" @click="openPromoCreate">Create discount</b-button>
           </div>
           <b-table v-if="filteredPromos.length" :items="filteredPromos" :fields="promoFields" striped responsive>
             <template #cell(status)="data">
@@ -70,37 +72,84 @@
       </b-tabs>
       <p v-if="error" class="text-danger">{{ error }}</p>
 
-      <b-modal v-model="showPromoModal" :title="editPromoId ? 'Edit promotion' : 'Create promotion'" size="lg" @ok="onPromoModalOk">
+      <b-modal
+        v-model="showPromoModal"
+        :title="editPromoId ? 'Edit discount' : 'Create discount'"
+        size="lg"
+        hide-footer
+        @hidden="promoWizardStep = 1"
+      >
+        <nav class="promo-steps mb-3">
+          <button
+            v-for="s in promoStepMeta"
+            :key="s.n"
+            type="button"
+            class="promo-steps__btn"
+            :class="{ 'promo-steps__btn--active': promoWizardStep === s.n }"
+            @click="promoWizardStep = s.n"
+          >
+            {{ s.n }}. {{ s.label }}
+          </button>
+        </nav>
         <b-form>
-          <p class="text-muted small mb-3">Set discount rules and limits. Optional fields can be left blank; you can edit them later on the promotion detail page.</p>
-          <b-card title="Basic" class="mb-2">
-            <b-form-group label="Name"><b-form-input v-model="promoForm.name" placeholder="e.g. Summer Sale" /></b-form-group>
-            <b-form-group label="Type"><b-form-select v-model="promoForm.promotion_type" :options="promoTypeOptions" /></b-form-group>
-            <b-form-group label="Discount % (1–70)"><b-form-input v-model.number="promoForm.discount_percent" type="number" min="1" max="70" /></b-form-group>
-            <b-form-group label="Start"><b-form-input v-model="promoForm.start_datetime" type="datetime-local" /></b-form-group>
-            <b-form-group label="End"><b-form-input v-model="promoForm.end_datetime" type="datetime-local" /></b-form-group>
-            <b-form-group label="Description"><b-form-textarea v-model="promoForm.description" rows="2" placeholder="Optional" /></b-form-group>
-            <b-form-group label="Cover image (1920×786 banner)" :description="editPromoId ? 'Upload a new image to replace (optional).' : 'Required. Image will be resized/cropped to 1920×786.'">
+          <div v-show="promoWizardStep === 1">
+            <p class="text-muted small mb-3">Name the deal and how much off.</p>
+            <b-form-group label="Name"><b-form-input v-model="promoForm.name" placeholder="e.g. Weekend 20% off" /></b-form-group>
+            <b-form-group label="Kind of deal">
+              <b-form-select v-model="promoForm.promotion_type" :options="promoTypeOptions" />
+            </b-form-group>
+            <b-form-group label="Discount % (1–70)">
+              <b-form-input v-model.number="promoForm.discount_percent" type="number" min="1" max="70" />
+            </b-form-group>
+            <b-form-group label="Starts"><b-form-input v-model="promoForm.start_datetime" type="datetime-local" /></b-form-group>
+            <b-form-group label="Ends"><b-form-input v-model="promoForm.end_datetime" type="datetime-local" /></b-form-group>
+            <b-form-group label="Short description"><b-form-textarea v-model="promoForm.description" rows="2" placeholder="Optional" /></b-form-group>
+            <b-form-group
+              label="Cover photo (1920×786)"
+              :description="editPromoId ? 'Optional — upload to replace.' : 'Required for a new discount.'"
+            >
               <img v-if="promoForm.cover_preview" :src="promoForm.cover_preview" alt="Cover" class="promo-cover-preview mb-2" />
               <input type="file" accept="image/*" class="form-control" @change="onPromoCoverFileChange" />
             </b-form-group>
-          </b-card>
-          <b-card title="Order &amp; caps" class="mb-2">
-            <b-form-group label="Priority" description="When several promotions could apply, the one with higher priority wins."><b-form-input v-model.number="promoForm.priority" type="number" placeholder="Optional" /></b-form-group>
-            <b-form-group label="Min order amount" description="Minimum order amount (in currency) required for this promotion to apply."><b-form-input v-model.number="promoForm.min_order_amount" type="number" step="0.01" placeholder="Optional" /></b-form-group>
-            <b-form-group label="Max discount cap (per order)" description="Maximum discount amount per order from this promotion (cap in currency)."><b-form-input v-model.number="promoForm.max_discount_cap" type="number" step="0.01" placeholder="Optional" /></b-form-group>
-            <b-form-group label="Max total burn (lifetime)" description="Cap on total discount this promotion can give overall (lifetime)."><b-form-input v-model.number="promoForm.max_total_burn" type="number" step="0.01" placeholder="Optional" /></b-form-group>
-          </b-card>
-          <b-card title="Usage limits" class="mb-2">
-            <b-form-group label="Max uses (total)" description="Maximum times this promotion can be used in total."><b-form-input v-model.number="promoForm.max_uses" type="number" min="0" placeholder="Optional" /></b-form-group>
-            <b-form-group label="Max uses per user" description="Maximum times one user can use this promotion."><b-form-input v-model.number="promoForm.max_uses_per_user" type="number" min="0" placeholder="Optional" /></b-form-group>
-          </b-card>
-          <b-card title="Options" class="mb-2">
-            <b-form-checkbox v-model="promoForm.allow_stacking">Allow stacking — customer can combine this with other promotions</b-form-checkbox>
-            <b-form-checkbox v-model="promoForm.exclude_from_other_promos">Exclude from other promos — if used, customer cannot use other promotions</b-form-checkbox>
-            <b-form-group label="Visibility boost" description="Boost in listing/search (if supported)."><b-form-input v-model.number="promoForm.visibility_boost" type="number" placeholder="Optional" /></b-form-group>
-          </b-card>
+          </div>
+          <div v-show="promoWizardStep === 2">
+            <p class="text-muted small mb-3">Optional limits — skip anything you don’t need.</p>
+            <b-form-group label="Minimum order amount">
+              <b-form-input v-model.number="promoForm.min_order_amount" type="number" step="0.01" placeholder="No minimum" />
+            </b-form-group>
+            <b-form-group label="Max discount per order">
+              <b-form-input v-model.number="promoForm.max_discount_cap" type="number" step="0.01" placeholder="No cap" />
+            </b-form-group>
+            <b-form-group label="Max uses (everyone)">
+              <b-form-input v-model.number="promoForm.max_uses" type="number" min="0" placeholder="Unlimited" />
+            </b-form-group>
+            <b-form-group label="Max uses per person">
+              <b-form-input v-model.number="promoForm.max_uses_per_user" type="number" min="0" placeholder="Unlimited" />
+            </b-form-group>
+            <b-form-checkbox v-model="promoForm.allow_stacking" class="mb-2">
+              Allow stacking with other discounts
+            </b-form-checkbox>
+            <b-form-checkbox v-model="promoForm.exclude_from_other_promos">
+              If used, block other discounts on the same order
+            </b-form-checkbox>
+          </div>
+          <div v-show="promoWizardStep === 3">
+            <p class="text-muted small mb-3">Check this looks right, then save.</p>
+            <ul class="mb-0 ps-3">
+              <li><strong>{{ promoForm.name || 'Untitled' }}</strong> — {{ promoForm.discount_percent }}% off</li>
+              <li>Type: {{ promoForm.promotion_type }}</li>
+              <li>From {{ promoForm.start_datetime || '—' }} to {{ promoForm.end_datetime || '—' }}</li>
+              <li v-if="promoForm.min_order_amount">Min order: {{ promoForm.min_order_amount }}</li>
+              <li v-if="promoForm.max_uses">Max uses: {{ promoForm.max_uses }}</li>
+            </ul>
+          </div>
         </b-form>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <b-button v-if="promoWizardStep > 1" variant="outline-secondary" @click="promoWizardStep -= 1">Back</b-button>
+          <b-button v-if="promoWizardStep < 3" variant="primary" @click="promoWizardStep += 1">Continue</b-button>
+          <b-button v-else variant="primary" @click="onPromoModalOk">{{ editPromoId ? 'Save' : 'Create discount' }}</b-button>
+          <b-button variant="outline-secondary" class="ms-auto" @click="showPromoModal = false">Cancel</b-button>
+        </div>
       </b-modal>
       <b-modal v-model="showCodeModal" :title="editCodeId ? 'Edit code' : 'Create code'" @ok="saveCode">
         <b-form>
@@ -169,11 +218,17 @@ const editPromoId = ref<number | null>(null)
 const editCodeId = ref<number | null>(null)
 const editBundleId = ref<number | null>(null)
 const promoTypeOptions = [
-  { value: 'flash', text: 'Flash' },
-  { value: 'timed', text: 'Timed' },
-  { value: 'bundle', text: 'Bundle' },
-  { value: 'seller', text: 'Seller' },
+  { value: 'flash', text: 'Flash sale style' },
+  { value: 'timed', text: 'Timed discount' },
+  { value: 'bundle', text: 'Bundle deal' },
+  { value: 'seller', text: 'Shop-specific' },
   { value: 'category', text: 'Category' },
+]
+const promoWizardStep = ref(1)
+const promoStepMeta = [
+  { n: 1, label: 'Deal' },
+  { n: 2, label: 'Limits' },
+  { n: 3, label: 'Review' },
 ]
 const promoFields = [
   { key: 'id', label: 'ID' },
@@ -294,6 +349,7 @@ function onPromoCoverFileChange(ev: Event) {
 
 function openPromoCreate() {
   editPromoId.value = null
+  promoWizardStep.value = 1
   promoForm.name = ''
   promoForm.promotion_type = 'timed'
   promoForm.discount_percent = 10
@@ -316,6 +372,7 @@ function openPromoCreate() {
 }
 async function openPromoEdit(item: Record<string, unknown>) {
   editPromoId.value = item.id as number
+  promoWizardStep.value = 1
   promoForm.cover_file = null
   const slug = typeof item.slug === 'string' && item.slug ? item.slug : null
   try {
@@ -364,10 +421,9 @@ function appendPromoFormToFormData(fd: FormData) {
   if (promoForm.visibility_boost != null) fd.append('visibility_boost', String(promoForm.visibility_boost))
 }
 
-function onPromoModalOk(ev: Event) {
-  savePromo(ev).then((ok) => {
-    if (!ok && ev) (ev as { preventDefault?: () => void }).preventDefault?.()
-  })
+async function onPromoModalOk() {
+  const ok = await savePromo()
+  if (ok) showPromoModal.value = false
 }
 
 async function savePromo(ev?: Event): Promise<boolean> {
@@ -625,5 +681,22 @@ function downloadBundlesTemplate() {
   object-fit: contain;
   border-radius: 8px;
   border: 1px solid var(--bs-border-color, #dee2e6);
+}
+.promo-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.promo-steps__btn {
+  border: 1px solid #e6e8ec;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+.promo-steps__btn--active {
+  border-color: #2f6fed;
+  background: #f3f7ff;
+  font-weight: 600;
 }
 </style>

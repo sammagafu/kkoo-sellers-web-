@@ -2,8 +2,10 @@
   <VerticalLayout>
     <div class="product-post">
       <header class="product-post__header">
+        <p class="product-post__kind-banner">{{ addingBanner }}</p>
         <p class="product-post__kicker">
-          {{ t('catalog.addProduct.stepKicker', { step, total: displayTotal }) }}
+          {{ t('catalog.editProduct.stepKicker', { step, total: 3 }) }}
+          · {{ kindShort }}
         </p>
         <h1 class="product-post__title">{{ stepTitle }}</h1>
         <p v-if="stepLede" class="product-post__lede">{{ stepLede }}</p>
@@ -18,6 +20,16 @@
             <div class="product-post__bar-fill" :style="{ width: `${stepProgress}%` }" />
           </div>
         </div>
+        <nav class="product-post__dots" aria-label="Steps">
+          <span
+            v-for="dot in stepDots"
+            :key="dot.n"
+            class="product-post__dot"
+            :class="{ 'product-post__dot--active': step === dot.n, 'product-post__dot--done': step > dot.n }"
+          >
+            {{ dot.label }}
+          </span>
+        </nav>
       </header>
 
       <p v-if="error" class="product-post__error">{{ error }}</p>
@@ -76,27 +88,27 @@
           />
         </div>
 
-        <!-- 2: Name + caption/details -->
+        <!-- 2: Details -->
         <div v-show="step === 2" class="product-post__fields">
           <label class="product-post__field">
-            <span>{{ t('catalog.addProduct.nameLabel') }}</span>
+            <span>{{ copy('nameLabel') }}</span>
             <input
               v-model="form.title"
               type="text"
               maxlength="160"
-              :placeholder="t('catalog.addProduct.namePlaceholder')"
+              :placeholder="copy('namePlaceholder')"
               autocomplete="off"
               inputmode="text"
             />
           </label>
 
           <label class="product-post__field">
-            <span>{{ t('catalog.addProduct.captionLabel') }}</span>
+            <span>{{ copy('captionLabel') }}</span>
             <textarea
               v-model="form.description"
               rows="4"
               maxlength="500"
-              :placeholder="t('catalog.addProduct.captionPlaceholder')"
+              :placeholder="copy('captionPlaceholder')"
             />
           </label>
 
@@ -114,22 +126,35 @@
             </div>
           </label>
 
+          <label class="product-post__field">
+            <span>{{ copy('optionsLabel') }}</span>
+            <input
+              v-model="form.optionsText"
+              type="text"
+              :placeholder="copy('optionsPlaceholder')"
+              autocomplete="off"
+            />
+            <small>{{ t('catalog.addProduct.optionsHint') }}</small>
+          </label>
+
+          <label class="product-post__field">
+            <span>{{ copy('weightLabel') }}</span>
+            <input
+              v-model="weightDisplay"
+              type="text"
+              inputmode="decimal"
+              :placeholder="t('catalog.addProduct.weightPlaceholder')"
+              @input="onWeightInput"
+            />
+            <small>{{ t('catalog.addProduct.weightHint') }}</small>
+          </label>
+
           <button type="button" class="product-post__more-toggle" @click="showMore = !showMore">
             {{ showMore ? t('catalog.addProduct.hideMore') : t('catalog.addProduct.showMore') }}
             <i :class="showMore ? 'bx bx-chevron-up' : 'bx bx-chevron-down'" aria-hidden="true" />
           </button>
 
           <div v-if="showMore" class="product-post__more">
-            <label class="product-post__field">
-              <span>{{ t('catalog.addProduct.optionsLabel') }}</span>
-              <input
-                v-model="form.optionsText"
-                type="text"
-                :placeholder="t('catalog.addProduct.optionsPlaceholder')"
-                autocomplete="off"
-              />
-              <small>{{ t('catalog.addProduct.optionsHint') }}</small>
-            </label>
             <label class="product-post__field">
               <span>{{ t('catalog.addProduct.stockLabel') }}</span>
               <input v-model.number="form.stock" type="number" min="0" step="1" inputmode="numeric" />
@@ -145,27 +170,12 @@
           </div>
         </div>
 
-        <!-- 3: Category -->
+        <!-- 3: Where buyers find it -->
         <div v-show="step === 3" class="product-post__fields">
+          <p class="product-post__field-hint">{{ t('catalog.addProduct.categoryHint') }}</p>
           <CatalogCategoryPicker
             v-model="form.categories"
-            selection-mode="roots"
             :use-admin-categories="isAdmin"
-            :label="t('catalog.addProduct.categoryQuestion')"
-            :hint="t('catalog.addProduct.categoryHint')"
-            @selection-meta="onCategoryMeta"
-          />
-        </div>
-
-        <!-- 4: Subcategory -->
-        <div v-show="step === 4" class="product-post__fields">
-          <CatalogCategoryPicker
-            v-model="form.categories"
-            selection-mode="children"
-            :parent-slug="mainCategorySlug"
-            :use-admin-categories="isAdmin"
-            :label="t('catalog.addProduct.subcategoryQuestion')"
-            :hint="t('catalog.addProduct.subcategoryHint')"
           />
         </div>
 
@@ -233,9 +243,11 @@ import { brandSlugFromProduct, categorySlugsFromProduct } from '@/utils/catalogP
 import { formatApiError } from '@/utils/formatApiError'
 import { parseVariantAttributes } from '@/utils/skuDisplay'
 import { toastError, toastSuccess } from '@/utils/toast'
+import { useProductListingKind } from '@/composables/useProductListingKind'
 
 const DEFAULT_STOCK = 99
 const { t } = useI18n()
+const { copy, addingBanner, kindShort } = useProductListingKind()
 const router = useRouter()
 const route = useRoute()
 const slugParam = computed(() => (route.params.slug as string) || '')
@@ -248,9 +260,9 @@ const submitting = ref(false)
 const showMore = ref(false)
 const step = ref(1)
 const priceDisplay = ref('')
+const weightDisplay = ref('')
 const cameraInput = ref<HTMLInputElement | null>(null)
 const galleryInput = ref<HTMLInputElement | null>(null)
-const categoryHasChildren = ref(false)
 const galleryUrlByFile = new WeakMap<File, string>()
 let coverObjectUrl: string | null = null
 
@@ -292,49 +304,38 @@ const form = reactive({
   }>,
 })
 
-const mainCategorySlug = computed(() => form.categories[0] || '')
-const hasSubcategoryPick = computed(() => form.categories.length > 1)
 const hasCover = computed(() => !!form.cover_file || !!form.cover_image?.trim())
+const TOTAL_STEPS = 3
+const stepProgress = computed(() => Math.round((step.value / TOTAL_STEPS) * 100))
+const isLastStep = computed(() => step.value >= TOTAL_STEPS)
 
-const displayTotal = computed(() => (categoryHasChildren.value ? 4 : step.value >= 3 ? 3 : 4))
-const stepProgress = computed(() => Math.round((step.value / displayTotal.value) * 100))
-const isLastStep = computed(() => {
-  if (step.value === 4) return true
-  if (step.value === 3 && !categoryHasChildren.value && form.categories.length > 0) return true
-  return false
-})
+const stepDots = computed(() => [
+  { n: 1, label: t('catalog.addProduct.stepDot1') },
+  { n: 2, label: t('catalog.addProduct.stepDot2') },
+  { n: 3, label: t('catalog.addProduct.stepDot3') },
+])
 
 const stepTitle = computed(() => {
-  if (step.value === 1) return t('catalog.addProduct.step1Title')
-  if (step.value === 2) return t('catalog.addProduct.step2Title')
-  if (step.value === 3) return t('catalog.addProduct.step3Title')
-  return t('catalog.addProduct.step4Title')
+  if (step.value === 1) return copy('step1Title')
+  if (step.value === 2) return copy('step2Title')
+  return t('catalog.editProduct.step3Title')
 })
 
 const stepLede = computed(() => {
-  if (step.value === 1) return t('catalog.addProduct.step1Lede')
-  if (step.value === 2) return t('catalog.addProduct.step2Lede')
-  if (step.value === 3) return t('catalog.addProduct.step3Lede')
-  return t('catalog.addProduct.step4Lede')
+  if (step.value === 1) return copy('step1Lede')
+  if (step.value === 2) return copy('step2Lede')
+  return t('catalog.addProduct.step3Lede')
 })
 
 const canAdvance = computed(() => {
   if (step.value === 1) return hasCover.value
   if (step.value === 2) return !!form.title.trim() && Number(form.base_price) > 0
   if (step.value === 3) return form.categories.length > 0
-  if (step.value === 4) {
-    if (!categoryHasChildren.value) return true
-    return hasSubcategoryPick.value
-  }
   return true
 })
 
 const canPublish = computed(() => {
-  if (!form.title.trim() || Number(form.base_price) <= 0 || !hasCover.value || !form.categories.length) {
-    return false
-  }
-  if (categoryHasChildren.value && !hasSubcategoryPick.value) return false
-  return true
+  return !!form.title.trim() && Number(form.base_price) > 0 && hasCover.value && form.categories.length > 0
 })
 
 const coverPreviewUrl = ref('')
@@ -365,15 +366,6 @@ onBeforeUnmount(() => {
   }
 })
 
-function onCategoryMeta(meta: { slug: string; hasChildren: boolean }) {
-  categoryHasChildren.value = !!meta.hasChildren
-  if (meta.slug && form.categories.length > 1 && meta.hasChildren) {
-    // Re-picking a root with children resets subs until step 4.
-    const root = meta.slug
-    if (form.categories[0] !== root) form.categories = [root]
-  }
-}
-
 function formatPriceDisplay(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return ''
   return n.toLocaleString('en-TZ')
@@ -386,10 +378,20 @@ function onPriceInput(ev: Event) {
   priceDisplay.value = raw ? formatPriceDisplay(n) : ''
 }
 
+function onWeightInput(ev: Event) {
+  const raw = (ev.target as HTMLInputElement).value.trim().replace(',', '.')
+  weightDisplay.value = raw
+  if (!raw) {
+    form.weight_kg = null
+    return
+  }
+  const n = Number(raw)
+  form.weight_kg = Number.isFinite(n) && n > 0 ? n : null
+}
+
 function nextStep() {
-  if (!canAdvance.value) return
-  if (step.value === 3 && !categoryHasChildren.value) return
-  step.value = Math.min(4, step.value + 1)
+  if (!canAdvance.value || isLastStep.value) return
+  step.value = Math.min(TOTAL_STEPS, step.value + 1)
 }
 
 function prevStep() {
@@ -494,9 +496,6 @@ function validateBeforeSubmit(asDraft: boolean): string | null {
   if (!asDraft && (!Number.isFinite(price) || price <= 0)) return t('catalog.addProduct.needPrice')
   if (!asDraft && !hasCover.value) return t('catalog.addProduct.needPhoto')
   if (!asDraft && !form.categories.length) return t('catalog.addProduct.needCategory')
-  if (!asDraft && categoryHasChildren.value && !hasSubcategoryPick.value) {
-    return t('catalog.addProduct.needSubcategory')
-  }
   return null
 }
 
@@ -608,6 +607,7 @@ onMounted(async () => {
     form.base_price = Number(d.base_price ?? 0)
     form.discount_price = d.discount_price != null ? Number(d.discount_price) : null
     form.weight_kg = d.weight_kg != null ? Number(d.weight_kg) : null
+    weightDisplay.value = form.weight_kg != null ? String(form.weight_kg) : ''
     form.available_on_marketplace = d.available_on_marketplace !== false
     form.available_on_microsite = d.available_on_microsite !== false
     form.allow_preorder = Boolean(d.allow_preorder)
@@ -622,8 +622,6 @@ onMounted(async () => {
     form.stock = form.existingSkus[0]?.stock_quantity ?? DEFAULT_STOCK
     form.optionsText = optionsTextFromSkus(form.existingSkus)
     priceDisplay.value = formatPriceDisplay(form.base_price)
-    // If product already has a subcategory, assume parent has children for step flow.
-    categoryHasChildren.value = form.categories.length > 1
     loaded.value = true
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Failed to load product')
@@ -639,6 +637,17 @@ onMounted(async () => {
 }
 .product-post__header {
   margin-bottom: var(--kkoo-spacing-lg, 1.3rem);
+}
+.product-post__kind-banner {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0.55rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(92, 48, 143, 0.1);
+  color: var(--kkoo-primary, #5c308f);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 .product-post__kicker {
   margin: 0 0 0.25rem;
@@ -665,6 +674,36 @@ onMounted(async () => {
 .product-post__progress {
   display: block;
   margin-top: var(--kkoo-spacing-md, 0.8rem);
+}
+.product-post__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+.product-post__dot {
+  min-height: 36px;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(92, 48, 143, 0.16);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--kkoo-text-muted, #6a4c86);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.product-post__dot--active {
+  background: var(--kkoo-primary, #5c308f);
+  border-color: var(--kkoo-primary, #5c308f);
+  color: #fff;
+}
+.product-post__dot--done:not(.product-post__dot--active) {
+  border-color: rgba(92, 48, 143, 0.35);
+  color: var(--kkoo-primary, #5c308f);
+}
+.product-post__field-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--kkoo-text-muted, #6a4c86);
 }
 .product-post__bar {
   height: 0.4rem;

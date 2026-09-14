@@ -48,6 +48,15 @@
         <b-col cols="12">
           <b-form-group label="Summary"><b-form-textarea v-model="form.summary" rows="2" /></b-form-group>
         </b-col>
+        <b-col cols="12">
+          <b-form-group
+            label="Cover photo *"
+            description="Required. Landscape image — we crop to 1920×786 for Discover cards."
+          >
+            <img v-if="coverPreview" :src="coverPreview" alt="Cover preview" class="event-cover-preview mb-2" />
+            <input type="file" accept="image/*" class="form-control" @change="onCoverChange" />
+          </b-form-group>
+        </b-col>
         <b-col md="4">
           <b-form-group label="Starts (local)">
             <b-form-input v-model="form.starts_local" type="datetime-local" />
@@ -83,6 +92,15 @@
     <b-card title="Published & draft events">
       <p v-if="loading" class="text-muted">Loading…</p>
       <b-table v-else :items="events" :fields="fields" small responsive hover>
+        <template #cell(cover)="data">
+          <img
+            v-if="coverUrl(data.item)"
+            :src="coverUrl(data.item)!"
+            alt=""
+            class="event-cover-thumb"
+          />
+          <span v-else class="text-muted small">No cover</span>
+        </template>
         <template #cell(starts_at)="data">
           {{ formatDate(data.item.starts_at) }}
         </template>
@@ -94,10 +112,21 @@
             v-if="data.item.status !== 'published'"
             size="sm"
             variant="outline-success"
+            class="me-1"
             @click="publish(data.item)"
           >
             Publish
           </b-button>
+          <label class="btn btn-sm btn-outline-primary mb-0">
+            {{ uploadingCoverId === data.item.id ? '…' : 'Cover' }}
+            <input
+              type="file"
+              accept="image/*"
+              class="d-none"
+              :disabled="uploadingCoverId === data.item.id"
+              @change="(e) => onRowCoverChange(data.item, e)"
+            />
+          </label>
         </template>
       </b-table>
       <p v-if="!loading && !events.length" class="text-muted mb-0">No events yet — add one above.</p>
@@ -110,14 +139,18 @@ import { ref, reactive, onMounted } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import { discoverEventsAdminApi, type PlatformEventRow } from '@/api/events'
 import { formatApiError } from '@/utils/formatApiError'
+import { resolveAssetUrl } from '@/utils/assetUrl'
 
 const loading = ref(false)
 const saving = ref(false)
 const checkingIn = ref(false)
+const uploadingCoverId = ref<number | null>(null)
 const error = ref('')
 const success = ref('')
 const events = ref<PlatformEventRow[]>([])
 const checkInCode = ref('')
+const coverFile = ref<File | null>(null)
+const coverPreview = ref('')
 
 const categoryOptions = [
   { value: 'music', text: 'Music' },
@@ -129,6 +162,7 @@ const categoryOptions = [
 ]
 
 const fields = [
+  { key: 'cover', label: 'Cover' },
   { key: 'title', label: 'Title' },
   { key: 'city', label: 'City' },
   { key: 'venue_name', label: 'Venue' },
@@ -171,6 +205,17 @@ function addTicketClass() {
   })
 }
 
+function coverUrl(item: PlatformEventRow) {
+  return resolveAssetUrl(item.cover_image ?? '')
+}
+
+function onCoverChange(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+  coverFile.value = file
+  coverPreview.value = file ? URL.createObjectURL(file) : ''
+}
+
 function formatDate(iso?: string) {
   if (!iso) return '—'
   try {
@@ -204,41 +249,73 @@ async function createEvent() {
     error.value = 'Title, start, and end are required'
     return
   }
+  if (!coverFile.value) {
+    error.value = 'Add a cover photo for this event'
+    return
+  }
   saving.value = true
   error.value = ''
   success.value = ''
   try {
-    await discoverEventsAdminApi.create({
-      title: form.title.trim(),
-      summary: form.summary.trim(),
-      category: form.category,
-      city: form.city.trim() || 'Dar es Salaam',
-      venue_name: form.venue_name.trim(),
-      organizer_name: form.organizer_name.trim(),
-      starts_at: toRfc3339(form.starts_local),
-      ends_at: toRfc3339(form.ends_local),
-      is_featured: form.is_featured,
-      status: 'published',
-      ticket_classes: form.ticket_classes
-        .filter((t) => t.name.trim() && t.price > 0 && t.capacity > 0)
-        .map((t) => ({
-          name: t.name.trim(),
-          price: t.price,
-          capacity: t.capacity,
-          currency: 'TZS',
-          gift_card_amount: t.gift_card_amount || 0,
-          attendance_bonus_points: t.attendance_bonus_points || 100,
-          benefits: t.gift_card_amount > 0 ? ['Gift card included'] : [],
-        })),
-    })
-    success.value = 'Event published. Buyers can buy tickets on Discover and earn points.'
+    const fd = new FormData()
+    fd.append('title', form.title.trim())
+    fd.append('summary', form.summary.trim())
+    fd.append('category', form.category)
+    fd.append('city', form.city.trim() || 'Dar es Salaam')
+    fd.append('venue_name', form.venue_name.trim())
+    fd.append('organizer_name', form.organizer_name.trim())
+    fd.append('starts_at', toRfc3339(form.starts_local))
+    fd.append('ends_at', toRfc3339(form.ends_local))
+    fd.append('is_featured', form.is_featured ? 'true' : 'false')
+    fd.append('status', 'published')
+    fd.append(
+      'ticket_classes',
+      JSON.stringify(
+        form.ticket_classes
+          .filter((t) => t.name.trim() && t.price > 0 && t.capacity > 0)
+          .map((t) => ({
+            name: t.name.trim(),
+            price: t.price,
+            capacity: t.capacity,
+            currency: 'TZS',
+            gift_card_amount: t.gift_card_amount || 0,
+            attendance_bonus_points: t.attendance_bonus_points || 100,
+            benefits: t.gift_card_amount > 0 ? ['Gift card included'] : [],
+          })),
+      ),
+    )
+    fd.append('cover_image', coverFile.value)
+    await discoverEventsAdminApi.createWithCover(fd)
+    success.value = 'Event published with cover. Buyers can see it on Discover.'
     form.title = ''
     form.summary = ''
+    coverFile.value = null
+    coverPreview.value = ''
     await load()
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Failed to create event')
   } finally {
     saving.value = false
+  }
+}
+
+async function onRowCoverChange(item: PlatformEventRow, ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  uploadingCoverId.value = item.id
+  error.value = ''
+  try {
+    const fd = new FormData()
+    fd.append('cover_image', file)
+    await discoverEventsAdminApi.updateWithCover(item.slug || String(item.id), fd)
+    success.value = `Cover updated for “${item.title}”.`
+    await load()
+  } catch (e: unknown) {
+    error.value = formatApiError(e, 'Failed to update cover')
+  } finally {
+    uploadingCoverId.value = null
   }
 }
 
@@ -272,3 +349,21 @@ async function doCheckIn() {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.event-cover-preview {
+  display: block;
+  width: min(100%, 28rem);
+  max-height: 10rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+}
+.event-cover-thumb {
+  width: 4.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.35rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+}
+</style>

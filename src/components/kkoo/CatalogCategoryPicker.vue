@@ -2,12 +2,12 @@
   <div class="catalog-category-picker" @mousedown.stop>
     <b-row>
       <b-col md="6">
-        <b-form-group label="Main category" class="mb-3">
+        <b-form-group label="Main group" class="mb-3">
           <b-form-input
             v-if="!selectedMain"
             v-model="mainSearch"
             type="search"
-            placeholder="Search categories (e.g. Pharmacy, Pain)…"
+            placeholder="Search (e.g. Food, Clothes, Pharmacy)…"
             autocomplete="off"
             :disabled="loading"
             @focus="openMainList"
@@ -53,19 +53,19 @@
         </b-form-group>
       </b-col>
       <b-col md="6">
-        <b-form-group label="Subcategory" class="mb-3">
+        <b-form-group label="More specific group" class="mb-3">
           <b-form-input
             v-model="subSearch"
             type="search"
-            placeholder="Search subcategories…"
+            placeholder="Search under this group…"
             autocomplete="off"
             :disabled="loading || !mainSlug"
             @focus="subListOpen = true"
             @input="subListOpen = true"
           />
-          <p v-if="!mainSlug && !loading" class="text-muted small mt-1 mb-0">Select a main category first.</p>
+          <p v-if="!mainSlug && !loading" class="text-muted small mt-1 mb-0">Pick a main group first.</p>
           <p v-else-if="mainSlug && !loading && !subcategoryOptions.length" class="text-muted small mt-1 mb-0">
-            This main category has no subcategories. The main category will be used.
+            No smaller groups here — we’ll use the main group.
           </p>
           <div v-if="selectedSubLabels.length" class="d-flex flex-wrap gap-1 mt-2">
             <b-badge
@@ -118,12 +118,36 @@
     <p class="text-muted small mb-2">
       Search any category name. Nested matches select the main category and that subcategory. If there are no subcategories, only the main category is saved.
     </p>
+    <div v-if="!useAdminCategories" class="border-top pt-3 mt-2">
+      <p class="small text-muted mb-2">
+        Need a section that isn’t listed?
+        <span v-if="selectedMain">Add a subcategory under <strong>{{ selectedMain.name }}</strong>, or leave “Under selected main” off for a top-level category.</span>
+        <span v-else>Sellers can create a top-level category here — it’s approved immediately.</span>
+      </p>
+      <b-row class="g-2 align-items-end">
+        <b-col md="6">
+          <b-form-input v-model="newCategoryName" placeholder="New category name" @keyup.enter="createCategory" />
+        </b-col>
+        <b-col md="3" v-if="selectedMain">
+          <b-form-checkbox v-model="createAsSubcategory" class="mb-1">
+            Under selected main
+          </b-form-checkbox>
+        </b-col>
+        <b-col md="3">
+          <b-button size="sm" variant="outline-primary" :disabled="creatingCategory || !newCategoryName.trim()" @click="createCategory">
+            {{ creatingCategory ? 'Adding…' : 'Add category' }}
+          </b-button>
+        </b-col>
+      </b-row>
+      <p v-if="createMsg" class="small text-success mt-2 mb-0">{{ createMsg }}</p>
+      <p v-if="createErr" class="small text-danger mt-2 mb-0">{{ createErr }}</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { catalogPublicApi, catalogAdminCategoriesApi } from '@/api'
+import { catalogPublicApi, catalogAdminCategoriesApi, catalogSellerApi } from '@/api'
 import { formatApiError } from '@/utils/formatApiError'
 import {
   type CatalogCategoryNode,
@@ -166,6 +190,11 @@ const mainSearch = ref('')
 const subSearch = ref('')
 const mainListOpen = ref(false)
 const subListOpen = ref(false)
+const newCategoryName = ref('')
+const createAsSubcategory = ref(true)
+const creatingCategory = ref(false)
+const createMsg = ref('')
+const createErr = ref('')
 let syncingFromParent = false
 
 const allHits = computed(() => flattenCategories(roots.value))
@@ -334,6 +363,43 @@ async function loadCategories() {
   }
 }
 
+async function createCategory() {
+  const name = newCategoryName.value.trim()
+  if (!name || creatingCategory.value || props.useAdminCategories) return
+  creatingCategory.value = true
+  createMsg.value = ''
+  createErr.value = ''
+  try {
+    const payload: { name: string; category_kind: string; parent_id?: number } = {
+      name,
+      category_kind: 'menu',
+    }
+    const nestUnderMain = Boolean(selectedMain.value && createAsSubcategory.value && selectedMain.value.id)
+    if (nestUnderMain && selectedMain.value?.id) {
+      payload.parent_id = selectedMain.value.id
+    }
+    const { data } = await catalogSellerApi.createSellerCategory(payload)
+    const created = (data ?? {}) as { name?: string; slug?: string; parent_id?: number | null; id?: number }
+    createMsg.value = nestUnderMain
+      ? `“${created.name || name}” added under ${selectedMain.value?.name}.`
+      : `“${created.name || name}” added.`
+    newCategoryName.value = ''
+    await loadCategories()
+    if (created.slug) {
+      if (nestUnderMain && mainSlug.value) {
+        selectedSubSlugs.value = [...new Set([...selectedSubSlugs.value, String(created.slug)])]
+        subListOpen.value = true
+        emitModel()
+      } else {
+        selectMain(String(created.slug))
+      }
+    }
+  } catch (e: unknown) {
+    createErr.value = formatApiError(e, 'Failed to add category')
+  } finally {
+    creatingCategory.value = false
+  }
+}
 
 watch(
   () => props.modelValue,

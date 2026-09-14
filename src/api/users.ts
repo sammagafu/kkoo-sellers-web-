@@ -77,8 +77,12 @@ export const kycAdminApi = {
   approve(id: number) {
     return client.post(`/users/admin/kyc-documents/${id}/approve/`)
   },
-  reject(id: number, data?: { reason?: string }) {
-    return client.post(`/users/admin/kyc-documents/${id}/reject/`, data ?? {})
+  reject(id: number, data?: { reason?: string; rejection_reason?: string }) {
+    const reason = data?.rejection_reason ?? data?.reason
+    return client.post(`/users/admin/kyc-documents/${id}/reject/`, {
+      reason,
+      rejection_reason: reason,
+    })
   },
 }
 

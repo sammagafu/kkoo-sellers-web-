@@ -1,10 +1,10 @@
 <template>
   <VerticalLayout class="admin-onboard">
     <header class="admin-onboard__head mb-4">
-      <p class="admin-onboard__eyebrow mb-1">Platform CRM</p>
+      <p class="admin-onboard__eyebrow mb-1">Add a company</p>
       <h1 class="admin-onboard__title mb-2">Company onboarding</h1>
       <p class="admin-onboard__lead text-muted mb-0">
-        Register a business, set its type, then invite the owner and team by phone.
+        Three easy steps: shop details → tools → invite the team.
       </p>
     </header>
 
@@ -30,8 +30,10 @@
 
     <!-- Step 1: Company -->
     <section v-show="step === 1" class="admin-onboard__panel">
-      <h2 class="h5 mb-1">Company details</h2>
-      <p class="text-muted small mb-3">Name and type are required. Owner can be an existing KKOO user.</p>
+      <h2 class="h5 mb-1">Shop details</h2>
+      <p class="text-muted small mb-3">
+        Name your company, then tap the business type. <strong>Shop</strong> is the usual default.
+      </p>
 
       <b-row class="g-3">
         <b-col md="8">
@@ -45,7 +47,7 @@
           </b-form-group>
         </b-col>
         <b-col cols="12">
-          <b-form-group label="Business type *">
+          <b-form-group label="What do they sell? *">
             <div v-if="optionsLoading" class="text-muted small">Loading types…</div>
             <div v-else class="admin-onboard__verticals">
               <button
@@ -56,10 +58,17 @@
                 :class="{ 'admin-onboard__vertical--active': form.verticalKey === v.key }"
                 @click="selectVertical(v)"
               >
-                <strong>{{ v.label }}</strong>
-                <span class="small text-muted">{{ v.description }}</span>
+                <span
+                  v-if="typeUi(v).badge"
+                  class="admin-onboard__vertical-badge"
+                >{{ typeUi(v).badge }}</span>
+                <strong>{{ typeUi(v).title }}</strong>
+                <span class="small text-muted">{{ typeUi(v).hint }}</span>
               </button>
             </div>
+            <p v-if="form.verticalKey" class="small text-muted mt-2 mb-0">
+              Selected: <strong>{{ selectedTypeTitle }}</strong>
+            </p>
           </b-form-group>
         </b-col>
         <b-col md="6">
@@ -114,8 +123,8 @@
 
     <!-- Step 2: Modules -->
     <section v-show="step === 2" class="admin-onboard__panel">
-      <h2 class="h5 mb-1">CRM modules</h2>
-      <p class="text-muted small mb-3">Suggested for this industry — adjust before creating the company.</p>
+      <h2 class="h5 mb-1">Tools for this shop</h2>
+      <p class="text-muted small mb-3">Suggested for this industry — turn tools on or off before creating.</p>
 
       <div v-for="cat in moduleCategories" :key="cat" class="mb-3">
         <p class="small fw-semibold text-uppercase text-muted mb-2">{{ categoryLabel(cat) }}</p>
@@ -143,9 +152,9 @@
 
     <!-- Step 3: Invitations -->
     <section v-show="step === 3" class="admin-onboard__panel">
-      <h2 class="h5 mb-1">Team invitations</h2>
+      <h2 class="h5 mb-1">Invite the team</h2>
       <p class="text-muted small mb-3">
-        Invite the owner and staff by WhatsApp number. We send SMS by default (works without Meta templates).
+        Add phones for the owner and staff. We send SMS by default (works without WhatsApp templates).
       </p>
 
       <b-alert v-if="!createdBusinessId" variant="warning" show>
@@ -220,6 +229,7 @@ import {
 import { CRM_ROLE_OPTIONS, KKOO_CRM_ROLES, crmRoleLabel } from '@/config/crmRoles'
 import { formatApiError } from '@/utils/formatApiError'
 import { isLikelyE164, normalizeInvitePhone } from '@/utils/phone'
+import { businessTypeDisplay, isDefaultBusinessType } from '@/utils/businessTypeDisplay'
 
 type OwnerHit = {
   id: number
@@ -231,9 +241,9 @@ type OwnerHit = {
 
 const step = ref(1)
 const stepMeta = [
-  { n: 1, label: 'Company' },
-  { n: 2, label: 'Modules' },
-  { n: 3, label: 'Invitations' },
+  { n: 1, label: 'Shop' },
+  { n: 2, label: 'Tools' },
+  { n: 3, label: 'Invite team' },
 ]
 
 const pageError = ref('')
@@ -308,6 +318,15 @@ function selectVertical(v: OnboardingVertical) {
   }
 }
 
+function typeUi(v: OnboardingVertical) {
+  return businessTypeDisplay(v.key, { label: v.label, description: v.description })
+}
+
+const selectedTypeTitle = computed(() => {
+  const v = verticals.value.find((x) => x.key === form.verticalKey)
+  return v ? typeUi(v).title : ''
+})
+
 function goStep(n: number) {
   if (n === 3 && !createdBusinessId.value) return
   if (n < step.value || n === step.value || createdBusinessId.value) step.value = n
@@ -360,6 +379,11 @@ async function loadOptions() {
     modules.value = data.modules ?? []
     for (const m of modules.value) {
       selectedModules[m.key] = false
+    }
+    const preferred =
+      verticals.value.find((v) => isDefaultBusinessType(v.key)) ?? verticals.value[0]
+    if (preferred && !form.verticalKey) {
+      selectVertical(preferred)
     }
   } catch (e) {
     pageError.value = formatApiError(e) || 'Could not load business types'
@@ -526,19 +550,34 @@ onMounted(() => {
 }
 
 .admin-onboard__vertical {
+  position: relative;
   text-align: left;
-  border: 1px solid rgba(92, 48, 143, 0.14);
+  border: 2px solid rgba(92, 48, 143, 0.14);
   background: #fff;
   border-radius: 0.75rem;
   padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  min-height: 7.5rem;
 }
 
 .admin-onboard__vertical--active {
   border-color: var(--kkoo-primary, #5c308f);
-  box-shadow: 0 0 0 2px rgba(92, 48, 143, 0.2);
+  box-shadow: 0 0 0 1px var(--kkoo-primary, #5c308f);
+  background: color-mix(in srgb, var(--kkoo-primary, #5c308f) 6%, #fff);
+}
+
+.admin-onboard__vertical-badge {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a5a00;
+  background: #fff3cd;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
 }
 
 .admin-onboard__modules {

@@ -90,7 +90,7 @@
               </b-form-group>
             </b-col>
             <b-col md="6">
-              <b-form-group label="Store type" label-size="sm">
+              <b-form-group label="Business type" label-size="sm">
                 <b-form-select v-model="storeForm.seller_type" :options="sellerTypeOptions" size="sm" />
               </b-form-group>
             </b-col>
@@ -254,9 +254,10 @@ const riderForm = ref({
 })
 
 const sellerTypeOptions = [
-  { value: 'marketplace', text: 'Marketplace' },
+  { value: 'marketplace', text: 'Shop (default)' },
   { value: 'restaurant', text: 'Restaurant' },
   { value: 'grocery', text: 'Grocery' },
+  { value: 'pharmacy', text: 'Pharmacy' },
   { value: 'hotel', text: 'Hotel' },
 ]
 

@@ -1,8 +1,76 @@
-/** Category cache / recent picks used by CatalogCategoryPicker (shared with biz). */
+import { ref, watch, type Ref } from 'vue'
 
+const DRAFT_KEY = 'kkoo-product-create-draft'
 const RECENT_CATEGORY_KEY = 'kkoo-seller-recent-category'
 const CATEGORY_CACHE_KEY = 'kkoo-category-tree-cache'
 const CATEGORY_CACHE_TTL_MS = 1000 * 60 * 60 * 6
+
+export type ProductDraftPayload = {
+  title: string
+  description: string
+  categories: string[]
+  base_price: number | string
+  optionsText: string
+  stock: number
+  weight_kg?: number | null
+  step?: number
+  savedAt?: number
+}
+
+export function useProductDraftAutosave(
+  form: Omit<ProductDraftPayload, 'step' | 'savedAt'>,
+  step: Ref<number>
+) {
+  const savedHint = ref('')
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+  function persist() {
+    try {
+      const payload: ProductDraftPayload = {
+        ...form,
+        step: step.value,
+        savedAt: Date.now(),
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(payload))
+      savedHint.value = 'saved'
+    } catch {
+      savedHint.value = ''
+    }
+  }
+
+  function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(persist, 400)
+  }
+
+  watch(
+    () => ({ ...form, step: step.value }),
+    () => scheduleSave(),
+    { deep: true }
+  )
+
+  function loadDraft(): ProductDraftPayload | null {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as ProductDraftPayload
+      if (!parsed?.savedAt || Date.now() - parsed.savedAt > 1000 * 60 * 60 * 72) {
+        clearDraft()
+        return null
+      }
+      return parsed
+    } catch {
+      return null
+    }
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY)
+    savedHint.value = ''
+  }
+
+  return { savedHint, loadDraft, clearDraft, persist }
+}
 
 export function recentCategoryKey(userId?: number | string | null): string {
   return userId ? `${RECENT_CATEGORY_KEY}-${userId}` : RECENT_CATEGORY_KEY

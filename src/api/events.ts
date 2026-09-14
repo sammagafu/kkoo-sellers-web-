@@ -10,6 +10,7 @@ export type PlatformEventRow = {
   category?: string
   venue_name?: string
   city?: string
+  cover_image?: string
   starts_at: string
   ends_at?: string
   status?: string
@@ -24,8 +25,16 @@ export const discoverEventsAdminApi = {
   create(data: Record<string, unknown>) {
     return client.post<PlatformEventRow>('/discover/admin/events/', data)
   },
+  /** Create with cover upload (multipart). Field: cover_image or cover. */
+  createWithCover(formData: FormData) {
+    return client.post<PlatformEventRow>('/discover/admin/events/', formData)
+  },
   update(ref: string, data: Record<string, unknown>) {
     return client.patch<PlatformEventRow>(`/discover/admin/events/${encodeURIComponent(ref)}/`, data)
+  },
+  /** Update with optional new cover (multipart). */
+  updateWithCover(ref: string, formData: FormData) {
+    return client.patch<PlatformEventRow>(`/discover/admin/events/${encodeURIComponent(ref)}/`, formData)
   },
   createTicketClass(ref: string, data: Record<string, unknown>) {
     return client.post(`/discover/admin/events/${encodeURIComponent(ref)}/ticket-classes/`, data)

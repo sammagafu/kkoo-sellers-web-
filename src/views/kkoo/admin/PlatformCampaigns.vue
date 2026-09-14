@@ -1,324 +1,353 @@
 <template>
   <VerticalLayout>
-    <b-card title="Push & promo campaigns">
-      <p class="text-muted small mb-3">
-        Two creative formats:
-        <strong>In-app advert</strong> / full-screen web carousel (1080×1350 portrait) and
-        <strong>Promotion banner</strong> strip placements (1920×786).
-        Choose delivery: buyer web, buyers app, carousel slider, or push.
-        Link a flash sale, promotion, or <strong>preorder product</strong> so taps open the right deal.
-      </p>
-      <div class="campaign-size-cheat mb-3">
-        <div v-for="row in CAMPAIGN_IMAGE_SIZE_SUMMARY" :key="row.size" class="campaign-size-cheat__row">
-          <strong class="campaign-size-cheat__size">{{ row.size }}</strong>
-          <span class="campaign-size-cheat__use">{{ row.use }}</span>
-          <code class="campaign-size-cheat__placements">{{ row.placements }}</code>
+    <b-card>
+      <div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+        <div class="me-auto">
+          <h1 class="h4 mb-1">Push &amp; promo campaigns</h1>
+          <p class="text-muted mb-0">
+            Three easy steps: write the offer → pick who gets it → send a test, then send for real.
+          </p>
         </div>
-      </div>
-      <div class="d-flex flex-wrap gap-2 mb-3">
         <b-button variant="primary" @click="openCreate">Create campaign</b-button>
         <b-button variant="outline-secondary" :disabled="loading" @click="load">Refresh</b-button>
-        <router-link class="btn btn-outline-warning btn-sm" :to="{ name: 'admin.flash-sales' }">
-          Flash sales
-        </router-link>
+        <router-link class="btn btn-outline-warning btn-sm" :to="{ name: 'admin.flash-sales' }">Flash sales</router-link>
+        <router-link class="btn btn-outline-secondary btn-sm" :to="{ name: 'admin.promotions' }">Discount promos</router-link>
       </div>
+
       <b-alert v-if="error" variant="danger" show dismissible>{{ error }}</b-alert>
       <b-alert v-if="pushMsg" variant="success" show dismissible>{{ pushMsg }}</b-alert>
 
       <b-table v-if="items.length" :items="items" :fields="fields" striped responsive>
         <template #cell(placement)="row">
-          <code>{{ row.item.placement }}</code>
-          <div v-if="row.item.badge || row.item.badge_label" class="mt-1">
-            <b-badge variant="info">{{ row.item.badge_label || row.item.badge }}</b-badge>
-          </div>
+          <span class="small">{{ placementLabel(row.item.placement) }}</span>
         </template>
         <template #cell(channels)="row">
-          <span class="small">{{ row.item.delivery_channels || 'all surfaces' }}</span>
-        </template>
-        <template #cell(deal)="row">
-          <span class="small">
-            <template v-if="row.item.action_type === 'preorder'">
-              Preorder
-              <template v-if="row.item.product_title"> · {{ row.item.product_title }}</template>
-              <template v-else-if="row.item.product_id"> · product #{{ row.item.product_id }}</template>
-              <template v-if="row.item.remaining_stock != null">
-                · {{ Number(row.item.remaining_stock).toLocaleString() }} left
-              </template>
-            </template>
-            <template v-else>
-              <template v-if="row.item.flash_sale_id">FS #{{ row.item.flash_sale_id }}</template>
-              <template v-if="row.item.flash_sale_id && row.item.promotion_id"> · </template>
-              <template v-if="row.item.promotion_id">Promo #{{ row.item.promotion_id }}</template>
-              <template v-if="!row.item.flash_sale_id && !row.item.promotion_id">—</template>
-            </template>
-          </span>
+          <span class="small">{{ channelSummary(row.item.delivery_channels) }}</span>
         </template>
         <template #cell(window)="row">
-          <span class="small">{{ row.item.start_at }} → {{ row.item.end_at }}</span>
+          <span class="small">{{ formatWindow(row.item.start_at, row.item.end_at) }}</span>
         </template>
         <template #cell(active)="row">
           <b-badge :variant="row.item.is_active ? 'success' : 'secondary'">
-            {{ row.item.is_active ? 'Yes' : 'No' }}
+            {{ row.item.is_active ? 'On' : 'Off' }}
           </b-badge>
         </template>
         <template #cell(actions)="row">
-          <b-button size="sm" variant="outline-success" class="me-1" :disabled="pushingId === row.item.id" @click="pushNow(row.item)">
-            {{ pushingId === row.item.id ? 'Pushing…' : 'Push' }}
-          </b-button>
+          <b-button size="sm" variant="success" class="me-1" @click="openSend(row.item)">Send</b-button>
           <b-button size="sm" variant="outline-primary" class="me-1" @click="openEdit(row.item)">Edit</b-button>
           <b-button size="sm" variant="outline-danger" @click="remove(row.item)">Delete</b-button>
         </template>
       </b-table>
-      <p v-else-if="!loading" class="text-muted mb-0">No campaigns yet.</p>
+      <p v-else-if="loading" class="text-muted mb-0">Loading…</p>
+      <EmptyState
+        v-else
+        title="No campaigns yet"
+        message="Create one to show a banner or send a push about a deal."
+      />
     </b-card>
 
-    <b-card title="Announce product deal" class="mt-3">
-      <p class="text-muted small mb-3">
-        Broadcast a one-off sale push to users subscribed to <code>sale</code> (Promotions &amp; Offers in the buyers app).
-        Include flash sale / promotion IDs so taps open the deal.
-      </p>
-      <b-alert v-if="announceMsg" variant="success" show dismissible>{{ announceMsg }}</b-alert>
-      <b-form @submit.prevent="announceDeal">
-        <b-row>
-          <b-col md="6">
-            <b-form-group label="Title" class="mb-2">
-              <b-form-input v-model="announce.title" required placeholder="Weekend flash deals" />
-            </b-form-group>
-          </b-col>
-          <b-col md="6">
-            <b-form-group label="Target app" class="mb-2">
-              <b-form-select v-model="announce.target_app" :options="appKeyOptions" />
-            </b-form-group>
-          </b-col>
-        </b-row>
-        <b-form-group label="Message" class="mb-2">
-          <b-form-textarea v-model="announce.message" rows="2" required placeholder="Up to 40% off selected products — tap to shop" />
-        </b-form-group>
-        <b-row>
-          <b-col md="4">
-            <b-form-group label="Flash sale" class="mb-2">
-              <b-form-select v-model="announce.flash_sale_id" :options="flashSaleOptions" />
-            </b-form-group>
-          </b-col>
-          <b-col md="4">
-            <b-form-group label="Promotion" class="mb-2">
-              <b-form-select v-model="announce.promotion_id" :options="promotionOptions" />
-            </b-form-group>
-          </b-col>
-          <b-col md="4">
-            <b-form-group label="Slug (optional)" class="mb-2">
-              <b-form-input v-model="announce.slug" placeholder="spring-clearance" />
-            </b-form-group>
-          </b-col>
-        </b-row>
-        <b-button type="submit" variant="success" :disabled="announcing">
-          {{ announcing ? 'Sending…' : 'Send deal push' }}
-        </b-button>
-      </b-form>
-    </b-card>
+    <!-- Create / Edit wizard -->
+    <b-modal
+      v-model="showModal"
+      :title="editingId ? 'Edit campaign' : 'Create campaign'"
+      size="lg"
+      hide-footer
+      @hidden="onModalHidden"
+    >
+      <nav class="camp-steps mb-3" aria-label="Campaign steps">
+        <button
+          v-for="s in stepMeta"
+          :key="s.n"
+          type="button"
+          class="camp-steps__btn"
+          :class="{ 'camp-steps__btn--active': wizardStep === s.n, 'camp-steps__btn--done': wizardStep > s.n }"
+          @click="wizardStep = s.n"
+        >
+          <span class="camp-steps__num">{{ s.n }}</span>
+          {{ s.label }}
+        </button>
+      </nav>
 
-    <b-modal v-model="showModal" :title="editingId ? 'Edit campaign' : 'Create campaign'" size="lg" @ok="onModalOk">
       <b-alert v-if="modalError" variant="danger" show class="mb-3">{{ modalError }}</b-alert>
-      <b-form>
+
+      <!-- Step 1: What -->
+      <div v-show="wizardStep === 1">
+        <h2 class="h6 mb-2">What are you promoting?</h2>
         <b-form-group label="Title" class="mb-2">
-          <b-form-input v-model="form.title" required />
+          <b-form-input v-model="form.title" placeholder="Weekend flash deals" required />
         </b-form-group>
-        <b-form-group label="Subtitle / message" class="mb-2">
-          <b-form-input v-model="form.subtitle" />
+        <b-form-group label="Short message" class="mb-2">
+          <b-form-input v-model="form.subtitle" placeholder="Up to 40% off — tap to shop" />
         </b-form-group>
-        <b-form-group label="Promo label (chip on buyer carousel)" class="mb-2">
-          <b-form-select v-model="form.badge" :options="badgeOptions" />
-          <p class="text-muted small mb-0 mt-1">
-            Shown as a chip above the title (Preorder, Limited offer, Flash, New item, Trending, …).
-            Leave as Auto to infer from action / flash sale / gift.
+        <b-form-group label="Photo" class="mb-2">
+          <img v-if="imagePreview" :src="imagePreview" alt="Preview" class="campaign-image-preview mb-2" />
+          <input type="file" accept="image/*" class="form-control mb-2" @change="onImageFileChange" />
+          <b-form-input v-model="form.image_url" placeholder="Or paste image URL" />
+          <p class="text-muted small mt-1 mb-0">
+            Suggested size: <strong>{{ imageSizeBadge(form.placement) }}</strong> — {{ imageSpecHint }}
           </p>
         </b-form-group>
-        <b-form-group label="Campaign image" class="mb-2">
-          <img
-            v-if="imagePreview"
-            :src="imagePreview"
-            alt="Campaign preview"
-            class="campaign-image-preview mb-2"
-          />
-          <input type="file" accept="image/*" class="form-control mb-2" @change="onImageFileChange" />
-          <b-form-input v-model="form.image_url" placeholder="Or paste image URL (https://… or /media/…)" />
-          <div class="campaign-image-helper mt-2">
-            <div class="campaign-image-helper__meta">
-              <span class="campaign-image-helper__badge">{{ activeCreative.label }}</span>
-              <span class="campaign-image-helper__aspect">{{ activeCreative.aspectLabel }}</span>
-            </div>
-            <p class="campaign-image-helper__hint mb-2">{{ imageSpecHint }}</p>
-            <div
-              class="campaign-image-helper__frame"
-              :class="{ 'campaign-image-helper__frame--portrait': activeCreative.isPortrait }"
-              :style="{ aspectRatio: imageAspectCss(form.placement) }"
-              aria-hidden="true"
-            >
-              <span>{{ activeCreative.width }} × {{ activeCreative.height }}</span>
-            </div>
-            <p class="text-muted small mb-0 mt-2">
-              Optional if a flash sale, promotion, or product is linked — buyer web can fall back to those covers
-              and show up to 6 product thumbnails on the carousel.
-            </p>
-          </div>
-        </b-form-group>
         <b-row>
           <b-col md="6">
-            <b-form-group label="Placement" class="mb-2">
+            <b-form-group label="Where it shows" class="mb-2">
               <b-form-select v-model="form.placement" :options="placementOptions" />
-              <p class="text-muted small mb-0 mt-1">
-                Size for this placement: <strong>{{ imageSizeBadge(form.placement) }}</strong>
-              </p>
             </b-form-group>
           </b-col>
           <b-col md="6">
-            <b-form-group label="Target app" class="mb-2">
+            <b-form-group label="App / vertical" class="mb-2">
               <b-form-select v-model="form.target_app_key" :options="appKeyOptions" />
             </b-form-group>
           </b-col>
         </b-row>
-        <b-form-group label="Delivery channels" class="mb-2">
+        <b-form-group label="Also send as" class="mb-2">
           <div class="d-flex flex-wrap gap-3">
-            <b-form-checkbox v-for="ch in channelOptions" :key="ch.value" v-model="channels[ch.value]">
-              {{ ch.text }}
-            </b-form-checkbox>
+            <b-form-checkbox v-model="channels.web_banner">Website banner</b-form-checkbox>
+            <b-form-checkbox v-model="channels.app_banner">App banner</b-form-checkbox>
+            <b-form-checkbox v-model="channels.web_advert">Website popup</b-form-checkbox>
+            <b-form-checkbox v-model="channels.app_advert">App popup</b-form-checkbox>
+            <b-form-checkbox v-model="channels.push">Push notification</b-form-checkbox>
           </div>
-          <p class="text-muted small mb-0 mt-1">
-            Check <strong>Push notification</strong> for FCM/inbox. Advert / web carousel = portrait (1080×1350). Strip banners = 1920×786.
-          </p>
         </b-form-group>
         <b-row>
           <b-col md="6">
-            <b-form-group label="Linked flash sale" class="mb-2">
+            <b-form-group label="Link flash sale" class="mb-2">
               <b-form-select v-model="form.flash_sale_id" :options="flashSaleOptions" />
             </b-form-group>
           </b-col>
           <b-col md="6">
-            <b-form-group label="Linked promotion" class="mb-2">
+            <b-form-group label="Link discount promo" class="mb-2">
               <b-form-select v-model="form.promotion_id" :options="promotionOptions" />
             </b-form-group>
           </b-col>
         </b-row>
         <b-row>
           <b-col md="6">
-            <b-form-group label="Action type" class="mb-2">
-              <b-form-select v-model="form.action_type" :options="actionTypeOptions" />
-              <p class="text-muted small mb-0 mt-1">
-                Choose <strong>Preorder</strong> to tie this campaign to a capped SKU product (stock shown on buyer web/app).
-              </p>
+            <b-form-group label="Starts" class="mb-2">
+              <b-form-input v-model="startLocal" type="datetime-local" />
             </b-form-group>
           </b-col>
           <b-col md="6">
-            <b-form-group label="Preorder product" class="mb-2">
-              <div v-if="selectedProductLabel" class="d-flex align-items-center gap-2 mb-2">
-                <b-badge variant="primary" class="text-wrap text-start">
-                  #{{ form.product_id }} · {{ selectedProductLabel }}
-                </b-badge>
-                <b-button
-                  size="sm"
-                  variant="outline-secondary"
-                  :disabled="form.action_type !== 'preorder'"
-                  @click="clearSelectedProduct"
-                >
-                  Clear
-                </b-button>
-              </div>
-              <b-form-input
-                v-model.number="manualProductId"
-                type="number"
-                min="1"
-                class="mb-2"
-                placeholder="Or enter product ID directly"
-                :disabled="form.action_type !== 'preorder'"
-                @change="applyManualProductId"
-              />
-              <b-form-input
-                v-model="productSearchQuery"
-                placeholder="Search by title or slug..."
-                :disabled="form.action_type !== 'preorder'"
-                @input="debouncedSearchProducts"
-              />
-              <p v-if="productSearchLoading" class="text-muted small mb-0 mt-1">Searching…</p>
-              <div v-else-if="productSearchResults.length" class="campaign-product-results mt-2">
-                <button
-                  v-for="prod in productSearchResults"
-                  :key="String(prod.id)"
-                  type="button"
-                  class="campaign-product-results__item"
-                  @click="selectProduct(prod)"
-                >
-                  <span class="campaign-product-results__title">#{{ prod.id }} · {{ prod.title }}</span>
-                  <span class="campaign-product-results__slug">{{ prod.slug }}</span>
-                </button>
-              </div>
-              <p v-else-if="productSearchQuery.trim()" class="text-muted small mb-0 mt-1">
-                No products found. Try another search or enter the product ID above.
-              </p>
-              <p v-if="form.action_type === 'preorder' && editingId && form.remaining_stock != null" class="text-muted small mb-0 mt-1">
-                Remaining stock: {{ Number(form.remaining_stock).toLocaleString() }}
-              </p>
-              <p v-else-if="form.action_type === 'preorder'" class="text-muted small mb-0 mt-1">
-                Search and pick the capped SKU product, or type its ID, then save.
-              </p>
+            <b-form-group label="Ends" class="mb-2">
+              <b-form-input v-model="endLocal" type="datetime-local" />
             </b-form-group>
           </b-col>
         </b-row>
-        <b-row>
-          <b-col md="6">
-            <b-form-group label="Gift voucher ID (optional)" class="mb-2">
-              <b-form-input v-model.number="form.gift_voucher_id" type="number" min="0" placeholder="Voucher ID" />
-            </b-form-group>
-          </b-col>
-          <b-col md="6">
-            <b-form-group label="Gift label" class="mb-2">
-              <b-form-input v-model="form.gift_label" placeholder="Claim TZS 5,000 gift" />
-            </b-form-group>
-          </b-col>
-        </b-row>
-        <b-row>
-          <b-col md="6">
-            <b-form-group label="Start (RFC3339)" class="mb-2">
-              <b-form-input v-model="form.start_at" placeholder="2026-05-20T00:00:00Z" />
-            </b-form-group>
-          </b-col>
-          <b-col md="6">
-            <b-form-group label="End (RFC3339)" class="mb-2">
-              <b-form-input v-model="form.end_at" placeholder="2026-06-20T00:00:00Z" />
-            </b-form-group>
-          </b-col>
-        </b-row>
-        <b-form-group label="CTA label" class="mb-2">
-          <b-form-input v-model="form.cta_label" />
+        <b-form-group label="Button text" class="mb-2">
+          <b-form-input v-model="form.cta_label" placeholder="View offer" />
         </b-form-group>
-        <b-form-group label="CTA route (buyer web / app)" class="mb-2">
-          <b-form-input v-model="form.cta_route" placeholder="/product/s/mkt-preorder-mega or /flash-sales" />
-          <p class="text-muted small mb-0 mt-1">
-            Preorder: <code>/product/s/{slug}</code>. Deals: <code>/flash-sales</code>, <code>/rewards</code>.
-            Leave blank when a flash sale / promotion / product is linked.
+        <details class="mb-2">
+          <summary class="text-muted small">More options</summary>
+          <b-form-group label="Promo chip" class="mb-2 mt-2">
+            <b-form-select v-model="form.badge" :options="badgeOptions" />
+          </b-form-group>
+          <b-form-group label="Open this path" class="mb-2">
+            <b-form-input v-model="form.cta_route" placeholder="/flash-sales" />
+          </b-form-group>
+          <b-form-group label="External link" class="mb-2">
+            <b-form-input v-model="form.cta_external_url" />
+          </b-form-group>
+          <b-form-group label="Action" class="mb-2">
+            <b-form-select v-model="form.action_type" :options="actionTypeOptions" />
+          </b-form-group>
+          <template v-if="form.action_type === 'preorder'">
+            <b-form-group label="Preorder product ID" class="mb-2">
+              <b-form-input v-model.number="manualProductId" type="number" min="1" @change="applyManualProductId" />
+            </b-form-group>
+            <b-form-input
+              v-model="productSearchQuery"
+              placeholder="Search product…"
+              class="mb-2"
+              @input="debouncedSearchProducts"
+            />
+            <div v-if="productSearchResults.length" class="campaign-product-results mb-2">
+              <button
+                v-for="prod in productSearchResults"
+                :key="String(prod.id)"
+                type="button"
+                class="campaign-product-results__item"
+                @click="selectProduct(prod)"
+              >
+                <span class="campaign-product-results__title">#{{ prod.id }} · {{ prod.title }}</span>
+              </button>
+            </div>
+          </template>
+          <b-row>
+            <b-col md="4">
+              <b-form-group label="Priority" class="mb-2">
+                <b-form-input v-model.number="form.priority" type="number" />
+              </b-form-group>
+            </b-col>
+            <b-col md="4">
+              <b-form-group label="Max views / person" class="mb-2">
+                <b-form-input v-model.number="form.max_impressions_per_user" type="number" />
+              </b-form-group>
+            </b-col>
+            <b-col md="4">
+              <b-form-group label="Cooldown (hours)" class="mb-2">
+                <b-form-input v-model.number="form.cooldown_hours" type="number" />
+              </b-form-group>
+            </b-col>
+          </b-row>
+          <b-form-checkbox v-model="form.is_active">Turn on when saved</b-form-checkbox>
+        </details>
+      </div>
+
+      <!-- Step 2: Who -->
+      <div v-show="wizardStep === 2">
+        <h2 class="h6 mb-2">Who should get this?</h2>
+        <p class="text-muted small mb-3">Pick a group. You can still change this when you press Send.</p>
+        <div class="camp-audience mb-3">
+          <label
+            v-for="opt in audiencePresets"
+            :key="opt.value"
+            class="camp-audience__opt"
+            :class="{ 'camp-audience__opt--on': audiencePreset === opt.value }"
+          >
+            <input v-model="audiencePreset" type="radio" class="d-none" :value="opt.value" />
+            <strong>{{ opt.title }}</strong>
+            <span>{{ opt.hint }}</span>
+          </label>
+        </div>
+
+        <div v-if="audiencePreset === 'shops'" class="mb-3">
+          <b-form-group label="Find shops" class="mb-2">
+            <b-form-input v-model="shopSearch" placeholder="Search shop name…" @input="debouncedShopSearch" />
+          </b-form-group>
+          <div v-if="shopResults.length" class="campaign-product-results mb-2">
+            <button
+              v-for="shop in shopResults"
+              :key="shop.userId"
+              type="button"
+              class="campaign-product-results__item"
+              @click="toggleShop(shop)"
+            >
+              <span class="campaign-product-results__title">
+                {{ selectedShopIds.includes(shop.userId) ? '✓ ' : '' }}{{ shop.name }}
+              </span>
+              <span class="campaign-product-results__slug">Owner user #{{ shop.userId }}</span>
+            </button>
+          </div>
+          <p v-if="selectedShopIds.length" class="small mb-0">
+            Selected: {{ selectedShopIds.length }} shop(s)
+            <b-button size="sm" variant="link" class="py-0" @click="selectedShopIds = []">Clear</b-button>
           </p>
+        </div>
+
+        <div v-if="audiencePreset === 'test'" class="mb-3">
+          <b-form-group label="Test user IDs" class="mb-0">
+            <b-form-input v-model="testUserIdsText" placeholder="e.g. 12, 45, 90" />
+            <small class="text-muted">Comma-separated user IDs — send only to these people.</small>
+          </b-form-group>
+        </div>
+
+        <h3 class="h6 mb-2">Device</h3>
+        <div class="d-flex flex-wrap gap-3 mb-2">
+          <b-form-checkbox v-model="deviceAndroid">Android</b-form-checkbox>
+          <b-form-checkbox v-model="deviceIos">iPhone / iOS</b-form-checkbox>
+        </div>
+        <p class="text-muted small mb-0">Leave both unchecked to include every device.</p>
+      </div>
+
+      <!-- Step 3: Send -->
+      <div v-show="wizardStep === 3">
+        <h2 class="h6 mb-2">Save &amp; send</h2>
+        <ol class="small text-muted mb-3 ps-3">
+          <li>Save the campaign</li>
+          <li>Optional: send a test to yourself</li>
+          <li>Check how many people match, then send</li>
+        </ol>
+        <div class="camp-summary mb-3">
+          <p class="mb-1"><strong>{{ form.title || 'Untitled' }}</strong></p>
+          <p class="small text-muted mb-1">{{ form.subtitle || 'No message' }}</p>
+          <p class="small mb-0">
+            {{ audiencePresetLabel }} · {{ deviceLabel }} · {{ placementLabel(form.placement) }}
+          </p>
+        </div>
+        <p v-if="estimateText" class="fw-semibold mb-3">{{ estimateText }}</p>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <b-button variant="outline-primary" :disabled="saving" @click="saveOnly">
+            {{ saving ? 'Saving…' : editingId ? 'Save changes' : 'Save campaign' }}
+          </b-button>
+          <b-button variant="outline-secondary" :disabled="!canPush || sending" @click="runEstimate">
+            Estimate audience
+          </b-button>
+          <b-button variant="outline-success" :disabled="!canPush || sending" @click="runSendTest">
+            Send test
+          </b-button>
+          <b-button variant="success" :disabled="!canPush || sending" @click="runSendLive">
+            {{ sending ? 'Sending…' : 'Send now' }}
+          </b-button>
+        </div>
+        <b-form-group v-if="audiencePreset !== 'test'" label="Test user IDs (for Send test)" class="mb-0">
+          <b-form-input v-model="testUserIdsText" placeholder="Your user ID, e.g. 1" />
         </b-form-group>
-        <b-form-group label="CTA external URL (optional)" class="mb-2">
-          <b-form-input v-model="form.cta_external_url" />
-        </b-form-group>
-        <b-row>
-          <b-col md="4">
-            <b-form-group label="Priority (lower first)" class="mb-2">
-              <b-form-input v-model.number="form.priority" type="number" />
-            </b-form-group>
-          </b-col>
-          <b-col md="4">
-            <b-form-group label="Max impressions / user" class="mb-2">
-              <b-form-input v-model.number="form.max_impressions_per_user" type="number" />
-            </b-form-group>
-          </b-col>
-          <b-col md="4">
-            <b-form-group label="Cooldown (hours)" class="mb-2">
-              <b-form-input v-model.number="form.cooldown_hours" type="number" />
-            </b-form-group>
-          </b-col>
-        </b-row>
-        <b-form-checkbox v-model="form.is_active">Active</b-form-checkbox>
-      </b-form>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-4">
+        <b-button v-if="wizardStep > 1" variant="outline-secondary" @click="wizardStep -= 1">Back</b-button>
+        <b-button v-if="wizardStep < 3" variant="primary" @click="nextStep">Continue</b-button>
+        <b-button variant="outline-secondary" class="ms-auto" @click="showModal = false">Close</b-button>
+      </div>
+    </b-modal>
+
+    <!-- Send existing campaign -->
+    <b-modal v-model="sendShow" title="Send campaign" hide-footer @hidden="clearSend">
+      <p v-if="sendTarget" class="mb-3">
+        <strong>{{ sendTarget.title }}</strong>
+      </p>
+      <b-alert v-if="sendError" variant="danger" show>{{ sendError }}</b-alert>
+      <b-alert v-if="sendInfo" variant="success" show>{{ sendInfo }}</b-alert>
+
+      <div class="camp-audience mb-3">
+        <label
+          v-for="opt in audiencePresets"
+          :key="'s-' + opt.value"
+          class="camp-audience__opt"
+          :class="{ 'camp-audience__opt--on': audiencePreset === opt.value }"
+        >
+          <input v-model="audiencePreset" type="radio" class="d-none" :value="opt.value" />
+          <strong>{{ opt.title }}</strong>
+          <span>{{ opt.hint }}</span>
+        </label>
+      </div>
+
+      <div v-if="audiencePreset === 'shops'" class="mb-3">
+        <b-form-input v-model="shopSearch" placeholder="Search shop…" class="mb-2" @input="debouncedShopSearch" />
+        <div v-if="shopResults.length" class="campaign-product-results mb-2">
+          <button
+            v-for="shop in shopResults"
+            :key="'send-' + shop.userId"
+            type="button"
+            class="campaign-product-results__item"
+            @click="toggleShop(shop)"
+          >
+            <span class="campaign-product-results__title">
+              {{ selectedShopIds.includes(shop.userId) ? '✓ ' : '' }}{{ shop.name }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="audiencePreset === 'test'" class="mb-3">
+        <b-form-input v-model="testUserIdsText" placeholder="User IDs, e.g. 12, 45" />
+      </div>
+
+      <div class="d-flex flex-wrap gap-3 mb-3">
+        <b-form-checkbox v-model="deviceAndroid">Android</b-form-checkbox>
+        <b-form-checkbox v-model="deviceIos">iPhone / iOS</b-form-checkbox>
+      </div>
+
+      <p v-if="estimateText" class="fw-semibold">{{ estimateText }}</p>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <b-button variant="outline-secondary" :disabled="sending" @click="runEstimate">Estimate</b-button>
+        <b-button variant="outline-success" :disabled="sending" @click="runSendTest">Send test</b-button>
+        <b-button variant="success" :disabled="sending" @click="runSendLive">Send now</b-button>
+        <b-button variant="outline-secondary" class="ms-auto" @click="sendShow = false">Close</b-button>
+      </div>
+      <b-form-group v-if="audiencePreset !== 'test'" label="Test user IDs" class="mt-3 mb-0">
+        <b-form-input v-model="testUserIdsText" placeholder="Your user ID" />
+      </b-form-group>
     </b-modal>
   </VerticalLayout>
 </template>
@@ -326,121 +355,123 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import {
   campaignsAdminApi,
-  pushAnnouncementsApi,
   promotionsAdminApi,
   adminListFlashSales,
   catalogAdminApi,
+  sellersAdminApi,
   type AppCampaignPayload,
+  type CampaignPushPayload,
 } from '@/api'
 import { resolveAssetUrl } from '@/utils/assetUrl'
 import { formatApiError } from '@/utils/formatApiError'
 import { confirmDestructiveAction } from '@/utils/confirmDestructiveAction'
 import {
-  CAMPAIGN_IMAGE_SIZE_SUMMARY,
-  creativeSpecForPlacement,
-  imageAspectCss,
   imageSizeBadge,
   imageUploadHint,
 } from '@/utils/campaignCreative'
 
 type CampaignRow = AppCampaignPayload & { id: number }
+type ShopHit = { userId: number; name: string }
 
 const items = ref<CampaignRow[]>([])
 const loading = ref(false)
 const error = ref('')
 const modalError = ref('')
 const saving = ref(false)
+const sending = ref(false)
 const pushMsg = ref('')
-const announceMsg = ref('')
-const pushingId = ref<number | null>(null)
-const announcing = ref(false)
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
+const wizardStep = ref(1)
 const imageFile = ref<File | null>(null)
 const imagePreview = ref('')
+const startLocal = ref('')
+const endLocal = ref('')
+
 const productSearchQuery = ref('')
-const productSearchLoading = ref(false)
 const productSearchResults = ref<Array<{ id: number; title: string; slug: string }>>([])
-const selectedProductLabel = ref('')
 const manualProductId = ref<number | null>(null)
 let productSearchDebounce: ReturnType<typeof setTimeout> | null = null
+let shopSearchDebounce: ReturnType<typeof setTimeout> | null = null
 
-const flashSaleOptions = ref<{ value: number | null; text: string }[]>([
-  { value: null, text: '— None —' },
-])
-const promotionOptions = ref<{ value: number | null; text: string }[]>([
-  { value: null, text: '— None —' },
-])
+const flashSaleOptions = ref<{ value: number | null; text: string }[]>([{ value: null, text: '— None —' }])
+const promotionOptions = ref<{ value: number | null; text: string }[]>([{ value: null, text: '— None —' }])
+
+const audiencePreset = ref<'subscribers' | 'buyers' | 'sellers' | 'shops' | 'test'>('subscribers')
+const deviceAndroid = ref(false)
+const deviceIos = ref(false)
+const testUserIdsText = ref('')
+const shopSearch = ref('')
+const shopResults = ref<ShopHit[]>([])
+const selectedShopIds = ref<number[]>([])
+const estimateText = ref('')
+
+const sendShow = ref(false)
+const sendTarget = ref<CampaignRow | null>(null)
+const sendError = ref('')
+const sendInfo = ref('')
+
+const stepMeta = [
+  { n: 1, label: 'Offer' },
+  { n: 2, label: 'Who' },
+  { n: 3, label: 'Send' },
+]
+
+const audiencePresets = [
+  { value: 'subscribers', title: 'Deal subscribers', hint: 'People who opted into Promotions & Offers' },
+  { value: 'buyers', title: 'All buyers', hint: 'Active buyer accounts' },
+  { value: 'sellers', title: 'All shops', hint: 'Every seller / shop owner' },
+  { value: 'shops', title: 'Specific shops', hint: 'Pick one or more shops by name' },
+  { value: 'test', title: 'Test people', hint: 'Only the user IDs you type' },
+] as const
 
 const placementOptions = [
-  { value: 'inapp_advert', text: 'Full screen — in-app advert (1080×1350 popup)' },
-  { value: 'home_hero', text: 'Home — full-screen hero carousel (1080×1350 web)' },
-  { value: 'promo_banner', text: 'Home — promo strip below hero (1920×786)' },
-  { value: 'promo_carousel', text: 'Home — promo carousel (1080×1350 full-screen web)' },
-  { value: 'food_tab_top', text: 'Eat tab — top banner on restaurant list (1920×786)' },
-  { value: 'grocery_tab_top', text: 'Grocery tab — top banner on store list (1920×786)' },
-  { value: 'cart_top', text: 'Cart — top banner before line items (1920×786)' },
-  { value: 'checkout_top', text: 'Checkout — top banner before payment (1920×786)' },
-  { value: 'rewards_top', text: 'Rewards — top banner (1920×786)' },
+  { value: 'inapp_advert', text: 'Full-screen popup' },
+  { value: 'home_hero', text: 'Home hero' },
+  { value: 'promo_banner', text: 'Home promo strip' },
+  { value: 'promo_carousel', text: 'Home carousel' },
+  { value: 'food_tab_top', text: 'Food tab banner' },
+  { value: 'grocery_tab_top', text: 'Grocery tab banner' },
+  { value: 'cart_top', text: 'Cart banner' },
+  { value: 'checkout_top', text: 'Checkout banner' },
+  { value: 'rewards_top', text: 'Rewards banner' },
 ]
 const actionTypeOptions = [
-  { value: '', text: 'None — open CTA route / linked deal' },
-  { value: 'preorder', text: 'Preorder — capped product stock' },
+  { value: '', text: 'Open link / linked deal' },
+  { value: 'preorder', text: 'Preorder product' },
 ]
 const badgeOptions = [
-  { value: '', text: 'Auto (from action / deal)' },
+  { value: '', text: 'Auto' },
   { value: 'preorder', text: 'Preorder' },
   { value: 'limited', text: 'Limited offer' },
   { value: 'flash', text: 'Flash' },
-  { value: 'new', text: 'New item' },
-  { value: 'trending', text: 'Trending' },
-  { value: 'gift', text: 'Gift' },
+  { value: 'new', text: 'New' },
   { value: 'sale', text: 'Sale' },
   { value: 'hot', text: 'Hot' },
-  { value: 'exclusive', text: 'Exclusive' },
-  { value: 'clearance', text: 'Clearance' },
 ]
 const appKeyOptions = [
-  { value: 'all', text: 'all' },
-  { value: 'marketplace', text: 'marketplace' },
+  { value: 'all', text: 'All apps' },
+  { value: 'marketplace', text: 'Marketplace' },
+  { value: 'food', text: 'Food' },
+  { value: 'grocery', text: 'Grocery' },
 ]
-const channelOptions = [
-  { value: 'web_advert', text: 'Buyer web — in-app advert (1080×1350)' },
-  { value: 'app_advert', text: 'Buyers app — in-app advert (1080×1350)' },
-  { value: 'web_banner', text: 'Buyer web — full-screen carousel (1080×1350) / strip (1920×786)' },
-  { value: 'app_banner', text: 'Buyers app — promo banner (1920×786)' },
-  { value: 'push', text: 'Push notification' },
-] as const
 
 const channels = reactive<Record<string, boolean>>({
   web_advert: false,
   app_advert: false,
   web_banner: true,
   app_banner: false,
-  push: false,
+  push: true,
 })
-
-const imageSpecHint = computed(() => imageUploadHint(form.placement))
-const activeCreative = computed(() => creativeSpecForPlacement(form.placement))
-
-const fields = [
-  { key: 'title', label: 'Title' },
-  { key: 'placement', label: 'Placement' },
-  { key: 'channels', label: 'Channels' },
-  { key: 'deal', label: 'Deal' },
-  { key: 'window', label: 'Window' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'active', label: 'Active' },
-  { key: 'actions', label: '' },
-]
 
 const form = reactive<AppCampaignPayload & { is_active?: boolean }>({
   title: '',
   subtitle: '',
   placement: 'promo_banner',
-  delivery_channels: 'web_banner',
+  delivery_channels: 'web_banner,push',
   gift_voucher_id: undefined,
   gift_label: '',
   flash_sale_id: null,
@@ -462,34 +493,75 @@ const form = reactive<AppCampaignPayload & { is_active?: boolean }>({
   is_active: true,
 })
 
+const imageSpecHint = computed(() => imageUploadHint(form.placement))
+const canPush = computed(() => editingId.value != null || !!sendTarget.value)
+
+const audiencePresetLabel = computed(() => {
+  const hit = audiencePresets.find((p) => p.value === audiencePreset.value)
+  return hit?.title ?? 'Audience'
+})
+
+const deviceLabel = computed(() => {
+  if (deviceAndroid.value && deviceIos.value) return 'Android + iPhone'
+  if (deviceAndroid.value) return 'Android only'
+  if (deviceIos.value) return 'iPhone only'
+  return 'All devices'
+})
+
+const fields = [
+  { key: 'title', label: 'Title' },
+  { key: 'placement', label: 'Shows on' },
+  { key: 'channels', label: 'Channels' },
+  { key: 'window', label: 'When' },
+  { key: 'active', label: 'Status' },
+  { key: 'actions', label: '' },
+]
+
 watch(
   () => form.image_url,
   (url) => {
-    if (!imageFile.value) {
-      imagePreview.value = resolveAssetUrl(url) ?? ''
-    }
+    if (!imageFile.value) imagePreview.value = resolveAssetUrl(url) ?? ''
   },
 )
 
-const announce = reactive({
-  title: '',
-  message: '',
-  target_app: 'marketplace',
-  flash_sale_id: null as number | null,
-  promotion_id: null as number | null,
-  slug: '',
-})
+function placementLabel(raw?: string) {
+  return placementOptions.find((p) => p.value === raw)?.text ?? raw ?? '—'
+}
+
+function channelSummary(raw?: string) {
+  const parts = String(raw ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (!parts.length) return 'Default surfaces'
+  return parts
+    .map((p) => {
+      if (p === 'push') return 'Push'
+      if (p.includes('banner')) return 'Banner'
+      if (p.includes('advert')) return 'Popup'
+      return p
+    })
+    .join(', ')
+}
+
+function formatWindow(start?: string, end?: string) {
+  const a = start ? new Date(start) : null
+  const b = end ? new Date(end) : null
+  const fmt = (d: Date) =>
+    Number.isNaN(d.getTime()) ? '—' : d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  if (!a && !b) return '—'
+  return `${a ? fmt(a) : '?'} → ${b ? fmt(b) : '?'}`
+}
 
 function channelsToString() {
-  return channelOptions
-    .filter((ch) => channels[ch.value])
-    .map((ch) => ch.value)
+  return (['web_advert', 'app_advert', 'web_banner', 'app_banner', 'push'] as const)
+    .filter((ch) => channels[ch])
     .join(',')
 }
 
 function applyChannelsFromString(raw?: string) {
-  channelOptions.forEach((ch) => {
-    channels[ch.value] = false
+  ;(['web_advert', 'app_advert', 'web_banner', 'app_banner', 'push'] as const).forEach((ch) => {
+    channels[ch] = false
   })
   const parts = String(raw ?? '')
     .split(',')
@@ -497,6 +569,7 @@ function applyChannelsFromString(raw?: string) {
     .filter(Boolean)
   if (!parts.length) {
     channels.web_banner = true
+    channels.push = true
     return
   }
   parts.forEach((p) => {
@@ -504,139 +577,116 @@ function applyChannelsFromString(raw?: string) {
   })
 }
 
-function resetProductSearch() {
-  productSearchQuery.value = ''
-  productSearchResults.value = []
-  selectedProductLabel.value = ''
-  manualProductId.value = null
+function toLocalInput(iso: string) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function clearSelectedProduct() {
-  form.product_id = null
-  manualProductId.value = null
-  resetProductSearch()
-}
-
-function selectProduct(prod: { id: number; title: string; slug: string }) {
-  form.product_id = prod.id
-  manualProductId.value = prod.id
-  selectedProductLabel.value = prod.title
-  productSearchQuery.value = ''
-  productSearchResults.value = []
-  if (!form.cta_route?.trim() || form.cta_route.startsWith('/product/s/')) {
-    form.cta_route = `/product/s/${prod.slug}`
-  }
-}
-
-function applyManualProductId() {
-  const id = Number(manualProductId.value)
-  if (!Number.isFinite(id) || id <= 0) {
-    return
-  }
-  form.product_id = id
-  selectedProductLabel.value = `Product #${id}`
-}
-
-function toRfc3339(raw: string) {
-  const s = String(raw ?? '').trim()
+function localToRfc3339(local: string) {
+  const s = String(local ?? '').trim()
   if (!s) return ''
-  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
-    // Already ISO-ish; normalize space timezone to Z when needed
-    try {
-      return new Date(s).toISOString()
-    } catch {
-      return s
+  const d = new Date(s)
+  if (Number.isNaN(d.getTime())) return s
+  return d.toISOString()
+}
+
+function parseUserIds(text: string): number[] {
+  return String(text ?? '')
+    .split(/[,\s]+/)
+    .map((x) => Number(x.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0)
+}
+
+function buildTargets(forTest = false): CampaignPushPayload['targets'] {
+  const platforms: string[] = []
+  if (deviceAndroid.value) platforms.push('android')
+  if (deviceIos.value) platforms.push('ios')
+
+  if (forTest || audiencePreset.value === 'test') {
+    const ids = parseUserIds(testUserIdsText.value)
+    return {
+      mode: 'users',
+      user_ids: ids,
+      platforms: platforms.length ? platforms : undefined,
     }
   }
-  return s
-}
-
-function debouncedSearchProducts() {
-  if (productSearchDebounce) clearTimeout(productSearchDebounce)
-  productSearchDebounce = setTimeout(searchProducts, 300)
-}
-
-async function searchProducts() {
-  const q = productSearchQuery.value.trim()
-  if (!q) {
-    productSearchResults.value = []
-    return
+  if (audiencePreset.value === 'subscribers') {
+    return {
+      mode: 'subscribers',
+      platforms: platforms.length ? platforms : undefined,
+    }
   }
-  productSearchLoading.value = true
-  try {
-    const { data } = await catalogAdminApi.listProducts({ search: q, page_size: 12 })
-    const raw = Array.isArray(data) ? data : (data as { results?: unknown[] })?.results ?? []
-    productSearchResults.value = (raw as Record<string, unknown>[])
-      .map((row) => ({
-        id: Number(row.id),
-        title: String(row.title ?? row.name ?? ''),
-        slug: String(row.slug ?? ''),
-      }))
-      .filter((row) => row.id > 0 && row.title)
-  } catch {
-    productSearchResults.value = []
-  } finally {
-    productSearchLoading.value = false
+  if (audiencePreset.value === 'buyers') {
+    return {
+      mode: 'users',
+      include_buyers: true,
+      include_sellers: false,
+      require_push: platforms.length > 0,
+      platforms: platforms.length ? platforms : undefined,
+    }
   }
-}
-
-function resetImageUpload() {
-  imageFile.value = null
-  imagePreview.value = ''
-}
-
-function onImageFileChange(ev: Event) {
-  const input = ev.target as HTMLInputElement
-  const file = input.files?.[0] ?? null
-  imageFile.value = file
-  if (file) {
-    imagePreview.value = URL.createObjectURL(file)
-  } else if (form.image_url) {
-    imagePreview.value = resolveAssetUrl(form.image_url) ?? ''
-  } else {
-    imagePreview.value = ''
+  if (audiencePreset.value === 'sellers') {
+    return {
+      mode: 'users',
+      include_buyers: false,
+      include_sellers: true,
+      require_push: platforms.length > 0,
+      platforms: platforms.length ? platforms : undefined,
+    }
+  }
+  return {
+    mode: 'users',
+    include_buyers: false,
+    include_sellers: false,
+    seller_user_ids: [...selectedShopIds.value],
+    platforms: platforms.length ? platforms : undefined,
   }
 }
 
-function appendFormToFormData(fd: FormData) {
-  fd.append('title', form.title)
-  fd.append('subtitle', form.subtitle ?? '')
-  fd.append('image_url', form.image_url ?? '')
-  fd.append('placement', form.placement ?? 'promo_banner')
-  fd.append('delivery_channels', channelsToString())
-  if (form.gift_voucher_id && form.gift_voucher_id > 0) {
-    fd.append('gift_voucher_id', String(form.gift_voucher_id))
+function syncDatesFromLocal() {
+  form.start_at = localToRfc3339(startLocal.value)
+  form.end_at = localToRfc3339(endLocal.value)
+}
+
+function nextStep() {
+  modalError.value = ''
+  if (wizardStep.value === 1) {
+    syncDatesFromLocal()
+    if (!form.title?.trim() || !form.start_at || !form.end_at) {
+      modalError.value = 'Add a title, start time, and end time.'
+      return
+    }
   }
-  fd.append('gift_label', form.gift_label ?? '')
-  if (form.flash_sale_id && form.flash_sale_id > 0) {
-    fd.append('flash_sale_id', String(form.flash_sale_id))
+  if (wizardStep.value === 2) {
+    if (audiencePreset.value === 'shops' && !selectedShopIds.value.length) {
+      modalError.value = 'Pick at least one shop, or choose another group.'
+      return
+    }
+    if (audiencePreset.value === 'test' && !parseUserIds(testUserIdsText.value).length) {
+      modalError.value = 'Enter at least one test user ID.'
+      return
+    }
   }
-  if (form.promotion_id && form.promotion_id > 0) {
-    fd.append('promotion_id', String(form.promotion_id))
-  }
-  fd.append('action_type', form.action_type === 'preorder' ? 'preorder' : '')
-  // Always send product_id so backend can clear or replace the link.
-  fd.append(
-    'product_id',
-    form.action_type === 'preorder' && form.product_id && form.product_id > 0
-      ? String(form.product_id)
-      : '',
-  )
-  fd.append('badge', form.badge ?? '')
-  fd.append('cta_label', form.cta_label ?? '')
-  fd.append('cta_route', form.cta_route ?? '')
-  fd.append('cta_external_url', form.cta_external_url ?? '')
-  fd.append('priority', String(form.priority ?? 10))
-  fd.append('start_at', form.start_at)
-  fd.append('end_at', form.end_at)
-  fd.append('target_app_key', form.target_app_key ?? 'marketplace')
-  fd.append('max_impressions_per_user', String(form.max_impressions_per_user ?? 5))
-  fd.append('cooldown_hours', String(form.cooldown_hours ?? 24))
-  fd.append('is_active', String(form.is_active !== false))
+  wizardStep.value += 1
+}
+
+function resetAudience() {
+  audiencePreset.value = 'subscribers'
+  deviceAndroid.value = false
+  deviceIos.value = false
+  testUserIdsText.value = ''
+  shopSearch.value = ''
+  shopResults.value = []
+  selectedShopIds.value = []
+  estimateText.value = ''
 }
 
 function resetForm() {
   editingId.value = null
+  wizardStep.value = 1
   Object.assign(form, {
     title: '',
     subtitle: '',
@@ -663,18 +713,27 @@ function resetForm() {
     is_active: true,
   })
   applyChannelsFromString('web_banner,push')
-  resetImageUpload()
-  resetProductSearch()
+  imageFile.value = null
+  imagePreview.value = ''
+  const now = new Date()
+  const week = new Date(now.getTime() + 7 * 24 * 3600 * 1000)
+  startLocal.value = toLocalInput(now.toISOString())
+  endLocal.value = toLocalInput(week.toISOString())
+  manualProductId.value = null
+  productSearchQuery.value = ''
+  productSearchResults.value = []
+  resetAudience()
+  modalError.value = ''
 }
 
 function openCreate() {
   resetForm()
-  modalError.value = ''
   showModal.value = true
 }
 
 function openEdit(row: CampaignRow) {
   editingId.value = row.id
+  wizardStep.value = 1
   modalError.value = ''
   Object.assign(form, {
     title: row.title ?? '',
@@ -689,8 +748,8 @@ function openEdit(row: CampaignRow) {
     product_id: row.product_id ?? null,
     remaining_stock: row.remaining_stock ?? null,
     badge: row.badge ?? '',
-    start_at: toRfc3339(String(row.start_at ?? '')),
-    end_at: toRfc3339(String(row.end_at ?? '')),
+    start_at: String(row.start_at ?? ''),
+    end_at: String(row.end_at ?? ''),
     cta_label: row.cta_label ?? '',
     cta_route: row.cta_route ?? '',
     cta_external_url: row.cta_external_url ?? '',
@@ -702,18 +761,288 @@ function openEdit(row: CampaignRow) {
     is_active: row.is_active !== false,
   })
   applyChannelsFromString(row.delivery_channels)
-  selectedProductLabel.value =
-    row.product_title && row.product_id
-      ? row.product_title
-      : row.product_id
-        ? `Product #${row.product_id}`
-        : ''
+  startLocal.value = toLocalInput(String(row.start_at ?? ''))
+  endLocal.value = toLocalInput(String(row.end_at ?? ''))
   manualProductId.value = row.product_id ?? null
-  productSearchQuery.value = ''
-  productSearchResults.value = []
   imagePreview.value = resolveAssetUrl(row.image_url ?? '') ?? ''
   imageFile.value = null
+  resetAudience()
   showModal.value = true
+}
+
+function openSend(row: CampaignRow) {
+  sendTarget.value = row
+  sendError.value = ''
+  sendInfo.value = ''
+  estimateText.value = ''
+  resetAudience()
+  sendShow.value = true
+}
+
+function clearSend() {
+  sendTarget.value = null
+  sendError.value = ''
+  sendInfo.value = ''
+}
+
+function onModalHidden() {
+  if (!showModal.value) resetForm()
+}
+
+function onImageFileChange(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+  imageFile.value = file
+  imagePreview.value = file ? URL.createObjectURL(file) : resolveAssetUrl(form.image_url) ?? ''
+}
+
+function applyManualProductId() {
+  const id = Number(manualProductId.value)
+  if (Number.isFinite(id) && id > 0) form.product_id = id
+}
+
+function selectProduct(prod: { id: number; title: string; slug: string }) {
+  form.product_id = prod.id
+  manualProductId.value = prod.id
+  productSearchQuery.value = ''
+  productSearchResults.value = []
+  if (!form.cta_route?.trim() || form.cta_route.startsWith('/product/s/')) {
+    form.cta_route = `/product/s/${prod.slug}`
+  }
+}
+
+function debouncedSearchProducts() {
+  if (productSearchDebounce) clearTimeout(productSearchDebounce)
+  productSearchDebounce = setTimeout(searchProducts, 300)
+}
+
+async function searchProducts() {
+  const q = productSearchQuery.value.trim()
+  if (!q) {
+    productSearchResults.value = []
+    return
+  }
+  try {
+    const { data } = await catalogAdminApi.listProducts({ search: q, page_size: 12 })
+    const raw = Array.isArray(data) ? data : (data as { results?: unknown[] })?.results ?? []
+    productSearchResults.value = (raw as Record<string, unknown>[])
+      .map((row) => ({
+        id: Number(row.id),
+        title: String(row.title ?? row.name ?? ''),
+        slug: String(row.slug ?? ''),
+      }))
+      .filter((row) => row.id > 0 && row.title)
+  } catch {
+    productSearchResults.value = []
+  }
+}
+
+function debouncedShopSearch() {
+  if (shopSearchDebounce) clearTimeout(shopSearchDebounce)
+  shopSearchDebounce = setTimeout(searchShops, 300)
+}
+
+async function searchShops() {
+  const q = shopSearch.value.trim().toLowerCase()
+  try {
+    const { data } = await sellersAdminApi.list()
+    const raw = Array.isArray(data) ? data : (data as { results?: unknown[] })?.results ?? []
+    shopResults.value = (raw as Record<string, unknown>[])
+      .map((row) => {
+        const user = (row.user as Record<string, unknown> | undefined) ?? {}
+        const userId = Number(user.id ?? row.user_id ?? 0)
+        const name = String(row.business_name ?? user.phone_number ?? `Shop #${row.id}`)
+        return { userId, name }
+      })
+      .filter((s) => s.userId > 0 && (!q || s.name.toLowerCase().includes(q)))
+      .slice(0, 20)
+  } catch {
+    shopResults.value = []
+  }
+}
+
+function toggleShop(shop: ShopHit) {
+  if (selectedShopIds.value.includes(shop.userId)) {
+    selectedShopIds.value = selectedShopIds.value.filter((id) => id !== shop.userId)
+  } else {
+    selectedShopIds.value = [...selectedShopIds.value, shop.userId]
+  }
+}
+
+function appendFormToFormData(fd: FormData) {
+  syncDatesFromLocal()
+  fd.append('title', form.title)
+  fd.append('subtitle', form.subtitle ?? '')
+  fd.append('image_url', form.image_url ?? '')
+  fd.append('placement', form.placement ?? 'promo_banner')
+  fd.append('delivery_channels', channelsToString())
+  if (form.gift_voucher_id && form.gift_voucher_id > 0) fd.append('gift_voucher_id', String(form.gift_voucher_id))
+  fd.append('gift_label', form.gift_label ?? '')
+  if (form.flash_sale_id && form.flash_sale_id > 0) fd.append('flash_sale_id', String(form.flash_sale_id))
+  if (form.promotion_id && form.promotion_id > 0) fd.append('promotion_id', String(form.promotion_id))
+  fd.append('action_type', form.action_type === 'preorder' ? 'preorder' : '')
+  fd.append(
+    'product_id',
+    form.action_type === 'preorder' && form.product_id && form.product_id > 0 ? String(form.product_id) : '',
+  )
+  fd.append('badge', form.badge ?? '')
+  fd.append('cta_label', form.cta_label ?? '')
+  fd.append('cta_route', form.cta_route ?? '')
+  fd.append('cta_external_url', form.cta_external_url ?? '')
+  fd.append('priority', String(form.priority ?? 10))
+  fd.append('start_at', form.start_at)
+  fd.append('end_at', form.end_at)
+  fd.append('target_app_key', form.target_app_key ?? 'marketplace')
+  fd.append('max_impressions_per_user', String(form.max_impressions_per_user ?? 5))
+  fd.append('cooldown_hours', String(form.cooldown_hours ?? 24))
+  fd.append('is_active', String(form.is_active !== false))
+}
+
+async function persistCampaign(): Promise<number | null> {
+  syncDatesFromLocal()
+  modalError.value = ''
+  if (!form.title?.trim() || !form.start_at || !form.end_at) {
+    modalError.value = 'Add a title, start time, and end time.'
+    return null
+  }
+  if (form.action_type === 'preorder') {
+    applyManualProductId()
+    if (!(form.product_id && form.product_id > 0)) {
+      modalError.value = 'Preorder needs a product ID.'
+      return null
+    }
+  }
+  saving.value = true
+  try {
+    if (imageFile.value) {
+      const fd = new FormData()
+      appendFormToFormData(fd)
+      fd.append('image', imageFile.value)
+      if (editingId.value != null) {
+        await campaignsAdminApi.patchWithImage(editingId.value, fd)
+        return editingId.value
+      }
+      const { data } = await campaignsAdminApi.createWithImage(fd)
+      const id = Number((data as { id?: number })?.id)
+      if (id > 0) editingId.value = id
+      return id > 0 ? id : null
+    }
+    const payload: AppCampaignPayload & { is_active?: boolean } = {
+      ...form,
+      start_at: form.start_at,
+      end_at: form.end_at,
+      delivery_channels: channelsToString(),
+      gift_voucher_id: form.gift_voucher_id && form.gift_voucher_id > 0 ? form.gift_voucher_id : null,
+      flash_sale_id: form.flash_sale_id && form.flash_sale_id > 0 ? form.flash_sale_id : null,
+      promotion_id: form.promotion_id && form.promotion_id > 0 ? form.promotion_id : null,
+      action_type: form.action_type === 'preorder' ? 'preorder' : '',
+      product_id:
+        form.action_type === 'preorder' && form.product_id && form.product_id > 0 ? form.product_id : null,
+      badge: form.badge || '',
+    }
+    delete (payload as { remaining_stock?: number | null }).remaining_stock
+    delete (payload as { product_slug?: string }).product_slug
+    delete (payload as { product_title?: string }).product_title
+    delete (payload as { badge_label?: string }).badge_label
+    if (editingId.value != null) {
+      await campaignsAdminApi.patch(editingId.value, payload)
+      return editingId.value
+    }
+    const { data } = await campaignsAdminApi.create(payload)
+    const id = Number((data as { id?: number })?.id)
+    if (id > 0) editingId.value = id
+    return id > 0 ? id : null
+  } catch (e: unknown) {
+    modalError.value = formatApiError(e, 'Save failed')
+    return null
+  } finally {
+    saving.value = false
+  }
+}
+
+async function saveOnly() {
+  const id = await persistCampaign()
+  if (id) {
+    pushMsg.value = 'Campaign saved'
+    await load()
+  }
+}
+
+async function campaignIdForPush(): Promise<number | null> {
+  if (sendTarget.value?.id) return sendTarget.value.id
+  if (editingId.value) return editingId.value
+  return persistCampaign()
+}
+
+async function runEstimate() {
+  const id = await campaignIdForPush()
+  if (!id) return
+  sending.value = true
+  estimateText.value = ''
+  sendError.value = ''
+  try {
+    const { data } = await campaignsAdminApi.push(id, { dry_run: true, targets: buildTargets(false) })
+    const d = data as { estimated_recipients?: number }
+    estimateText.value = `About ${d.estimated_recipients ?? 0} people match this audience`
+    sendInfo.value = estimateText.value
+  } catch (e: unknown) {
+    const msg = formatApiError(e, 'Estimate failed')
+    modalError.value = msg
+    sendError.value = msg
+  } finally {
+    sending.value = false
+  }
+}
+
+async function runSendTest() {
+  if (!parseUserIds(testUserIdsText.value).length) {
+    const msg = 'Enter test user ID(s) first.'
+    modalError.value = msg
+    sendError.value = msg
+    return
+  }
+  const id = await campaignIdForPush()
+  if (!id) return
+  sending.value = true
+  try {
+    const { data } = await campaignsAdminApi.push(id, { dry_run: false, targets: buildTargets(true) })
+    const d = data as { message?: string; recipients?: number }
+    const msg = d.message ?? `Test sent to ${d.recipients ?? 0} user(s)`
+    pushMsg.value = msg
+    sendInfo.value = msg
+  } catch (e: unknown) {
+    const msg = formatApiError(e, 'Test send failed')
+    modalError.value = msg
+    sendError.value = msg
+  } finally {
+    sending.value = false
+  }
+}
+
+async function runSendLive() {
+  const id = await campaignIdForPush()
+  if (!id) return
+  if (audiencePreset.value === 'shops' && !selectedShopIds.value.length) {
+    const msg = 'Pick at least one shop.'
+    modalError.value = msg
+    sendError.value = msg
+    return
+  }
+  sending.value = true
+  try {
+    const { data } = await campaignsAdminApi.push(id, { dry_run: false, targets: buildTargets(false) })
+    const d = data as { message?: string; recipients?: number }
+    const msg = d.message ?? `Sent${d.recipients != null ? ` to ${d.recipients}` : ''}`
+    pushMsg.value = msg
+    sendInfo.value = msg
+    await load()
+  } catch (e: unknown) {
+    const msg = formatApiError(e, 'Send failed')
+    modalError.value = msg
+    sendError.value = msg
+  } finally {
+    sending.value = false
+  }
 }
 
 async function loadDealOptions() {
@@ -723,7 +1052,7 @@ async function loadDealOptions() {
       { value: null, text: '— None —' },
       ...(fs.results ?? []).map((s) => ({
         value: s.id,
-        text: `#${s.id} ${s.name}${s.is_active ? '' : ' (inactive)'}`,
+        text: `#${s.id} ${s.name}${s.is_active ? '' : ' (off)'}`,
       })),
     ]
   } catch {
@@ -735,10 +1064,7 @@ async function loadDealOptions() {
       (Array.isArray(data) ? data : [])) as { id: number; name: string }[]
     promotionOptions.value = [
       { value: null, text: '— None —' },
-      ...results.map((p) => ({
-        value: p.id,
-        text: `#${p.id} ${p.name}`,
-      })),
+      ...results.map((p) => ({ value: p.id, text: `#${p.id} ${p.name}` })),
     ]
   } catch {
     promotionOptions.value = [{ value: null, text: '— None —' }]
@@ -750,147 +1076,17 @@ async function load() {
   error.value = ''
   try {
     const { data } = await campaignsAdminApi.list()
-    const results = (data as { results?: CampaignRow[] }).results ?? []
-    items.value = results
+    items.value = (data as { results?: CampaignRow[] }).results ?? []
   } catch (e: unknown) {
-    error.value = formatApiError(e, 'Failed to load campaigns')
+    error.value = formatApiError(e, 'Could not load campaigns')
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-async function onModalOk(ev: Event) {
-  ev.preventDefault()
-  await save()
-}
-
-async function save() {
-  modalError.value = ''
-  error.value = ''
-  if (!form.title?.trim() || !form.start_at || !form.end_at) {
-    modalError.value = 'Title, start_at, and end_at are required (RFC3339).'
-    return
-  }
-  if (form.action_type === 'preorder') {
-    applyManualProductId()
-    if (!(form.product_id && form.product_id > 0)) {
-      modalError.value = 'Preorder campaigns require a product. Search, pick one, or enter its ID.'
-      return
-    }
-  }
-  saving.value = true
-  try {
-    const hasImageFile = !!imageFile.value
-    if (hasImageFile) {
-      const fd = new FormData()
-      appendFormToFormData(fd)
-      fd.append('image', imageFile.value!)
-      if (editingId.value != null) {
-        await campaignsAdminApi.patchWithImage(editingId.value, fd)
-      } else {
-        await campaignsAdminApi.createWithImage(fd)
-      }
-    } else {
-      const payload: AppCampaignPayload & { is_active?: boolean } = {
-        ...form,
-        start_at: toRfc3339(form.start_at),
-        end_at: toRfc3339(form.end_at),
-        delivery_channels: channelsToString(),
-        gift_voucher_id: form.gift_voucher_id && form.gift_voucher_id > 0 ? form.gift_voucher_id : null,
-        flash_sale_id: form.flash_sale_id && form.flash_sale_id > 0 ? form.flash_sale_id : null,
-        promotion_id: form.promotion_id && form.promotion_id > 0 ? form.promotion_id : null,
-        action_type: form.action_type === 'preorder' ? 'preorder' : '',
-        product_id:
-          form.action_type === 'preorder' && form.product_id && form.product_id > 0
-            ? form.product_id
-            : null,
-        badge: form.badge || '',
-      }
-      delete (payload as { remaining_stock?: number | null }).remaining_stock
-      delete (payload as { product_slug?: string }).product_slug
-      delete (payload as { product_title?: string }).product_title
-      delete (payload as { badge_label?: string }).badge_label
-      if (editingId.value != null) {
-        await campaignsAdminApi.patch(editingId.value, payload)
-      } else {
-        await campaignsAdminApi.create(payload)
-      }
-    }
-    showModal.value = false
-    resetForm()
-    await load()
-  } catch (e: unknown) {
-    modalError.value = formatApiError(e, 'Save failed')
-    error.value = modalError.value
-  } finally {
-    saving.value = false
-  }
-}
-
-async function pushNow(row: CampaignRow) {
-  pushingId.value = row.id
-  pushMsg.value = ''
-  error.value = ''
-  try {
-    const { data } = await campaignsAdminApi.push(row.id, { targets: { mode: 'subscribers' } })
-    const d = data as { message?: string; recipients?: number; estimated_recipients?: number }
-    pushMsg.value = d.message ?? `Push queued${d.recipients != null ? ` (${d.recipients} recipients)` : ''}`
-  } catch (e: unknown) {
-    error.value = formatApiError(e, 'Push failed')
-  } finally {
-    pushingId.value = null
-  }
-}
-
-async function announceDeal() {
-  if (!announce.title.trim() || !announce.message.trim()) {
-    error.value = 'Announce title and message are required.'
-    return
-  }
-  announcing.value = true
-  announceMsg.value = ''
-  error.value = ''
-  try {
-    const dataPayload: Record<string, unknown> = {
-      notification_type: announce.flash_sale_id
-        ? 'flash_sale'
-        : announce.promotion_id
-          ? 'promotion'
-          : 'sale',
-      target_app: announce.target_app,
-    }
-    if (announce.flash_sale_id) dataPayload.flash_sale_id = announce.flash_sale_id
-    if (announce.promotion_id) dataPayload.promotion_id = announce.promotion_id
-    if (announce.slug.trim()) dataPayload.slug = announce.slug.trim()
-
-    const { data } = await pushAnnouncementsApi.announceSale({
-      title: announce.title.trim(),
-      message: announce.message.trim(),
-      target_app: announce.target_app,
-      data: dataPayload,
-      targets: { mode: 'subscribers' },
-    })
-    const d = data as { message?: string; recipients?: number }
-    announceMsg.value =
-      d.message ?? `Deal push queued${d.recipients != null ? ` (${d.recipients} recipients)` : ''}`
-    announce.title = ''
-    announce.message = ''
-    announce.flash_sale_id = null
-    announce.promotion_id = null
-    announce.slug = ''
-  } catch (e: unknown) {
-    error.value = formatApiError(e, 'Announce failed')
-  } finally {
-    announcing.value = false
-  }
-}
-
 async function remove(row: CampaignRow) {
-  const ok = await confirmDestructiveAction({
-    title: 'Delete campaign?',
-    text: row.title,
-  })
+  const ok = await confirmDestructiveAction({ title: 'Delete campaign?', text: row.title })
   if (!ok) return
   try {
     await campaignsAdminApi.delete(row.id)
@@ -906,46 +1102,73 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.campaign-size-cheat {
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: 0.65rem;
-  background: color-mix(in srgb, var(--bs-primary) 5%, var(--bs-body-bg));
+.camp-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
-
-.campaign-size-cheat__row {
-  display: grid;
-  gap: 0.15rem 0.75rem;
-  grid-template-columns: auto 1fr;
-  align-items: baseline;
+.camp-steps__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid #e6e8ec;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
 }
-
-@media (min-width: 768px) {
-  .campaign-size-cheat__row {
-    grid-template-columns: 7.5rem 1fr;
-  }
-
-  .campaign-size-cheat__placements {
-    grid-column: 2;
-  }
+.camp-steps__btn--active {
+  border-color: #2f6fed;
+  background: #f3f7ff;
+  font-weight: 600;
 }
-
-.campaign-size-cheat__size {
-  font-variant-numeric: tabular-nums;
+.camp-steps__btn--done {
+  border-color: #b7e0c2;
 }
-
-.campaign-size-cheat__use {
-  color: var(--bs-secondary-color);
-  font-size: 0.875rem;
-}
-
-.campaign-size-cheat__placements {
+.camp-steps__num {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: #eef0f3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.75rem;
-  color: var(--bs-secondary-color);
+  font-weight: 700;
 }
-
+.camp-audience {
+  display: grid;
+  gap: 0.5rem;
+}
+@media (min-width: 700px) {
+  .camp-audience {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.camp-audience__opt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border: 1px solid #e6e8ec;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  background: #fff;
+}
+.camp-audience__opt span {
+  font-size: 0.82rem;
+  color: #5c6570;
+}
+.camp-audience__opt--on {
+  border-color: #2f6fed;
+  background: #f3f7ff;
+}
+.camp-summary {
+  border: 1px solid #e6e8ec;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: #fafbfc;
+}
 .campaign-image-preview {
   display: block;
   width: min(100%, 18rem);
@@ -954,7 +1177,6 @@ onMounted(async () => {
   border-radius: 0.5rem;
   border: 1px solid var(--bs-border-color);
 }
-
 .campaign-product-results {
   display: flex;
   flex-direction: column;
@@ -964,9 +1186,7 @@ onMounted(async () => {
   border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
   padding: 0.35rem;
-  background: var(--bs-body-bg);
 }
-
 .campaign-product-results__item {
   display: flex;
   flex-direction: column;
@@ -979,76 +1199,15 @@ onMounted(async () => {
   background: transparent;
   text-align: left;
 }
-
 .campaign-product-results__item:hover {
-  background: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.04));
+  background: rgba(0, 0, 0, 0.04);
 }
-
 .campaign-product-results__title {
   font-size: 0.86rem;
   font-weight: 600;
 }
-
 .campaign-product-results__slug {
   font-size: 0.75rem;
-  color: var(--bs-secondary-color);
-}
-
-.campaign-image-helper {
-  padding: 0.75rem 0.85rem;
-  border: 1px dashed var(--bs-border-color);
-  border-radius: 0.65rem;
-  background: var(--bs-tertiary-bg, var(--bs-body-bg));
-}
-
-.campaign-image-helper__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem;
-  margin-bottom: 0.35rem;
-}
-
-.campaign-image-helper__badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--bs-primary) 16%, transparent);
-  color: var(--bs-primary);
-}
-
-.campaign-image-helper__aspect {
-  font-size: 0.8rem;
-  color: var(--bs-secondary-color);
-}
-
-.campaign-image-helper__hint {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--bs-body-color);
-}
-
-.campaign-image-helper__frame {
-  width: min(100%, 18rem);
-  max-height: 8.5rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.5rem;
-  border: 1px solid var(--bs-border-color);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-primary) 12%, transparent), transparent 55%),
-    var(--bs-body-bg);
-  color: var(--bs-secondary-color);
-  font-size: 0.78rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.campaign-image-helper__frame--portrait {
-  width: min(100%, 8.5rem);
-  max-height: 12rem;
+  color: #5c6570;
 }
 </style>

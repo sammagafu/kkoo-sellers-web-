@@ -57,8 +57,8 @@ const adminMenu: MenuItemType[] = [
     label: 'People & merchants',
     children: [
       { key: 'admin-users', label: 'Users', route: { name: 'admin.users' }, parentKey: 'admin-hub-people' },
-      { key: 'admin-sellers', label: 'Seller management', route: { name: 'admin.sellers' }, parentKey: 'admin-hub-people' },
-      { key: 'admin-kyc', label: 'KYC documents', route: { name: 'admin.kyc-documents' }, parentKey: 'admin-hub-people' },
+      { key: 'admin-sellers', label: 'Sellers', route: { name: 'admin.sellers' }, parentKey: 'admin-hub-people' },
+      { key: 'admin-kyc', label: 'Verify documents', route: { name: 'admin.kyc-documents' }, parentKey: 'admin-hub-people' },
       { key: 'admin-document-types', label: 'Document types', route: { name: 'admin.document-types' }, parentKey: 'admin-hub-people' },
       {
         key: 'admin-document-requirements',
@@ -79,12 +79,12 @@ const adminMenu: MenuItemType[] = [
         label: 'Marketing',
         parentKey: 'admin-hub-growth',
         children: [
-          { key: 'admin-promotions', label: 'Promotions', route: { name: 'admin.promotions' }, parentKey: 'admin-hub-growth-marketing' },
+          { key: 'admin-promotions', label: 'Discount promos', route: { name: 'admin.promotions' }, parentKey: 'admin-hub-growth-marketing' },
           { key: 'admin-flash-sales', label: 'Flash sales', route: { name: 'admin.flash-sales' }, parentKey: 'admin-hub-growth-marketing' },
-          { key: 'admin-platform-campaigns', label: 'Push & promos', route: { name: 'admin.platform-campaigns' }, parentKey: 'admin-hub-growth-marketing' },
+          { key: 'admin-platform-campaigns', label: 'Push campaigns', route: { name: 'admin.platform-campaigns' }, parentKey: 'admin-hub-growth-marketing' },
           { key: 'admin-seller-help-tour', label: 'Seller help tour', route: { name: 'admin.seller-help-tour' }, parentKey: 'admin-hub-growth-marketing' },
-          { key: 'admin-ride-promotions', label: 'Ride promotions', route: { name: 'admin.ride-promotions' }, parentKey: 'admin-hub-growth-marketing' },
-          { key: 'admin-promotion-bundles', label: 'Promotion bundles', route: { name: 'admin.promotions.bundles' }, parentKey: 'admin-hub-growth-marketing' },
+          { key: 'admin-ride-promotions', label: 'Delivery fee discounts', route: { name: 'admin.ride-promotions' }, parentKey: 'admin-hub-growth-marketing' },
+          { key: 'admin-promotion-bundles', label: 'Bundle deals', route: { name: 'admin.promotions.bundles' }, parentKey: 'admin-hub-growth-marketing' },
           { key: 'admin-discover-events', label: 'Dar events', route: { name: 'admin.discover-events' }, parentKey: 'admin-hub-growth-marketing' },
           { key: 'admin-careers', label: 'Temp jobs', route: { name: 'admin.careers' }, parentKey: 'admin-hub-growth-marketing' },
         ],
