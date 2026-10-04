@@ -349,19 +349,19 @@ function countFromListResponse(data: unknown): number {
 
 const adminQuickActions = computed<QuickActionItem[]>(() => {
   const items: QuickActionItem[] = [
-    { key: 'orders', label: 'Orders', icon: 'solar:cart-large-2-broken', tone: 'pink', hint: 'Live commerce queue', to: { name: 'admin.orders' } },
-    { key: 'users', label: 'Users', icon: 'solar:users-group-two-rounded-broken', tone: 'teal', hint: 'Accounts & roles', to: { name: 'admin.users' } },
+    { key: 'orders', label: 'Orders', icon: 'solar:cart-large-2-bold-duotone', tone: 'pink', hint: 'Live commerce queue', to: { name: 'admin.orders' } },
+    { key: 'users', label: 'Users', icon: 'solar:users-group-rounded-bold-duotone', tone: 'teal', hint: 'Accounts & roles', to: { name: 'admin.users' } },
     ...(canManageSellers.value
-      ? [{ key: 'sellers', label: 'Sellers', icon: 'solar:user-id-broken', tone: 'purple' as const, hint: 'Approve & verify merchants', to: { name: 'admin.sellers' } }]
+      ? [{ key: 'sellers', label: 'Sellers', icon: 'solar:shop-2-bold-duotone', tone: 'purple' as const, hint: 'Approve & verify merchants', to: { name: 'admin.sellers' } }]
       : []),
-    { key: 'products', label: 'Products', icon: 'solar:box-broken', tone: 'red', hint: 'Marketplace catalog', to: { name: 'admin.catalog.products' } },
-    { key: 'kyc', label: 'KYC', icon: 'solar:document-broken', tone: 'warning', hint: 'Pending reviews', to: { name: 'admin.kyc-documents' } },
-    { key: 'disputes', label: 'Disputes', icon: 'solar:shield-warning-broken', tone: 'danger', hint: 'Trust & resolution', to: { name: 'admin.disputes' } },
-    { key: 'payouts', label: 'Payouts', icon: 'solar:wallet-money-broken', tone: 'orange', hint: 'Seller settlements', to: { name: 'admin.payouts' } },
-    { key: 'logistics', label: 'Drivers', icon: 'solar:delivery-broken', tone: 'dark', hint: 'Dispatch & fleet', to: { name: 'admin.logistics' } },
-    { key: 'promotions', label: 'Promotions', icon: 'solar:ticket-sale-broken', tone: 'pink', hint: 'Campaigns & codes', to: { name: 'admin.promotions' } },
-    { key: 'crm', label: 'CRM', icon: 'solar:chart-2-broken', tone: 'info', hint: 'Business oversight', to: { name: 'admin.crm.dashboard' } },
-    { key: 'analytics', label: 'Analytics', icon: 'solar:chart-square-broken', tone: 'primary', hint: 'Platform insights', to: { name: 'admin.analytics' } },
+    { key: 'products', label: 'Products', icon: 'solar:box-bold-duotone', tone: 'red', hint: 'Marketplace catalog', to: { name: 'admin.catalog.products' } },
+    { key: 'kyc', label: 'KYC', icon: 'solar:document-bold-duotone', tone: 'warning', hint: 'Pending reviews', to: { name: 'admin.kyc-documents' } },
+    { key: 'disputes', label: 'Disputes', icon: 'solar:shield-warning-bold-duotone', tone: 'danger', hint: 'Trust & resolution', to: { name: 'admin.disputes' } },
+    { key: 'payouts', label: 'Payouts', icon: 'solar:wallet-money-bold-duotone', tone: 'orange', hint: 'Seller settlements', to: { name: 'admin.payouts' } },
+    { key: 'logistics', label: 'Drivers', icon: 'solar:delivery-bold-duotone', tone: 'dark', hint: 'Dispatch & fleet', to: { name: 'admin.logistics' } },
+    { key: 'promotions', label: 'Promotions', icon: 'solar:ticket-sale-bold-duotone', tone: 'pink', hint: 'Campaigns & codes', to: { name: 'admin.promotions' } },
+    { key: 'crm', label: 'CRM', icon: 'solar:chart-2-bold-duotone', tone: 'info', hint: 'Business oversight', to: { name: 'admin.crm.dashboard' } },
+    { key: 'analytics', label: 'Analytics', icon: 'solar:chart-square-bold-duotone', tone: 'primary', hint: 'Platform insights', to: { name: 'admin.analytics' } },
   ]
   return items
 })

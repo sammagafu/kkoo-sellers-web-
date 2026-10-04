@@ -1,7 +1,16 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Bundle deals"
+      what="A set of products sold together. Shoppers see one bundle instead of adding each item."
+      :steps="[
+        'Create the discount first under Discount promos.',
+        'Open the Bundles tab there and tap Create bundle.',
+        'Come back here to see the bundles that already exist.',
+      ]"
+      actions="Day-to-day create, edit, and delete live on Discount promos → Bundles. This page is the list."
+    />
     <b-card title="Promotion Bundles">
-      <p class="text-muted">Bundle promotions (product sets). API: GET /promotions/admin/bundles/ — placeholder until backend supports full CRUD.</p>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <b-button variant="outline-primary" size="sm" @click="load">Refresh</b-button>
       </div>
@@ -15,6 +24,7 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { ref, onMounted } from 'vue'
 import { promotionsAdminApi } from '@/api'

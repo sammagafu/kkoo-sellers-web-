@@ -22,8 +22,30 @@ export async function joinGroupOrder(data: {
   return client.post('/group-orders/join/', data).then((r) => r.data)
 }
 
+/** Fiber returns `{ group_order, members, items, seconds_remaining }`. */
+function unwrapGroupOrderDetail(data: unknown): GroupOrderDetail {
+  if (data && typeof data === 'object' && 'group_order' in data) {
+    const raw = data as {
+      group_order: GroupOrder
+      members?: GroupOrderDetail['members']
+      items?: GroupOrderDetail['items']
+      seconds_remaining?: number
+    }
+    return {
+      ...raw.group_order,
+      members: raw.members ?? [],
+      items: raw.items ?? [],
+      seconds_remaining: raw.seconds_remaining,
+    }
+  }
+  return data as GroupOrderDetail
+}
+
 export async function getGroupOrder(shareCode: string): Promise<GroupOrderDetail> {
-  return client.get(`/group-orders/${shareCode}/`).then((r) => r.data)
+  const code = encodeURIComponent(shareCode.trim())
+  return client
+    .get(`/group-orders/${code}/`)
+    .then((r) => unwrapGroupOrderDetail(r.data))
 }
 
 export async function addGroupOrderItem(
@@ -55,9 +77,14 @@ export async function lockGroupOrder(shareCode: string): Promise<{
   return client.post(`/group-orders/${shareCode}/lock/`, {}).then((r) => r.data)
 }
 
-export async function listMyGroupOrders(params?: {
-  page?: number
-  page_size?: number
-}): Promise<{ results: GroupOrder[]; total: number }> {
-  return client.get('/group-orders/mine/', { params }).then((r) => r.data)
+export async function listMyGroupOrders(): Promise<{
+  results: GroupOrder[]
+  total: number
+}> {
+  const data = await client.get('/group-orders/mine/').then((r) => r.data)
+  if (Array.isArray(data)) {
+    return { results: data as GroupOrder[], total: data.length }
+  }
+  const results = (data?.results ?? []) as GroupOrder[]
+  return { results, total: Number(data?.total ?? results.length) }
 }

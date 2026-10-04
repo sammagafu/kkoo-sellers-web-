@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Reward settings"
+      what="The rules for points. This is where you decide how many points someone gets for inviting a friend or placing an order."
+      :steps="[
+        'Leave Rewards active on if you want points to work.',
+        'Change the numbers you care about. The note under each box says what it does.',
+        'Save at the bottom. Buyers earn points with the new numbers from then on.',
+      ]"
+      actions="This page is one form. Change the fields and save. There is no separate create or delete."
+    />
     <b-card title="Reward Settings">
       <p class="text-muted">Configure referral bonuses, purchase rewards, redemption rules, and point expiry.</p>
       <p v-if="loading && !data">Loading…</p>
@@ -133,6 +143,7 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import { ref, reactive, onMounted } from 'vue'
 import { rewardsAdminApi, type RewardRuleRow, type RewardRulesPayload, type RewardSettingsPayload } from '@/api'
 import { formatApiError } from '@/utils/formatApiError'

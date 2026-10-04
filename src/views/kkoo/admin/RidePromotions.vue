@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Delivery fee discounts"
+      what="Cuts the delivery or ride fee, the same idea as a cheaper Bolt trip. Buyers and drivers see a short code."
+      :steps="[
+        'Tap Create ride promotion.',
+        'Set the code, percent or fixed amount, and the dates.',
+        'Save. Use Edit on the row if the amount or dates change.',
+      ]"
+      actions="Create adds a code. Edit updates it. There is no separate delete — turn it inactive if you want it to stop."
+    />
     <b-card title="Delivery fee discounts">
       <p class="text-muted">Codes that cut the delivery / ride fee. Keep the name short so drivers and buyers understand it.</p>
       <b-alert v-if="endpointUnavailable" variant="info" show class="mb-3">
@@ -39,6 +49,7 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { ref, reactive, onMounted } from 'vue'
 import { promotionsAdminApi } from '@/api'

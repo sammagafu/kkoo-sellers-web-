@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Seller help tour"
+      what="The first-time tour shop owners see in the seller app. Each box is one screen. A video link makes that step clearer."
+      :steps="[
+        'Find the screen you want to explain.',
+        'Paste a YouTube or video link. Leave it blank to keep the written tip only.',
+        'Tap Save videos. New sellers see it the next time they open that screen.',
+      ]"
+      actions="This page is edit-and-save. There is nothing to delete — a blank link turns the video off."
+    />
     <b-card title="Seller how-to tour videos">
       <p class="text-muted small mb-3">
         First-time merchants see a guided tour with spotlights and tooltips
@@ -42,6 +52,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import {
   getAdminSiteExperience,
   patchSellerHelpTour,

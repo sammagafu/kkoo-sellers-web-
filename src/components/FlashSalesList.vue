@@ -3,8 +3,7 @@
     <div class="header-section mb-4">
       <h2 class="mb-2">Flash Sales</h2>
       <p class="text-muted mb-0">
-        Fiber API: <code>GET/POST/PATCH/DELETE /admin/flash-sales/</code> — buyers see
-        <code>GET /flash-sales/</code>
+        Fiber keeps these on <code>/admin/flash-sales/</code>. Buyers only see the ones that are live.
       </p>
     </div>
 

@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Push campaigns"
+      what="The message people get in the app. Write it the way you would text someone on WhatsApp: one offer, one action."
+      :steps="[
+        'Tap Create campaign and write the offer.',
+        'Pick who should see it and when.',
+        'Send a test to yourself, then Send for real. Edit or Delete from the list.',
+      ]"
+      actions="Send delivers the message. Edit changes the text. Delete removes the campaign."
+    />
     <b-card>
       <div class="d-flex flex-wrap align-items-start gap-3 mb-3">
         <div class="me-auto">
@@ -355,6 +365,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import {
   campaignsAdminApi,

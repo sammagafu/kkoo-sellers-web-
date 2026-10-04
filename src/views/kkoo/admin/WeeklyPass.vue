@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Weekly pass"
+      what="A week of small tasks so people open the app again. They see the tasks; you set the prize and the dates."
+      :steps="[
+        'Tap Create weekly pass and give it a title and dates.',
+        'Open Tasks on that row and add what they should do.',
+        'Edit if the dates change. Deactivate when the week is over.',
+      ]"
+      actions="Create adds a pass. Edit changes it. Tasks are the checklist. Deactivate turns it off without deleting the history."
+    />
     <b-card title="Weekly Pass (Admin)">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <p class="text-muted mb-0 me-auto">Create weekly passes that increase user engagement.</p>
@@ -123,6 +133,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { weeklyPassApi } from '@/api'
 import { formatApiError } from '@/utils/formatApiError'

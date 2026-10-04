@@ -1,21 +1,37 @@
 <template>
   <VerticalLayout>
     <b-card title="Wholesale Tiers">
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <p class="text-muted mb-0 me-auto">Create, edit and delete wholesale tiers (product, min quantity, unit price).</p>
-        <b-form-input v-model="search" placeholder="Search product/price..." class="w-auto" style="max-width: 180px;" />
-        <b-button variant="outline-secondary" size="sm" @click="exportCsv">Export CSV</b-button>
-        <b-button variant="outline-secondary" size="sm" @click="downloadTemplate">CSV template</b-button>
-        <b-button variant="outline-primary" size="sm" @click="triggerImportInput">Import CSV</b-button>
+      <div class="wholesale-how mb-3">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+          <strong>How wholesale works</strong>
+          <b-button variant="outline-secondary" size="sm" class="kkoo-word-btn" @click="showHow = !showHow">
+            {{ showHow ? 'Hide' : 'How it works' }}
+          </b-button>
+        </div>
+        <p class="text-muted mb-2">
+          A price tier is a bulk price for one product. A buyer who orders at least that many pays that price for each piece.
+        </p>
+        <ol v-if="showHow" class="mb-0">
+          <li>Choose a product you already sell.</li>
+          <li>Set the smallest quantity that gets this price. Example: 10.</li>
+          <li>Set the price for each piece. Example: TZS 8,000 instead of the normal price.</li>
+          <li>Add another tier if 50 or more should cost even less.</li>
+        </ol>
+      </div>
+      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mb-3">
+        <b-form-input v-model="search" placeholder="Search product or price" class="w-auto" style="max-width: 180px;" />
+        <b-button variant="outline-secondary" size="sm" class="kkoo-word-btn" @click="exportCsv">Export CSV</b-button>
+        <b-button variant="outline-secondary" size="sm" class="kkoo-word-btn" @click="downloadTemplate">CSV template</b-button>
+        <b-button variant="outline-primary" size="sm" class="kkoo-word-btn" @click="triggerImportInput">Import CSV</b-button>
         <input ref="importInputRef" type="file" accept=".csv" class="d-none" @change="onImportFile" />
-        <b-button variant="primary" @click="openCreate">Add tier</b-button>
+        <b-button variant="primary" class="kkoo-word-btn" @click="openCreate">Add a price tier</b-button>
       </div>
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="importResult" class="text-info small">{{ importResult }}</p>
       <b-table v-if="displayItems.length" :items="displayItems" :fields="fields" striped responsive>
         <template #cell(actions)="data">
-          <b-button size="sm" variant="outline-primary" class="me-1" @click="openEdit(data.item)">Edit</b-button>
-          <b-button size="sm" variant="outline-danger" @click="confirmDelete(data.item)">Delete</b-button>
+          <b-button size="sm" variant="outline-primary" class="kkoo-word-btn me-1" @click="openEdit(data.item)">Edit</b-button>
+          <b-button size="sm" variant="outline-danger" class="kkoo-word-btn" @click="confirmDelete(data.item)">Delete</b-button>
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
@@ -59,6 +75,7 @@ const loading = ref(false)
 const error = ref('')
 const importResult = ref('')
 const search = ref('')
+const showHow = ref(true)
 const showModal = ref(false)
 const editId = ref<number | null>(null)
 const form = ref({ product: 0, min_quantity: 1, unit_price: '0' })
@@ -213,3 +230,12 @@ async function onImportFile(ev: Event) {
   }
 }
 </script>
+
+<style scoped>
+.kkoo-word-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+</style>

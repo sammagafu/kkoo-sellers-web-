@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Discount promos"
+      what="A price cut at checkout. Buyers see the percent off when they pay — like a shop writing “20% off” on WhatsApp."
+      :steps="[
+        'Tap Create discount (or Create code / Create bundle on the other tabs).',
+        'Name it, set the percent, and pick start and end.',
+        'Save. The row stays in the list so you can edit or delete it later.',
+      ]"
+      actions="View opens the full record. Edit changes it. Delete removes it. Expired deals stay in the list so you can copy the idea."
+    />
     <b-card title="Discount promotions">
       <b-tabs v-model="activeTab" content-class="pt-3">
         <b-tab title="Discounts">
@@ -172,6 +182,7 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'

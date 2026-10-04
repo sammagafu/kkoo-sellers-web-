@@ -93,6 +93,12 @@ const adminMenu: MenuItemType[] = [
     label: 'Growth',
     children: [
       {
+        key: 'admin-growth-home',
+        label: 'Start here',
+        route: { name: 'admin.growth' },
+        parentKey: 'admin-hub-growth',
+      },
+      {
         key: 'admin-hub-growth-marketing',
         label: 'Marketing',
         parentKey: 'admin-hub-growth',
@@ -149,6 +155,7 @@ const adminMenu: MenuItemType[] = [
           { key: 'admin-crm-businesses', label: 'Businesses', route: { name: 'admin.crm.businesses' }, parentKey: 'admin-hub-crm-ops' },
           { key: 'admin-crm-customers', label: 'Customers', route: { name: 'admin.crm.customers' }, parentKey: 'admin-hub-crm-ops' },
           { key: 'admin-crm-invoices', label: 'Invoices', route: { name: 'admin.crm.invoices' }, parentKey: 'admin-hub-crm-ops' },
+          { key: 'admin-crm-recurring', label: 'Repeat billing', route: { name: 'admin.crm.recurring' }, parentKey: 'admin-hub-crm-ops' },
           { key: 'admin-crm-debts', label: 'Debts (Deni)', route: { name: 'admin.crm.debts' }, parentKey: 'admin-hub-crm-ops' },
         ],
       },

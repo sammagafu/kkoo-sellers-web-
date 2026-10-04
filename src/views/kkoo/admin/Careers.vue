@@ -1,93 +1,24 @@
 <template>
   <VerticalLayout>
-    <b-card title="Temp jobs & labour" class="mb-4">
-      <p class="text-muted mb-3">
-        Manage temporary labour postings (cleaning, helpers, short jobs). Buyers apply on the Careers page.
-        Rate types: <strong>per task</strong>, <strong>per job</strong>, or <strong>per hour</strong>.
-        Platform jobs leave seller empty; seller-owned jobs appear under that merchant in biz-web.
-      </p>
-      <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
-      <b-alert v-if="success" variant="success" dismissible show @dismissed="success = ''">{{ success }}</b-alert>
-      <div class="d-flex flex-wrap gap-2">
+    <GrowthGuide
+      title="Temp jobs"
+      what="Short jobs people can apply for — cleaning, helpers, a few hours of work. They see the post on Careers."
+      :steps="[
+        'Tap Post a job. Title, pay, and place are enough.',
+        'Publish. It shows on Careers.',
+        'Edit, or tap Close when the work is done.',
+      ]"
+      actions="Post creates the job. Edit updates it. Change the status to close applications."
+    />
+    <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
+    <b-alert v-if="success" variant="success" dismissible show @dismissed="success = ''">{{ success }}</b-alert>
+
+    <b-card title="Jobs" class="mb-4">
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <b-button variant="primary" @click="openCreate">Post a job</b-button>
         <b-form-select v-model="statusFilter" :options="statusFilterOptions" style="max-width: 12rem" @change="load" />
         <b-button variant="outline-secondary" :disabled="loading" @click="load">Refresh</b-button>
       </div>
-    </b-card>
-
-    <b-card :title="editingUuid ? 'Edit job' : 'Post a job'" class="mb-4">
-      <b-row class="g-3">
-        <b-col md="6">
-          <b-form-group label="Title"><b-form-input v-model="form.title" required placeholder="Home cleaning — half day" /></b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Department"><b-form-input v-model="form.department" placeholder="Cleaning" /></b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Rate type">
-            <b-form-select v-model="form.employment_type" :options="rateOptions" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Rate amount (TZS)">
-            <b-form-input v-model.number="form.rate_amount" type="number" min="0" step="500" placeholder="25000" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Earn min (TZS)">
-            <b-form-input v-model.number="form.earning_potential_min" type="number" min="0" step="1000" placeholder="50000" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Earn max / up to (TZS)">
-            <b-form-input v-model.number="form.earning_potential_max" type="number" min="0" step="1000" placeholder="120000" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Earning period">
-            <b-form-select v-model="form.earning_period" :options="periodOptions" />
-          </b-form-group>
-        </b-col>
-        <b-col md="6">
-          <b-form-group label="Location label">
-            <b-form-input v-model="form.location" placeholder="Dar es Salaam · Kinondoni" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Latitude (geotag)">
-            <b-form-input v-model.number="form.latitude" type="number" step="0.0001" placeholder="-6.7869" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Longitude (geotag)">
-            <b-form-input v-model.number="form.longitude" type="number" step="0.0001" placeholder="39.2695" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Deadline (optional)">
-            <b-form-input v-model="form.deadline_local" type="datetime-local" />
-          </b-form-group>
-        </b-col>
-        <b-col md="3">
-          <b-form-group label="Status">
-            <b-form-select v-model="form.status" :options="statusOptions" />
-          </b-form-group>
-        </b-col>
-        <b-col cols="12">
-          <b-form-group label="Description"><b-form-textarea v-model="form.description" rows="3" /></b-form-group>
-        </b-col>
-        <b-col cols="12">
-          <b-form-group label="Requirements"><b-form-textarea v-model="form.requirements" rows="2" placeholder="One requirement per line" /></b-form-group>
-        </b-col>
-      </b-row>
-      <div class="d-flex flex-wrap gap-2 mt-2">
-        <b-button variant="primary" :disabled="saving || !form.title.trim()" @click="save">
-          {{ saving ? 'Saving…' : editingUuid ? 'Update job' : 'Create job' }}
-        </b-button>
-        <b-button v-if="editingUuid" variant="outline-secondary" @click="resetForm">Cancel edit</b-button>
-      </div>
-    </b-card>
-
-    <b-card title="All jobs" class="mb-4">
       <p v-if="loading" class="text-muted">Loading…</p>
       <b-table v-else :items="postings" :fields="fields" small responsive hover>
         <template #cell(employment_type)="data">
@@ -122,8 +53,96 @@
           </div>
         </template>
       </b-table>
-      <p v-if="!loading && !postings.length" class="text-muted mb-0">No jobs yet — create one above.</p>
+      <p v-if="!loading && !postings.length" class="text-muted mb-0">No jobs yet. Tap Post a job.</p>
     </b-card>
+
+    <b-modal
+      v-model="showJobForm"
+      :title="editingUuid ? 'Edit job' : 'Post a job'"
+      size="lg"
+      hide-footer
+    >
+      <p class="text-muted small">People see this on Careers. Title, pay, and place are enough to publish.</p>
+      <b-form-group label="Job title">
+        <b-form-input v-model="form.title" placeholder="Home cleaning — half day" />
+      </b-form-group>
+      <b-row class="g-2">
+        <b-col md="5">
+          <b-form-group label="Pay (TZS)">
+            <b-form-input v-model.number="form.rate_amount" type="number" min="0" step="500" placeholder="25000" />
+          </b-form-group>
+        </b-col>
+        <b-col md="7">
+          <b-form-group label="Paid">
+            <b-form-select v-model="form.employment_type" :options="simpleRateOptions" />
+          </b-form-group>
+        </b-col>
+      </b-row>
+      <b-form-group label="Where">
+        <b-form-input v-model="form.location" placeholder="Kinondoni, Dar es Salaam" />
+      </b-form-group>
+      <b-form-group label="What they will do">
+        <b-form-textarea v-model="form.description" rows="3" placeholder="Half day. Bring your own supplies." />
+      </b-form-group>
+
+      <button type="button" class="btn btn-link btn-sm px-0 mb-2" @click="showJobMore = !showJobMore">
+        {{ showJobMore ? 'Hide extra details' : 'Add deadline, map pin, or requirements' }}
+      </button>
+      <div v-if="showJobMore">
+        <b-row class="g-2">
+          <b-col md="6">
+            <b-form-group label="Type of work">
+              <b-form-input v-model="form.department" placeholder="Cleaning" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="Show as">
+              <b-form-select v-model="form.status" :options="statusOptions" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="Apply by">
+              <b-form-input v-model="form.deadline_local" type="datetime-local" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="Typical earnings shown as">
+              <b-form-select v-model="form.earning_period" :options="periodOptions" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="From (TZS)">
+              <b-form-input v-model.number="form.earning_potential_min" type="number" min="0" step="1000" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="Up to (TZS)">
+              <b-form-input v-model.number="form.earning_potential_max" type="number" min="0" step="1000" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="Map latitude">
+              <b-form-input v-model.number="form.latitude" type="number" step="0.0001" placeholder="Optional" />
+            </b-form-group>
+          </b-col>
+          <b-col md="6">
+            <b-form-group label="Map longitude">
+              <b-form-input v-model.number="form.longitude" type="number" step="0.0001" placeholder="Optional" />
+            </b-form-group>
+          </b-col>
+        </b-row>
+        <b-form-group label="Requirements (one per line)">
+          <b-form-textarea v-model="form.requirements" rows="2" />
+        </b-form-group>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <b-button variant="primary" :disabled="saving || !form.title.trim()" @click="save">
+          {{ saving ? 'Saving…' : editingUuid ? 'Save changes' : 'Publish job' }}
+        </b-button>
+        <b-button variant="outline-secondary" @click="showJobForm = false">Cancel</b-button>
+      </div>
+    </b-modal>
 
     <b-card title="Applications">
       <b-button size="sm" variant="outline-secondary" class="mb-3" :disabled="appsLoading" @click="loadApps">Refresh applications</b-button>
@@ -144,8 +163,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import {
   careersAdminApi,
   type CareerApplicationRow,
@@ -162,6 +182,8 @@ const postings = ref<CareerPostingRow[]>([])
 const applications = ref<CareerApplicationRow[]>([])
 const statusFilter = ref('')
 const editingUuid = ref('')
+const showJobForm = ref(false)
+const showJobMore = ref(false)
 
 const rateOptions = [
   { value: 'per-task', text: 'Per task' },
@@ -232,6 +254,18 @@ const form = reactive({
   status: 'published',
 })
 
+const simpleRateOptions = computed(() => {
+  const main = rateOptions.filter((o) => ['per-task', 'per-job', 'per-hour'].includes(o.value))
+  if (main.some((o) => o.value === form.employment_type)) return main
+  return rateOptions
+})
+
+function openCreate() {
+  resetForm()
+  showJobMore.value = false
+  showJobForm.value = true
+}
+
 function rateLabel(value?: string) {
   return rateOptions.find((o) => o.value === value)?.text ?? value ?? '—'
 }
@@ -277,6 +311,8 @@ function resetForm() {
 }
 
 function startEdit(row: CareerPostingRow) {
+  showJobMore.value = true
+  showJobForm.value = true
   editingUuid.value = row.uuid || row.slug || String(row.id)
   form.title = row.title
   form.description = row.description || ''
@@ -356,6 +392,7 @@ async function save() {
       success.value = 'Job created.'
     }
     resetForm()
+    showJobForm.value = false
     await load()
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Failed to save job')

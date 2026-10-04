@@ -6,6 +6,7 @@
         <b-form-select v-model="paymentFilter" :options="paymentOptions" class="w-auto" @change="applyFilter" />
         <b-button variant="outline-secondary" size="sm" @click="load">Refresh</b-button>
         <b-button variant="primary" size="sm" :to="{ name: 'admin.crm.invoices.create' }">Create invoice</b-button>
+        <b-button variant="outline-primary" size="sm" :to="{ name: 'admin.crm.recurring' }">Repeat billing</b-button>
       </div>
       <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
       <b-table v-if="items.length" :items="items" :fields="fields" striped responsive>

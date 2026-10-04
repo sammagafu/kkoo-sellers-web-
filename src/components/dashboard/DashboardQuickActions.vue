@@ -195,21 +195,21 @@ const panelTitleId = `${props.panelId}-title`
 
 .qa-panel__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
   gap: 0.75rem;
 }
 
 @media (min-width: 992px) {
   .qa-panel__grid {
-    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   }
 }
 
 .qa-tile {
   position: relative;
   display: flex;
-  min-height: 6.75rem;
-  padding: 0.95rem 0.85rem;
+  min-height: 3.35rem;
+  padding: 0.45rem 0.65rem;
   border-radius: 1rem;
   text-decoration: none;
   color: inherit;

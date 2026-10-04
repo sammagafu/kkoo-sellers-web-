@@ -1,9 +1,17 @@
 <template>
   <VerticalLayout>
-    <b-card title="Users">
+    <b-card>
+      <div class="mb-3">
+        <h1 class="h4 mb-1">People</h1>
+        <p class="text-muted mb-2">Search a person, then turn their account on, pause it, or block it.</p>
+        <ol class="small text-muted ps-3 mb-0">
+          <li>Search by name or phone.</li>
+          <li>Open them to change their name, shop, or admin access.</li>
+          <li>Use Account on the row for on, pause, or block.</li>
+        </ol>
+      </div>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <p class="text-muted mb-0 me-auto">Find people, turn accounts on or off, or block misuse.</p>
-        <b-form-input v-model="search" placeholder="Search name or phone…" class="w-auto" style="max-width: 180px;" @input="debouncedLoad" />
+        <b-form-input v-model="search" placeholder="Search name or phone…" class="flex-grow-1" style="max-width: 280px;" @input="debouncedLoad" />
         <b-form-select v-model="filterStatus" :options="statusOptions" class="w-auto" @change="onFilterChange" />
         <b-form-select v-model="filterIsSeller" :options="sellerOptions" class="w-auto" @change="onFilterChange" />
         <b-dropdown variant="outline-secondary" size="sm" text="More" menu-class="shadow-sm">
@@ -51,21 +59,28 @@
         selectable
         v-model:selectedItems="selected"
       >
-        <template #cell(id)="data">
-          <router-link :to="{ name: 'admin.users.detail', params: { id: String(data.item.id) } }" class="text-primary text-decoration-none fw-medium">{{ data.item.id }}</router-link>
-        </template>
-        <template #cell(full_name)="data">
-          <router-link :to="{ name: 'admin.users.detail', params: { id: String(data.item.id) } }" class="text-primary text-decoration-none">{{ userDisplayName(data.item) }}</router-link>
+        <template #cell(person)="data">
+          <router-link :to="{ name: 'admin.users.detail', params: { id: String(data.item.id) } }" class="fw-semibold text-decoration-none">
+            {{ userDisplayName(data.item) }}
+          </router-link>
+          <div class="small text-muted">{{ data.item.phone_number || 'No phone' }}<span v-if="data.item.email"> · {{ data.item.email }}</span></div>
         </template>
         <template #cell(roles_display)="data">
-          <span class="text-nowrap">{{ rolesDisplay(data.item) }}</span>
+          {{ rolesDisplay(data.item) }}
+        </template>
+        <template #cell(account_status)="data">
+          <b-badge :variant="statusVariant(data.item.account_status)">{{ statusLabel(data.item.account_status) }}</b-badge>
         </template>
         <template #cell(actions)="data">
-          <b-button size="sm" variant="outline-primary" class="me-1" :to="{ name: 'admin.users.detail', params: { id: String(data.item.id) } }">Open</b-button>
-          <b-button v-if="data.item.account_status !== 'active'" size="sm" variant="outline-success" class="me-1" @click="action(data.item, 'activate')">Turn on</b-button>
-          <b-button v-if="data.item.account_status !== 'suspended'" size="sm" variant="outline-warning" class="me-1" @click="openActionModal(data.item, 'suspend')">Pause</b-button>
-          <b-button v-if="data.item.account_status !== 'archived'" size="sm" variant="outline-secondary" class="me-1" @click="archiveUser(data.item)">Archive</b-button>
-          <b-button v-if="data.item.account_status !== 'banned'" size="sm" variant="outline-danger" @click="openActionModal(data.item, 'ban')">Block</b-button>
+          <div class="d-flex flex-wrap gap-1">
+            <b-button size="sm" variant="primary" :to="{ name: 'admin.users.detail', params: { id: String(data.item.id) } }">Open</b-button>
+            <b-dropdown size="sm" variant="outline-secondary" text="Account" no-caret>
+              <b-dropdown-item v-if="data.item.account_status !== 'active'" @click="action(data.item, 'activate')">Turn on</b-dropdown-item>
+              <b-dropdown-item v-if="data.item.account_status !== 'suspended'" @click="openActionModal(data.item, 'suspend')">Pause</b-dropdown-item>
+              <b-dropdown-item v-if="data.item.account_status !== 'banned'" @click="openActionModal(data.item, 'ban')">Block</b-dropdown-item>
+              <b-dropdown-item v-if="data.item.account_status !== 'archived'" @click="archiveUser(data.item)">Archive</b-dropdown-item>
+            </b-dropdown>
+          </div>
         </template>
       </b-table>
       <p v-else-if="loading">Loading…</p>
@@ -167,15 +182,26 @@ const sellerOptions = [
 ]
 
 const fields = [
-  { key: 'id', label: 'ID' },
-  { key: 'phone_number', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'full_name', label: 'Name' },
-  { key: 'roles_display', label: 'Roles' },
-  { key: 'account_status', label: 'Status' },
-  { key: 'is_seller', label: 'Seller' },
-  { key: 'actions', label: 'Actions' },
+  { key: 'person', label: 'Person' },
+  { key: 'roles_display', label: 'What they do' },
+  { key: 'account_status', label: 'Account' },
+  { key: 'actions', label: '' },
 ]
+
+function statusLabel(status?: string) {
+  if (status === 'active') return 'On'
+  if (status === 'suspended') return 'Paused'
+  if (status === 'banned') return 'Blocked'
+  if (status === 'archived') return 'Archived'
+  return status || '—'
+}
+
+function statusVariant(status?: string) {
+  if (status === 'active') return 'success'
+  if (status === 'suspended') return 'warning'
+  if (status === 'banned') return 'danger'
+  return 'secondary'
+}
 
 const csvColumns = [
   { key: 'id', label: 'ID' },
@@ -203,22 +229,22 @@ function rolesDisplay(u: UserRow): string {
     parts.push(label)
   }
   if (u.is_seller) add('Seller')
-  if (u.is_staff) add('Staff')
-  if (u.is_superuser) add('Superuser')
+  if (u.is_staff) add('Admin')
+  if (u.is_superuser) add('Full admin')
   const roles = u.roles
   if (Array.isArray(roles) && roles.length) {
     for (const r of roles) {
       const s = String(r).toLowerCase()
       if (s === 'seller') add('Seller')
-      else if (s === 'staff') add('Staff')
-      else if (s === 'admin' || s === 'superuser' || s === 'all') add('Superuser')
+      else if (s === 'staff') add('Admin')
+      else if (s === 'admin' || s === 'superuser' || s === 'all') add('Full admin')
       else if (s === 'buyer') add('Buyer')
       else if (s === 'rider') add('Rider')
       else if (r) add(String(r))
     }
   }
   if (parts.length === 0) return '—'
-  const order = ['Seller', 'Staff', 'Superuser', 'Rider', 'Buyer']
+  const order = ['Seller', 'Admin', 'Full admin', 'Rider', 'Buyer']
   const ordered = order.filter((l) => parts.includes(l))
   const rest = parts.filter((p) => !order.includes(p))
   return [...ordered, ...rest].join(', ')
@@ -394,15 +420,15 @@ async function runBulkSuspendBan() {
     error.value = `${failed} of ${ids.length} action(s) failed.`
     toastError(error.value)
   } else {
-    toastSuccess(type === 'ban' ? 'Selected users banned' : 'Selected users suspended')
+    toastSuccess(type === 'ban' ? 'Selected people blocked' : 'Selected people paused')
   }
 }
 
 async function bulkActivateSelected() {
   if (!selected.value.length) return
   const ok = await confirmDestructiveAction({
-    title: `Activate ${selected.value.length} user(s)?`,
-    text: 'Account status will be set to active for each selected user.',
+    title: `Turn on ${selected.value.length} people?`,
+    text: 'Each selected account will be able to sign in again.',
   })
   if (!ok) return
   const ids = selected.value.map((u) => u.id)
@@ -421,7 +447,7 @@ async function bulkActivateSelected() {
     error.value = `${failed} of ${ids.length} activate(s) failed.`
     toastError(error.value)
   } else {
-    toastSuccess('Selected users activated')
+    toastSuccess('Selected people turned on')
   }
 }
 
@@ -452,7 +478,7 @@ async function runAction() {
     actionModalShow.value = false
     clearActionModal()
     await load()
-    toastSuccess(type === 'ban' ? 'User banned' : 'User suspended')
+    toastSuccess(type === 'ban' ? 'Account blocked' : 'Account paused')
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Action failed')
     toastError(error.value)
@@ -463,7 +489,7 @@ async function action(item: UserRow, actionType: 'ban' | 'suspend' | 'activate')
   try {
     await usersAdminApi.userAction(item.id, { action: actionType })
     await load()
-    toastSuccess(actionType === 'activate' ? 'User activated' : actionType === 'ban' ? 'User banned' : 'User suspended')
+    toastSuccess(actionType === 'activate' ? 'Account turned on' : actionType === 'ban' ? 'Account blocked' : 'Account paused')
   } catch (e: unknown) {
     error.value = formatApiError(e, 'Action failed')
     toastError(error.value)
@@ -472,8 +498,8 @@ async function action(item: UserRow, actionType: 'ban' | 'suspend' | 'activate')
 
 async function archiveUser(item: UserRow) {
   const ok = await confirmDestructiveAction({
-    title: `Archive user #${item.id}?`,
-    text: 'Account will be archived and public store handles released. Reversible via activate/restore.',
+    title: `Archive ${userDisplayName(item)}?`,
+    text: 'They cannot sign in, and their public shop link is released. Turn the account on later to restore it.',
   })
   if (!ok) return
   try {

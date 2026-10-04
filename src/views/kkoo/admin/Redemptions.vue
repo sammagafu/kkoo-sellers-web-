@@ -1,5 +1,15 @@
 <template>
   <VerticalLayout>
+    <GrowthGuide
+      title="Loyalty redemptions"
+      what="Someone spent their points and is waiting. You decide yes, no, or done — like approving a payment someone sent you."
+      :steps="[
+        'Open a pending row.',
+        'Approve if the request is fine, or Reject if it is not.',
+        'When the reward has been given, tap Complete.',
+      ]"
+      actions="Approve and Reject are for new requests. Complete is for ones you already approved. You do not create these — buyers do."
+    />
     <b-row>
       <b-col>
         <b-card title="Redemptions">
@@ -35,6 +45,7 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
+import GrowthGuide from '@/components/kkoo/GrowthGuide.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { ref, computed, watch } from 'vue'
 import { redemptionsAdminApi } from '@/api'

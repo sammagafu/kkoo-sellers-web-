@@ -25,21 +25,22 @@ defineProps<{
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.55rem;
   width: 100%;
   height: 100%;
-  text-align: center;
+  text-align: left;
 }
 
 .qa-tile__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.95rem;
-  height: 2.95rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  flex-shrink: 0;
   border-radius: 0.85rem;
   border: 1px solid transparent;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
@@ -47,8 +48,8 @@ defineProps<{
 }
 
 .qa-tile__icon :deep(svg) {
-  width: 1.45rem;
-  height: 1.45rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 :global(.qa-tile:hover) .qa-tile__icon,

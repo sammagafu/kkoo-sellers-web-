@@ -6,46 +6,78 @@
     </b-card>
     <template v-else-if="user">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <b-button variant="outline-secondary" size="sm" :to="{ name: 'admin.users' }">Back to Users</b-button>
-        <b-button variant="outline-primary" size="sm" @click="openEditModal">Edit account</b-button>
-        <b-button variant="outline-primary" size="sm" @click="openRolesModal">Platform roles</b-button>
-        <router-link
-          v-if="sellerId"
-          :to="{ name: 'admin.sellers.detail', params: { id: String(sellerId) } }"
-          class="btn btn-outline-secondary btn-sm"
-        >
-          View seller page →
-        </router-link>
+        <b-button variant="outline-secondary" size="sm" :to="{ name: 'admin.users' }">← People</b-button>
       </div>
 
-      <b-card title="User profile" class="mb-3">
-        <p class="text-muted small mb-3">Account and profile details for this user.</p>
-        <b-row>
-          <b-col md="6">
-            <b-list-group flush>
-              <b-list-group-item><strong>User ID</strong> {{ user.id ?? '—' }}</b-list-group-item>
-              <b-list-group-item><strong>Name</strong> {{ userDisplayName }}</b-list-group-item>
-              <b-list-group-item v-if="user.first_name != null || user.last_name != null"><strong>First name</strong> {{ user.first_name ?? '—' }}</b-list-group-item>
-              <b-list-group-item v-if="user.first_name != null || user.last_name != null"><strong>Last name</strong> {{ user.last_name ?? '—' }}</b-list-group-item>
-              <b-list-group-item><strong>Phone</strong> {{ user.phone_number ?? '—' }}</b-list-group-item>
-              <b-list-group-item><strong>Email</strong> {{ user.email ?? '—' }}</b-list-group-item>
-              <b-list-group-item v-if="user.username"><strong>Username</strong> {{ user.username }}</b-list-group-item>
-              <b-list-group-item v-if="user.date_of_birth != null"><strong>Date of birth</strong> {{ formatProfileValue(user.date_of_birth) }}</b-list-group-item>
-              <b-list-group-item v-if="user.language_preference"><strong>Language</strong> {{ user.language_preference }}</b-list-group-item>
-              <b-list-group-item v-if="user.referral_code"><strong>Referral code</strong> {{ user.referral_code }}</b-list-group-item>
-            </b-list-group>
-          </b-col>
-          <b-col md="6">
-            <b-list-group flush>
-              <b-list-group-item><strong>Account status</strong> <b-badge :variant="statusVariant">{{ user.account_status ?? '—' }}</b-badge></b-list-group-item>
-              <b-list-group-item><strong>Roles</strong> {{ rolesDisplay }}</b-list-group-item>
-              <b-list-group-item><strong>Created</strong> {{ formatDate(user.created_at) }}</b-list-group-item>
-              <b-list-group-item v-if="user.last_login"><strong>Last login</strong> {{ formatDate(user.last_login) }}</b-list-group-item>
-            </b-list-group>
-          </b-col>
-        </b-row>
+      <b-card class="mb-3">
+        <div class="d-flex flex-wrap align-items-start gap-2 mb-3">
+          <div class="me-auto">
+            <h1 class="h4 mb-1">{{ userDisplayName }}</h1>
+            <p class="text-muted mb-1">{{ user.phone_number || 'No phone' }}<span v-if="user.email"> · {{ user.email }}</span></p>
+            <b-badge :variant="statusVariant" class="me-1">{{ statusLabel }}</b-badge>
+            <span class="text-muted small">{{ rolesDisplay }}</span>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <b-button v-if="user.account_status !== 'active'" size="sm" variant="success" @click="setAccount('activate')">Turn on</b-button>
+          <b-button v-if="user.account_status !== 'suspended'" size="sm" variant="outline-warning" @click="openAccountModal('suspend')">Pause</b-button>
+          <b-button v-if="user.account_status !== 'banned'" size="sm" variant="outline-danger" @click="openAccountModal('ban')">Block</b-button>
+          <b-button size="sm" variant="outline-primary" @click="openEditModal">Edit name and shop</b-button>
+          <b-button size="sm" variant="outline-secondary" @click="openRolesModal">Admin access</b-button>
+          <router-link
+            v-if="sellerId"
+            :to="{ name: 'admin.sellers.detail', params: { id: String(sellerId) } }"
+            class="btn btn-outline-secondary btn-sm"
+          >
+            Shop page
+          </router-link>
+        </div>
+        <b-alert v-if="error" variant="danger" show class="mt-3 mb-0">{{ error }}</b-alert>
+        <p v-if="user.last_login" class="small text-muted mb-0 mt-3">Last sign-in {{ formatDate(user.last_login) }}</p>
       </b-card>
 
+      <b-card title="Account" class="mb-3">
+        <b-list-group flush>
+          <b-list-group-item><strong>User ID</strong> {{ user.id }}</b-list-group-item>
+          <b-list-group-item><strong>Phone</strong> {{ user.phone_number || '—' }}</b-list-group-item>
+          <b-list-group-item><strong>Email</strong> {{ user.email || '—' }}</b-list-group-item>
+          <b-list-group-item><strong>Verified</strong> {{ user.is_verified ? 'Yes' : 'No' }}</b-list-group-item>
+          <b-list-group-item><strong>Seller</strong> {{ user.is_seller ? 'Yes' : 'No' }}</b-list-group-item>
+          <b-list-group-item><strong>Referral code</strong> {{ user.referral_code || '—' }}</b-list-group-item>
+          <b-list-group-item><strong>CRM plan</strong> {{ user.crm_subscription_plan || '—' }}</b-list-group-item>
+          <b-list-group-item><strong>Created</strong> {{ user.created_at ? formatDate(user.created_at) : '—' }}</b-list-group-item>
+        </b-list-group>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <b-button
+            v-if="user.account_status !== 'archived'"
+            size="sm"
+            variant="outline-secondary"
+            @click="archiveThisUser"
+          >
+            Archive
+          </b-button>
+        </div>
+      </b-card>
+
+      <b-card v-if="buyerProfile" title="Buyer profile" class="mb-3">
+        <p class="text-muted small mb-3">Shopping and delivery preferences.</p>
+        <b-list-group flush>
+          <b-list-group-item v-if="buyerProfile.id != null"><strong>Buyer ID</strong> {{ buyerProfile.id }}</b-list-group-item>
+          <b-list-group-item><strong>Country</strong> {{ buyerProfile.country_code || '—' }}</b-list-group-item>
+          <b-list-group-item><strong>Currency</strong> {{ buyerProfile.currency_code || '—' }}</b-list-group-item>
+          <b-list-group-item><strong>Loyalty points</strong> {{ buyerProfile.loyalty_points_balance ?? 0 }}</b-list-group-item>
+          <b-list-group-item><strong>Wishlist</strong> {{ buyerProfile.wishlist_count ?? 0 }}</b-list-group-item>
+          <b-list-group-item><strong>Disputes</strong> {{ buyerProfile.dispute_count ?? 0 }}</b-list-group-item>
+          <b-list-group-item><strong>Refunds received</strong> {{ buyerProfile.total_refunds_received ?? 0 }}</b-list-group-item>
+          <b-list-group-item><strong>Referral code</strong> {{ user.referral_code || buyerProfile.referral_code || '—' }}</b-list-group-item>
+          <b-list-group-item v-if="buyerProfile.default_address != null"><strong>Default address</strong> {{ formatProfileValue(buyerProfile.default_address) }}</b-list-group-item>
+        </b-list-group>
+      </b-card>
+
+      <b-button size="sm" variant="link" class="px-0 mb-3" @click="showMore = !showMore">
+        {{ showMore ? 'Hide shop, rider, and extra details' : 'Set up shop, rider, or extra details' }}
+      </b-button>
+      <template v-if="showMore">
       <UserOnboardingAssist
         :user-id="id"
         :user="user"
@@ -54,23 +86,11 @@
         @updated="load"
       />
 
-      <b-card title="Platform access" class="mb-3">
-        <p class="text-muted small mb-3">
-          <strong>Staff</strong> can use the admin dashboard. <strong>Superuser</strong> can approve sensitive actions and manage superuser flags.
-          Only a signed-in superuser can assign or remove superuser on another user.
-        </p>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <b-badge :variant="user.is_staff ? 'success' : 'secondary'">Staff: {{ user.is_staff ? 'Yes' : 'No' }}</b-badge>
-          <b-badge :variant="user.is_superuser ? 'success' : 'secondary'">Superuser: {{ user.is_superuser ? 'Yes' : 'No' }}</b-badge>
-          <b-button size="sm" variant="outline-primary" class="ms-auto" @click="openRolesModal">Change platform roles</b-button>
-        </div>
-      </b-card>
-
-      <b-card v-if="user.is_seller && (sellerLoading || sellerProfile || sellerLoadError)" title="Seller profile" class="mb-3">
-        <p v-if="sellerLoading" class="text-muted mb-0">Loading seller profile…</p>
+      <b-card v-if="user.is_seller && (sellerLoading || sellerProfile || sellerLoadError)" title="Shop" class="mb-3">
+        <p v-if="sellerLoading" class="text-muted mb-0">Loading shop…</p>
         <p v-else-if="sellerLoadError" class="text-danger mb-0">{{ sellerLoadError }}</p>
         <template v-else-if="sellerProfile">
-          <p class="text-muted small mb-3">Business and store details for this seller.</p>
+          <p class="text-muted small mb-3">Name, phone, and address customers see.</p>
           <b-row>
             <b-col md="6">
               <b-list-group flush>
@@ -91,25 +111,14 @@
           </b-row>
           <p class="mb-0 mt-2">
             <b-badge :variant="sellerProfile.is_verified ? 'success' : (sellerProfile.verification_status === 'rejected' ? 'danger' : 'warning')">
-              {{ sellerProfile.is_verified ? 'Verified' : (sellerProfile.verification_status === 'rejected' ? 'Rejected' : 'Pending') }}
+              {{ sellerProfile.is_verified ? 'Can sell' : (sellerProfile.verification_status === 'rejected' ? 'Needs a fix' : 'Waiting for approval') }}
             </b-badge>
             <span v-if="sellerProfile.rejection_reason" class="text-muted ms-2">{{ sellerProfile.rejection_reason }}</span>
           </p>
         </template>
       </b-card>
-      <b-card v-else-if="user.is_seller && !sellerLoading" title="Seller profile" class="mb-3">
-        <p class="text-muted mb-0">This user is a seller. Could not load seller record (no seller ID linked).</p>
-      </b-card>
-
-      <b-card v-if="buyerProfile" title="Buyer profile" class="mb-3">
-        <p class="text-muted small mb-3">Shopping and delivery preferences.</p>
-        <b-list-group flush>
-          <b-list-group-item v-if="buyerProfile.default_address != null"><strong>Default address</strong> {{ formatProfileValue(buyerProfile.default_address) }}</b-list-group-item>
-          <b-list-group-item v-if="buyerProfile.currency_code"><strong>Currency</strong> {{ buyerProfile.currency_code }}</b-list-group-item>
-          <b-list-group-item v-if="buyerProfile.loyalty_points_balance != null"><strong>Loyalty points</strong> {{ buyerProfile.loyalty_points_balance }}</b-list-group-item>
-          <b-list-group-item v-if="buyerProfile.referral_code"><strong>Referral code</strong> {{ buyerProfile.referral_code }}</b-list-group-item>
-          <b-list-group-item v-if="buyerProfile.id != null"><strong>Buyer ID</strong> {{ buyerProfile.id }}</b-list-group-item>
-        </b-list-group>
+      <b-card v-else-if="user.is_seller && !sellerLoading" title="Shop" class="mb-3">
+        <p class="text-muted mb-0">This person runs a shop, but the shop record did not load.</p>
       </b-card>
 
       <b-card v-if="riderProfile" title="Rider profile" class="mb-3">
@@ -136,40 +145,48 @@
           </b-list-group-item>
         </b-list-group>
       </b-card>
+      </template>
 
-      <b-modal v-model="showEditModal" title="Edit user" @ok="onEditOk">
+      <b-modal v-model="showEditModal" title="Edit person" @ok="onEditOk">
         <b-alert v-if="editError" variant="danger" show>{{ editError }}</b-alert>
-        <b-form-group label="Account status">
+        <b-form-group label="First name">
+          <b-form-input v-model="editForm.first_name" />
+        </b-form-group>
+        <b-form-group label="Last name">
+          <b-form-input v-model="editForm.last_name" />
+        </b-form-group>
+        <b-form-group label="Account">
           <b-form-select v-model="editForm.account_status" :options="statusOptions" />
         </b-form-group>
-        <b-form-group label="Seller role">
-          <b-form-checkbox v-model="editForm.is_seller">Seller (can operate a storefront)</b-form-checkbox>
-        </b-form-group>
-        <p class="text-muted small mb-0">
-          To change staff or superuser, use <strong>Platform roles</strong> (separate dialog) so changes stay aligned with API rules.
-        </p>
+        <b-form-checkbox v-model="editForm.is_seller">They run a shop</b-form-checkbox>
+        <p class="text-muted small mb-0 mt-2">Admin access is changed with the Admin access button.</p>
       </b-modal>
 
-      <b-modal v-model="showRolesModal" title="Platform roles" size="lg" @ok="onRolesOk">
+      <b-modal v-model="accountModalShow" :title="accountModalTitle" @ok="onAccountOk" @hidden="accountReason = ''">
+        <p class="text-muted small">Add a short reason if you want it saved with the account.</p>
+        <b-form-textarea v-model="accountReason" rows="3" placeholder="Reason (optional)" />
+      </b-modal>
+
+      <b-modal v-model="showRolesModal" title="Admin access" size="lg" @ok="onRolesOk">
         <b-alert v-if="rolesError" variant="danger" show>{{ rolesError }}</b-alert>
         <b-alert v-if="!canManageSuperuser && user?.is_superuser" variant="warning" show>
-          This user is a superuser. Only another superuser can change or remove that access.
+          This person is a full admin. Only another full admin can change that.
         </b-alert>
         <b-alert v-if="!canManageSuperuser && !user?.is_superuser" variant="info" show>
-          You can grant or remove <strong>Staff</strong> (admin dashboard). Only a superuser can grant or remove <strong>Superuser</strong>.
+          You can let them use this admin site. Only a full admin can give or remove full admin access.
         </b-alert>
 
         <template v-if="!platformRolesReadOnly">
           <b-form-group label="Admin dashboard access">
-            <b-form-radio v-model="platformAccessLevel" class="mb-2" value="none">None — no staff tools</b-form-radio>
-            <b-form-radio v-model="platformAccessLevel" class="mb-2" value="staff">Staff — admin dashboard &amp; moderation</b-form-radio>
+            <b-form-radio v-model="platformAccessLevel" class="mb-2" value="none">No admin access</b-form-radio>
+            <b-form-radio v-model="platformAccessLevel" class="mb-2" value="staff">Admin — can use this site</b-form-radio>
             <b-form-radio v-model="platformAccessLevel" value="superuser" :disabled="!canManageSuperuser">
-              Superuser — staff plus elevated approvals (promote another superuser before demoting the last one)
+              Full admin — can also approve sensitive actions. Keep at least one full admin.
             </b-form-radio>
           </b-form-group>
         </template>
         <template v-else>
-          <p class="mb-0"><strong>Current:</strong> Superuser (locked for your account)</p>
+          <p class="mb-0"><strong>Current:</strong> Full admin. Only another full admin can change this.</p>
         </template>
       </b-modal>
     </template>
@@ -197,7 +214,7 @@ const error = ref('')
 const user = ref<Record<string, unknown> | null>(null)
 const showEditModal = ref(false)
 const showRolesModal = ref(false)
-const editForm = ref({ account_status: 'active', is_seller: false })
+const editForm = ref({ account_status: 'active', is_seller: false, first_name: '', last_name: '' })
 const editError = ref('')
 const platformAccessLevel = ref<PlatformAccessLevel>('none')
 const initialPlatformAccess = ref<PlatformAccessLevel>('none')
@@ -215,11 +232,24 @@ const platformRolesReadOnly = computed(() => {
 })
 
 const statusOptions = [
-  { value: 'active', text: 'Active' },
-  { value: 'suspended', text: 'Suspended' },
-  { value: 'banned', text: 'Banned' },
+  { value: 'active', text: 'On' },
+  { value: 'suspended', text: 'Paused' },
+  { value: 'banned', text: 'Blocked' },
   { value: 'archived', text: 'Archived' },
 ]
+const showMore = ref(false)
+const accountModalShow = ref(false)
+const accountType = ref<'ban' | 'suspend' | null>(null)
+const accountReason = ref('')
+const accountModalTitle = computed(() => (accountType.value === 'ban' ? 'Block this person' : 'Pause this person'))
+const statusLabel = computed(() => {
+  const s = String(user.value?.account_status ?? '')
+  if (s === 'active') return 'On'
+  if (s === 'suspended') return 'Paused'
+  if (s === 'banned') return 'Blocked'
+  if (s === 'archived') return 'Archived'
+  return s || '—'
+})
 
 const userDisplayName = computed(() => {
   const u = user.value
@@ -241,22 +271,22 @@ const rolesDisplay = computed(() => {
     parts.push(label)
   }
   if (u.is_seller) add('Seller')
-  if (u.is_staff) add('Staff')
-  if (u.is_superuser) add('Superuser')
+  if (u.is_staff) add('Admin')
+  if (u.is_superuser) add('Full admin')
   const roles = u.roles
   if (Array.isArray(roles) && roles.length) {
     for (const r of roles) {
       const s = String(r).toLowerCase()
       if (s === 'seller') add('Seller')
-      else if (s === 'staff') add('Staff')
-      else if (s === 'admin' || s === 'superuser' || s === 'all') add('Superuser')
+      else if (s === 'staff') add('Admin')
+      else if (s === 'admin' || s === 'superuser' || s === 'all') add('Full admin')
       else if (s === 'buyer') add('Buyer')
       else if (s === 'rider') add('Rider')
       else if (r) add(String(r))
     }
   }
   if (parts.length === 0) return '—'
-  const order = ['Seller', 'Staff', 'Superuser', 'Rider', 'Buyer']
+  const order = ['Seller', 'Admin', 'Full admin', 'Rider', 'Buyer']
   const ordered = order.filter((l) => parts.includes(l))
   const rest = parts.filter((p) => !order.includes(p))
   return [...ordered, ...rest].join(', ')
@@ -318,6 +348,8 @@ function openEditModal() {
   if (u) {
     editForm.value.account_status = (u.account_status as string) ?? 'active'
     editForm.value.is_seller = !!u.is_seller
+    editForm.value.first_name = String(u.first_name ?? '')
+    editForm.value.last_name = String(u.last_name ?? '')
   }
   showEditModal.value = true
 }
@@ -432,6 +464,8 @@ async function load() {
     user.value = (data ?? {}) as Record<string, unknown>
     editForm.value.account_status = (user.value.account_status as string) ?? 'active'
     editForm.value.is_seller = !!user.value?.is_seller
+    editForm.value.first_name = String(user.value.first_name ?? '')
+    editForm.value.last_name = String(user.value.last_name ?? '')
     syncPlatformFromUser()
     if (user.value?.is_seller) {
       await loadSellerProfile()
@@ -452,12 +486,52 @@ async function onEditOk(ev: Event) {
     await usersAdminApi.patch(id.value, {
       account_status: editForm.value.account_status,
       is_seller: editForm.value.is_seller,
+      first_name: editForm.value.first_name.trim(),
+      last_name: editForm.value.last_name.trim(),
     })
     await load()
     showEditModal.value = false
     toastSuccess('Account updated')
   } catch (e: unknown) {
     editError.value = formatApiError(e, 'Update failed')
+  }
+}
+
+function openAccountModal(type: 'ban' | 'suspend') {
+  accountType.value = type
+  accountReason.value = ''
+  accountModalShow.value = true
+}
+
+function onAccountOk(ev: Event) {
+  ev.preventDefault()
+  const type = accountType.value
+  if (!type) return
+  accountModalShow.value = false
+  void setAccount(type, accountReason.value.trim() || undefined)
+}
+
+async function archiveThisUser() {
+  if (!id.value || !user.value) return
+  error.value = ''
+  try {
+    await usersAdminApi.archive(id.value)
+    await load()
+    toastSuccess('User archived')
+  } catch (e: unknown) {
+    error.value = formatApiError(e, 'Could not archive this user')
+  }
+}
+
+async function setAccount(type: 'ban' | 'suspend' | 'activate', reason?: string) {
+  if (!id.value) return
+  error.value = ''
+  try {
+    await usersAdminApi.userAction(id.value, { action: type, reason })
+    await load()
+    toastSuccess(type === 'activate' ? 'Account turned on' : type === 'ban' ? 'Account blocked' : 'Account paused')
+  } catch (e: unknown) {
+    error.value = formatApiError(e, 'Could not update the account')
   }
 }
 
