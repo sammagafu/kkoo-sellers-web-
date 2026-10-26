@@ -449,6 +449,7 @@ onMounted(async () => {
       if (riders && typeof riders === 'object') {
         d.riders_total = riders.total
         d.riders_with_deliveries = riders.with_deliveries
+        if (d.drivers_total == null) d.drivers_total = riders.total
       }
       const logistics = raw.logistics as Record<string, unknown> | undefined
       if (logistics && typeof logistics === 'object') {

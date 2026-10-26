@@ -126,7 +126,8 @@ const payoutFields = [
 ]
 
 const driverName = computed(() => {
-  const u = (driver.value?.user ?? {}) as Record<string, unknown>
+  const row = driver.value ?? {}
+  const u = { ...row, ...((row.user ?? {}) as Record<string, unknown>) }
   const full = String(u.full_name ?? '').trim()
   if (full) return full
   const first = String(u.first_name ?? '').trim()
@@ -136,7 +137,8 @@ const driverName = computed(() => {
 })
 
 const driverPhone = computed(() => {
-  const u = (driver.value?.user ?? {}) as Record<string, unknown>
+  const row = driver.value ?? {}
+  const u = { ...row, ...((row.user ?? {}) as Record<string, unknown>) }
   return String(u.phone_number ?? '').trim() || '—'
 })
 

@@ -42,7 +42,7 @@
               >
                 <SwiperSlide v-for="(url, idx) in imageSlides" :key="idx">
                   <div class="product-detail-slide">
-                    <img :src="url" :alt="`Image ${idx + 1}`" class="product-detail-slide-img" />
+                    <KkooMediaImg :src="url" media-slot="detail" :alt="`Image ${idx + 1}`" img-class="product-detail-slide-img" />
                   </div>
                 </SwiperSlide>
                 <div class="swiper-button-next product-detail-slider-next" aria-label="Next"></div>
@@ -121,6 +121,7 @@ import VerticalLayout from '@/layouts/VerticalLayout.vue'
 import { catalogAdminApi, catalogSellerApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { productCoverUrl, productImageUrls } from '@/utils/assetUrl'
+import KkooMediaImg from '@/components/kkoo/KkooMediaImg.vue'
 import { sellerOwnsProduct } from '@/utils/catalogProductAccess'
 import {
   brandDisplayFromProduct,

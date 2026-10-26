@@ -43,11 +43,12 @@
       <p v-if="error" class="text-danger">{{ error }}</p>
       <b-table v-else-if="items.length" :items="items" :fields="fields" striped responsive>
         <template #cell(cover)="data">
-          <img
+          <KkooMediaImg
             v-if="productCoverUrl(data.item)"
-            :src="productCoverUrl(data.item) || ''"
+            :src="productCoverUrl(data.item)"
+            media-slot="thumb"
             :alt="t('catalog.coverPhoto')"
-            class="product-cover-thumb"
+            img-class="product-cover-thumb"
           />
           <span v-else class="text-muted">—</span>
         </template>
@@ -105,6 +106,7 @@ import { useCatalogListPagination } from '@/composables/useCatalogListPagination
 import { catalogSellerApi, usersAdminApi } from '@/api'
 import { exportToCsv, downloadCsvTemplate } from '@/composables/useCsv'
 import { productCoverUrl } from '@/utils/assetUrl'
+import KkooMediaImg from '@/components/kkoo/KkooMediaImg.vue'
 import { confirmDestructiveAction } from '@/utils/confirmDestructiveAction'
 import { useImportBatchProgress } from '@/composables/useImportBatchProgress'
 import { formatImportBatchSummary, runSequentialImports } from '@/utils/sequentialFileImport'

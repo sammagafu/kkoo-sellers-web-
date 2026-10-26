@@ -4,7 +4,18 @@
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <b-button variant="primary" size="sm" :to="{ name: 'admin.crm.onboarding' }">Register company</b-button>
         <b-button variant="outline-secondary" size="sm" :to="{ name: 'admin.crm.businesses' }">All businesses</b-button>
-        <span class="text-muted ms-md-2">Period:</span>
+        <span class="text-muted ms-md-2">Company:</span>
+        <b-form-select
+          v-model="businessId"
+          :options="businessOptions"
+          :disabled="!businesses.length"
+          value-field="value"
+          text-field="text"
+          size="sm"
+          class="w-auto"
+          @change="load"
+        />
+        <span class="text-muted">Period:</span>
         <b-form-select v-model="period" :options="periodOptions" value-field="value" text-field="text" size="sm" class="w-auto" @change="load" />
       </div>
       <b-alert v-if="error" variant="danger" show>{{ error }}</b-alert>
@@ -66,6 +77,10 @@
         </b-row>
         <p v-if="apiUnavailable" class="text-muted small">CRM not connected.</p>
       </template>
+      <div v-else-if="!loading && !error && !businesses.length" class="text-center py-4">
+        <p class="text-muted mb-2">No companies yet. Register one to see cash, debt, and stock.</p>
+        <b-button variant="primary" :to="{ name: 'admin.crm.onboarding' }">Register company</b-button>
+      </div>
       <div v-else-if="!loading && !error" class="text-center py-4">
         <p class="text-muted">No dashboard data</p>
         <b-button variant="outline-primary" @click="load">Retry</b-button>
@@ -76,8 +91,9 @@
 
 <script setup lang="ts">
 import VerticalLayout from '@/layouts/VerticalLayout.vue'
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { crmApi } from '@/api'
+import { formatApiError } from '@/utils/formatApiError'
 
 const periodOptions = [
   { value: 'today', text: 'Today' },
@@ -89,6 +105,13 @@ const loading = ref(false)
 const error = ref('')
 const dashboard = ref<Record<string, unknown> | null>(null)
 const apiUnavailable = ref(false)
+const businesses = ref<Array<{ id: number; name: string }>>([])
+const businessId = ref<number | null>(null)
+
+const businessOptions = computed(() => {
+  if (!businesses.value.length) return [{ value: null, text: 'No companies' }]
+  return businesses.value.map((b) => ({ value: b.id, text: b.name || `Company ${b.id}` }))
+})
 
 function formatCurrency(v: unknown): string {
   if (v == null || v === '') return '—'
@@ -97,13 +120,26 @@ function formatCurrency(v: unknown): string {
   return new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n)
 }
 
+async function loadBusinesses() {
+  const { data } = await crmApi.getBusinesses({ page_size: 100 })
+  const results = ((data as { results?: Array<{ id?: number; name?: string }> })?.results ?? [])
+    .map((b) => ({ id: Number(b.id), name: String(b.name ?? '') }))
+    .filter((b) => Number.isFinite(b.id) && b.id > 0)
+  businesses.value = results
+  if (businessId.value == null || !results.some((b) => b.id === businessId.value)) {
+    businessId.value = results[0]?.id ?? null
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = ''
   dashboard.value = null
   apiUnavailable.value = false
   try {
-    const { data } = await crmApi.getDashboard({ period: period.value })
+    if (!businesses.value.length) await loadBusinesses()
+    if (businessId.value == null) return
+    const { data } = await crmApi.getDashboard({ business_id: businessId.value, period: period.value })
     dashboard.value = (data ?? {}) as Record<string, unknown>
   } catch (e: unknown) {
     const err = e as { response?: { status?: number } }
@@ -118,7 +154,7 @@ async function load() {
         debts_overdue_count: 0,
       }
     } else {
-      error.value = (err as { message?: string }).message ?? 'Failed to load dashboard'
+      error.value = formatApiError(e, 'Failed to load dashboard')
     }
   } finally {
     loading.value = false

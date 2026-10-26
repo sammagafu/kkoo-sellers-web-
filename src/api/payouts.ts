@@ -11,7 +11,9 @@ export interface PayoutMethodOption {
 export interface PayoutMethodsSettings {
   banks: PayoutMethodOption[]
   mobile_money_providers: PayoutMethodOption[]
+  results?: PayoutMethodOption[]
   selcom_enabled: boolean
+  rail?: 'selcom'
 }
 
 export const payoutsAdminApi = {

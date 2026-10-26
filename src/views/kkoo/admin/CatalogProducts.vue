@@ -140,11 +140,12 @@
             </template>
             <template #cell(title)="data">
               <div class="catalog-product-cell">
-                <img
+                <KkooMediaImg
                   v-if="productCoverUrl(data.item)"
-                  :src="productCoverUrl(data.item) || ''"
+                  :src="productCoverUrl(data.item)"
+                  media-slot="thumb"
                   alt=""
-                  class="product-cover-thumb"
+                  img-class="product-cover-thumb"
                 />
                 <span v-else class="product-cover-thumb product-cover-thumb--empty" aria-hidden="true" />
                 <div class="catalog-product-cell__text min-w-0">
@@ -503,6 +504,7 @@ import { useRoute, type RouteLocationRaw } from 'vue-router'
 import { catalogAdminApi, usersAdminApi } from '@/api'
 import { exportToCsv, downloadCsvTemplate } from '@/composables/useCsv'
 import { productCoverUrl } from '@/utils/assetUrl'
+import KkooMediaImg from '@/components/kkoo/KkooMediaImg.vue'
 import { formatApiError } from '@/utils/formatApiError'
 import { useImportBatchProgress } from '@/composables/useImportBatchProgress'
 import {

@@ -123,7 +123,7 @@
                   </b-form-group>
                 </b-col>
                 <b-col cols="12">
-                  <b-form-group label="Cash withdrawal method" description="Choose how you want to receive payouts. Options are set by admin.">
+                  <b-form-group label="Cash withdrawal method" description="Selcom sends payouts to M-Pesa, Airtel Money, or Mixx by Yas. Bank stays available if you need it.">
                     <b-form-select
                       id="withdrawal_method"
                       v-model="payoutMethodType"
@@ -160,7 +160,7 @@
                 </template>
                 <template v-else-if="payoutMethodType === 'mobile_money'">
                   <b-col md="6">
-                    <b-form-group label="Mobile money provider" label-for="payout_provider">
+                    <b-form-group label="Network" label-for="payout_provider">
                       <b-form-select
                         id="payout_provider"
                         v-model="payoutProviderId"
@@ -179,7 +179,7 @@
                 </template>
                 <template v-else-if="payoutMethodType === 'selcom'">
                   <b-col cols="12">
-                    <p class="text-muted small mb-0">You will complete Selcom setup when requesting a payout. No extra details needed here.</p>
+                    <p class="text-muted small mb-0">Selcom is the payout rail. Choose M-Pesa, Airtel Money, or Mixx by Yas under mobile money.</p>
                   </b-col>
                 </template>
                 <b-col v-if="!availableMethodsLoaded && (form.preferred_payout_method || form.payout_account_details)" cols="12">
@@ -483,10 +483,11 @@ const logoPreview = computed(() => {
 
 const withdrawalMethodOptions = computed(() => {
   const opts: { value: 'bank' | 'mobile_money' | 'selcom'; text: string }[] = []
+  if (availableProviders.value.some((p) => p.is_available !== false)) {
+    opts.push({ value: 'mobile_money', text: 'Mobile money (via Selcom)' })
+  }
   if (availableBanks.value.some((b) => b.is_available !== false)) opts.push({ value: 'bank', text: 'Bank' })
-  if (availableProviders.value.some((p) => p.is_available !== false)) opts.push({ value: 'mobile_money', text: 'Mobile money' })
-  if (selcomEnabled.value) opts.push({ value: 'selcom', text: 'Selcom' })
-  if (opts.length === 0) opts.push({ value: 'bank', text: 'Bank' }, { value: 'mobile_money', text: 'Mobile money' }, { value: 'selcom', text: 'Selcom' })
+  if (opts.length === 0) opts.push({ value: 'mobile_money', text: 'Mobile money (via Selcom)' }, { value: 'bank', text: 'Bank' })
   return opts
 })
 const availableBanksOptions = computed(() =>
@@ -532,8 +533,9 @@ function applyProfileToForm(d: Record<string, unknown>): void {
       : d.payout_account_details != null
         ? JSON.stringify(d.payout_account_details)
         : ''
-  const method = (form.preferred_payout_method || 'bank') as 'bank' | 'mobile_money' | 'selcom'
-  if (['bank', 'mobile_money', 'selcom'].includes(method)) payoutMethodType.value = method
+  const method = form.preferred_payout_method || 'mpesa'
+  if (method === 'bank') payoutMethodType.value = 'bank'
+  else payoutMethodType.value = 'mobile_money'
   let details: Record<string, unknown> = {}
   try {
     details = form.payout_account_details ? JSON.parse(form.payout_account_details) : {}
@@ -541,7 +543,9 @@ function applyProfileToForm(d: Record<string, unknown>): void {
   payoutBankId.value = details.bank_id != null ? (details.bank_id as string | number) : null
   payoutAccountNumber.value = toString(details.account_number)
   payoutAccountName.value = toString(details.account_name)
-  payoutProviderId.value = details.provider_id != null ? (details.provider_id as string | number) : null
+  payoutProviderId.value = details.provider_id != null
+    ? (details.provider_id as string | number)
+    : (['mpesa', 'airtel', 'mixx'].includes(method) ? method : 'mpesa')
   payoutPhoneNumber.value = toString(details.phone_number)
   form.contact_phone = toString(d.contact_phone)
   form.contact_email = toString(d.contact_email)
@@ -567,7 +571,9 @@ function buildSavePayload(): Record<string, unknown> {
     tin_number: trim(form.tin_number) ?? undefined,
     business_license_number: trim(form.business_license_number) ?? undefined,
     business_license_expiry: trim(form.business_license_expiry) ?? undefined,
-    preferred_payout_method: availableMethodsLoaded.value ? (payoutMethodType.value || undefined) : (trim(form.preferred_payout_method) ?? undefined),
+    preferred_payout_method: availableMethodsLoaded.value
+      ? (payoutMethodType.value === 'bank' ? 'bank' : (String(payoutProviderId.value || 'mpesa')))
+      : (trim(form.preferred_payout_method) ?? undefined),
     contact_phone: trim(form.contact_phone) ?? undefined,
     contact_email: trim(form.contact_email) ?? undefined,
     business_address: trim(form.business_address) ?? undefined,
@@ -723,10 +729,18 @@ watch(() => form.logo_url, () => { logoPreviewError.value = false })
 async function loadAvailablePayoutMethods(): Promise<void> {
   try {
     const res = await payoutsSellerApi.getAvailablePayoutMethods()
-    const d = (res?.data ?? res ?? {}) as { banks?: PayoutMethodOption[]; mobile_money_providers?: PayoutMethodOption[]; selcom_enabled?: boolean }
+    const d = (res?.data ?? res ?? {}) as {
+      banks?: PayoutMethodOption[]
+      mobile_money_providers?: PayoutMethodOption[]
+      results?: PayoutMethodOption[]
+      selcom_enabled?: boolean
+    }
     availableBanks.value = Array.isArray(d.banks) ? d.banks : []
-    availableProviders.value = Array.isArray(d.mobile_money_providers) ? d.mobile_money_providers : []
-    selcomEnabled.value = Boolean(d.selcom_enabled)
+    const providers = Array.isArray(d.mobile_money_providers) ? d.mobile_money_providers : []
+    availableProviders.value = providers.length
+      ? providers
+      : (Array.isArray(d.results) ? d.results.filter((r) => String(r.code || r.id) !== 'bank') : [])
+    selcomEnabled.value = d.selcom_enabled !== false
   } catch {
     availableBanks.value = []
     availableProviders.value = []

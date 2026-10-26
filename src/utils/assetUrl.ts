@@ -19,12 +19,79 @@ export function looksLikeMediaPath(value: string | null | undefined): boolean {
   return false
 }
 
+const KKOO_HOST = /(?:^|\.)kkooapp\.co\.tz$/i
+
+/** Strip kkoo hosts to a relative /media path and upgrade leftover http:// on our domains. */
+export function canonicalizePublicAssetUrl(raw: string): string {
+  const u = raw.trim()
+  if (!u.startsWith('http://') && !u.startsWith('https://')) return u
+  try {
+    const parsed = new URL(u)
+    const host = parsed.hostname.toLowerCase()
+    if (KKOO_HOST.test(host) && (parsed.pathname.startsWith('/media/') || parsed.pathname.startsWith('/img/'))) {
+      return `${parsed.pathname}${parsed.search}`
+    }
+    if (KKOO_HOST.test(host) && parsed.protocol === 'http:') {
+      parsed.protocol = 'https:'
+      return parsed.toString()
+    }
+  } catch {
+    return u
+  }
+  return u
+}
+
 export function resolveAssetUrl(url: string | null | undefined): string | null {
   if (!url || typeof url !== 'string' || !url.trim()) return null
-  const u = url.trim()
+  const u = canonicalizePublicAssetUrl(url)
   if (u.startsWith('http://') || u.startsWith('https://')) return u
   const path = u.startsWith('/') ? u : `/${u}`
   return `${mediaBaseUrl}${path}`
+}
+
+/** Display sizes shared with Fiber `/img/{slot}/media/...` and Flutter. */
+export type MediaImageSlot = 'thumb' | 'card' | 'detail' | 'original'
+
+export const mediaSizes: Record<Exclude<MediaImageSlot, 'original'>, string> = {
+  thumb: '96px',
+  card: '(max-width: 640px) 45vw, 210px',
+  detail: '(max-width: 768px) 100vw, 720px',
+}
+
+const SLOT_WIDTH: Record<Exclude<MediaImageSlot, 'original'>, number> = {
+  thumb: 200,
+  card: 410,
+  detail: 1280,
+}
+
+function insertMediaSlot(url: string, slot: MediaImageSlot): string {
+  if (slot === 'original' || /\/img\/(thumb|card|detail)\//.test(url)) return url
+  const marker = '/media/'
+  const idx = url.indexOf(marker)
+  if (idx < 0) return url
+  return `${url.slice(0, idx)}/img/${slot}${url.slice(idx)}`
+}
+
+/** Rewrite a resolved `/media/...` URL to the Fiber variant for [slot]. */
+export function sizedAssetUrl(
+  url: string | null | undefined,
+  slot: MediaImageSlot = 'card',
+): string | null {
+  const resolved = resolveAssetUrl(url)
+  if (!resolved || slot === 'original') return resolved
+  return insertMediaSlot(resolved, slot)
+}
+
+/** `srcset` ladder for catalog photos (thumb/card/detail). */
+export function mediaSrcset(url: string | null | undefined): string | undefined {
+  const resolved = resolveAssetUrl(url)
+  if (!resolved || resolved.indexOf('/media/') < 0) return undefined
+  const parts: string[] = []
+  ;(Object.keys(SLOT_WIDTH) as Array<keyof typeof SLOT_WIDTH>).forEach((slot) => {
+    const sized = sizedAssetUrl(resolved, slot)
+    if (sized) parts.push(`${sized} ${SLOT_WIDTH[slot]}w`)
+  })
+  return parts.length ? parts.join(', ') : undefined
 }
 
 /** Get first available image URL from product (cover_image, image, thumbnail, primary_media). */

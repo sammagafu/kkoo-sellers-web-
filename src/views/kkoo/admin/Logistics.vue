@@ -21,9 +21,9 @@
         <template #cell(user)="row">
           <div class="small">
             <div class="fw-semibold">
-              {{ displayName(row.item.user) }}
+              {{ displayName(row.item) }}
             </div>
-            <div class="text-muted">{{ displayPhone(row.item.user) }}</div>
+            <div class="text-muted">{{ displayPhone(row.item) }}</div>
           </div>
         </template>
 
@@ -94,8 +94,14 @@ function normalizeList(data: unknown): DriverRow[] {
   return (obj?.results ?? []) as DriverRow[]
 }
 
-function displayName(u: unknown): string {
-  const user = (u ?? {}) as Record<string, unknown>
+function personRecord(driver: unknown): Record<string, unknown> {
+  const row = (driver ?? {}) as Record<string, unknown>
+  const user = (row.user ?? {}) as Record<string, unknown>
+  return { ...row, ...user }
+}
+
+function displayName(driver: unknown): string {
+  const user = personRecord(driver)
   const full = String(user.full_name ?? '').trim()
   if (full) return full
   const first = String(user.first_name ?? '').trim()
@@ -104,8 +110,8 @@ function displayName(u: unknown): string {
   return joined || String(user.username ?? user.phone_number ?? '—')
 }
 
-function displayPhone(u: unknown): string {
-  const user = (u ?? {}) as Record<string, unknown>
+function displayPhone(driver: unknown): string {
+  const user = personRecord(driver)
   const phone = String(user.phone_number ?? '').trim()
   return phone || '—'
 }
@@ -113,9 +119,8 @@ function displayPhone(u: unknown): string {
 function matchesQuery(driver: DriverRow, query: string): boolean {
   const qq = query.trim().toLowerCase()
   if (!qq) return true
-  const u = (driver.user ?? {}) as Record<string, unknown>
-  const name = displayName(u).toLowerCase()
-  const phone = displayPhone(u).toLowerCase()
+  const name = displayName(driver).toLowerCase()
+  const phone = displayPhone(driver).toLowerCase()
   return name.includes(qq) || phone.includes(qq)
 }
 

@@ -2077,7 +2077,7 @@ export default {
     termsTitle: 'Terms of Use',
     termsIntro: 'Welcome to KKOO. By using our apps and services (KKOO Marketplace, Eats, Rides & Delivery), you agree to these terms. Please read them carefully.',
     termsAcceptance: 'Acceptance of terms',
-    termsAcceptanceBody: 'By accessing or using KKOO services, you agree to be bound by these Terms of Use and our Privacy Policy. If you do not agree, do not use our services.',
+    termsAcceptanceBody: 'By accessing or using KKOO services, you agree to be bound by these Terms of Use and our Privacy Policy. If you do not agree, do not use our services. You may browse the public catalogue without an account. Buyer sign-in uses a phone number and a one-time code, not a password. Through the end of 6 November 2026 (East Africa Time), purchases on the live service may be simulated and are not live charges; the WhatsApp receipt is labeled TEST receipt.',
     termsServices: 'Our services',
     termsServicesBody: 'KKOO provides a trust-driven commerce and delivery platform: marketplace, food and grocery ordering, rides, and delivery. Services may vary by region and app. We reserve the right to modify or discontinue features with reasonable notice.',
     termsConduct: 'Your conduct',

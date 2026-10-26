@@ -1714,7 +1714,7 @@ export default {
     termsTitle: 'Masharti ya Matumizi',
     termsIntro: 'Karibu KKOO. Kwa kutumia programu na huduma zetu, unakubali masharti haya. Soma kwa makini.',
     termsAcceptance: 'Kukubali masharti',
-    termsAcceptanceBody: 'Kwa kufikia au kutumia huduma za KKOO, unakubali kufuata Masharti ya Matumizi na Sera yetu ya Faragha. Usipokubali, usitumie huduma zetu.',
+    termsAcceptanceBody: 'Kwa kufikia au kutumia huduma za KKOO, unakubali kufuata Masharti ya Matumizi na Sera yetu ya Faragha. Usipokubali, usitumie huduma zetu. Unaweza kuvinjari katalogi ya umma bila akaunti. Kuingia kwa mnunuzi kunatumia namba ya simu na msimbo wa mara moja, si nenosiri. Hadi mwisho wa tarehe 6 Novemba 2026 (saa za Afrika Mashariki), ununuzi kwenye huduma hai unaweza kuigwa na si malipo halisi; risiti ya WhatsApp ina lebo ya MAJARIBIO.',
     termsServices: 'Huduma zetu',
     termsServicesBody: 'KKOO inatoa jukwaa la biashara na usafirishaji: soko, chakula na duka, safari, na usafirishaji. Huduma zinaweza kutofautiana kwa mkoa na programu.',
     termsConduct: 'Tabia yako',

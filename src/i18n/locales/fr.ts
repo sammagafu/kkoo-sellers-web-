@@ -1674,7 +1674,7 @@ export default {
     termsTitle: 'Conditions d\'utilisation',
     termsIntro: 'Bienvenue sur KKOO. En utilisant nos applications et services (KKOO Marketplace, Eats, Rides & Delivery), vous acceptez ces conditions. Veuillez les lire attentivement.',
     termsAcceptance: 'Acceptation des conditions',
-    termsAcceptanceBody: 'En accédant ou en utilisant les services KKOO, vous acceptez d\'être lié par ces Conditions d\'utilisation et notre Politique de confidentialité. En cas de désaccord, n\'utilisez pas nos services.',
+    termsAcceptanceBody: 'En accédant ou en utilisant les services KKOO, vous acceptez d\'être lié par ces Conditions d\'utilisation et notre Politique de confidentialité. En cas de désaccord, n\'utilisez pas nos services. Vous pouvez parcourir le catalogue public sans compte. La connexion acheteur utilise un numéro de téléphone et un code à usage unique, pas un mot de passe. Jusqu\'à la fin du 6 novembre 2026 (heure d\'Afrique de l\'Est), les achats sur le service en ligne peuvent être simulés et ne sont pas des débits réels ; le reçu WhatsApp est étiqueté Recu TEST.',
     termsServices: 'Nos services',
     termsServicesBody: 'KKOO fournit une plateforme de commerce et de livraison : marketplace, commande de nourriture et courses, courses et livraison. Les services peuvent varier selon la région et l\'application.',
     termsConduct: 'Votre conduite',
